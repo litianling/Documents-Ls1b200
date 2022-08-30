@@ -1,0 +1,764 @@
+A51 MACRO ASSEMBLER  SAVEEEPROM                                                           03/03/2021 15:57:48 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN SaveEEPROM.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE SaveEEPROM.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* Èç¹ûÒªÔÚ³ÌÐòÖÐÊ¹ÓÃ´Ë´úÂë,ÇëÔÚ³ÌÐòÖÐ×¢Ã÷Ê¹ÓÃÁËSTCµÄ×ÊÁÏ¼°³ÌÐò        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     
+                      14     ;*************  ¹¦ÄÜËµÃ÷    **************
+                      15     
+                      16     ;±¾Àý³Ì»ùÓÚSTC8H8K64UÎªÖ÷¿ØÐ¾Æ¬µÄÊµÑéÏä8½øÐÐ±àÐ´²âÊÔ£¬STC8G¡¢STC8HÏµÁÐÐ¾Æ¬¿ÉÍ¨ÓÃ²Î¿¼.
+                      17     
+                      18     ;±È½ÏÆ÷µÄÕý¼«Í¨¹ý P3.7 ¶Ë¿ÚÁ¬½Ó¿Éµ÷µç×è£¬Óë1.19VÄÚ²¿¹Ì¶¨±È½Ï£»
+                      19     
+                      20     ;µ÷½Ú¿Éµ÷µç×è£¬µ±P3.7¿ÚµÄÊäÈëµçÑ¹µÍÓÚ1.19VÊ±²úÉú±È½ÏÆ÷ÖÐ¶Ï£¬´ËÊ±±£´æÊý¾Ýµ½EEPROM£»
+                      21     
+                      22     ;µ±P3.7¿ÚµÄÊäÈëµçÑ¹¸ßÓÚ1.19Vºó£¬»òÕßÖØÐÂÉÏµçÊ±£¬¶ÁÈ¡EEPROMÊý¾Ý½øÐÐ»Ö¸´¡£
+                      23     
+                      24     ;ÓÃSTCµÄMCUµÄIO·½Ê½Çý¶¯8Î»ÊýÂë¹Ü¡£
+                      25     
+                      26     ;Ê¹ÓÃTimer0µÄ16Î»×Ô¶¯ÖØ×°À´²úÉú1ms½ÚÅÄ,³ÌÐòÔËÐÐÓÚÕâ¸ö½ÚÅÄÏÂ,ÓÃ»§ÐÞ¸ÄMCUÖ÷Ê±ÖÓÆµÂÊÊ±,×Ô¶¯¶¨Ê
+                             ±ÓÚ1ms.
+                      27     
+                      28     ;ÓÃ»§¿ÉÒÔÔÚ"ÓÃ»§¶¨Òåºê"ÖÐÐÞ¸Ä±£´æÊý¾ÝµÄEEPROMµØÖ·¡£
+                      29     
+                      30     ;ÏÔÊ¾Ð§¹ûÎª: ÉÏµçºóÏÔÊ¾Ãë¼ÆÊý, ¼ÆÊý·¶Î§Îª0~10000£¬ÏÔÊ¾ÔÚÓÒ±ßµÄ5¸öÊýÂë¹Ü¡£
+                      31     
+                      32     ;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                      33     ;×¢Òâ£ºÏÂÔØÊ±£¬ÏÂÔØ½çÃæ"Ó²¼þÑ¡Ïî"ÖÐÏÂÃæµÄÏîÒªÈ·ÈÏÈçÏÂÉèÖÃ:
+                      34     
+                      35     ;ÉèÖÃÓÃ»§EEPROM´óÐ¡£¬²¢È·±£"ÓÃ»§¶¨Òåºê"ÖÐÉè¶¨µÄµØÖ·ÔÚEEPROMÉèÖÃµÄ´óÐ¡·¶Î§Ö®ÄÚ¡£
+                      36     
+                      37     ;Ñ¡ÔñÊ±ÖÓ 24MHZ (ÓÃ»§¿É×ÔÐÐÐÞ¸ÄÆµÂÊ)¡£
+                      38     ;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                      39     
+                      40     ;******************************************
+                      41     
+                      42     ;/****************************** ÓÃ»§¶¨Òåºê ***********************************/
+                      43     
+  5DC0                44     Fosc_KHZ    EQU 24000   ;24MHZ
+                      45     
+  00D0                46     STACK_POIRTER   EQU     0D0H    ; ¶ÑÕ»¿ªÊ¼µØÖ·
+                      47     
+  A240                48     Timer0_Reload   EQU     (65536 - Fosc_KHZ)  ; Timer 0 ÖÐ¶ÏÆµÂÊ, 1000´Î/Ãë
+                      49     
+  0040                50     EE_ADDRESS      EQU     0040H  ;±£´æµÄµØÖ·
+                      51     
+  0020                52     DIS_DOT         EQU     020H
+  0010                53     DIS_BLACK       EQU     010H
+  0011                54     DIS_            EQU     011H
+                      55     
+                      56     ;*******************************************************************
+                      57     ;*******************************************************************
+A51 MACRO ASSEMBLER  SAVEEEPROM                                                           03/03/2021 15:57:48 PAGE     2
+
+                      58     
+  0080                59     IAP_EN          EQU     (1 SHL 7)
+  0040                60     IAP_SWBS        EQU     (1 SHL 6)
+  0020                61     IAP_SWRST       EQU     (1 SHL 5)
+  0010                62     IAP_CMD_FAIL    EQU     (1 SHL 4)
+                      63     
+  0018                64     TPS_WAIT        EQU     24   ;24MHZ / 1000000
+                      65     
+  00BA                66     P_SW2     DATA 0BAH
+  008E                67     AUXR      DATA 08EH
+  00C0                68     P4        DATA 0C0H
+  00C8                69     P5        DATA 0C8H
+  00E8                70     P6        DATA 0E8H
+  00F8                71     P7        DATA 0F8H
+                      72     
+  00C2                73     IAP_DATA  DATA 0C2H
+  00C3                74     IAP_ADDRH DATA 0C3H
+  00C4                75     IAP_ADDRL DATA 0C4H
+  00C5                76     IAP_CMD   DATA 0C5H
+  00C6                77     IAP_TRIG  DATA 0C6H
+  00C7                78     IAP_CONTR DATA 0C7H
+  00F5                79     IAP_TPS   DATA 0F5H
+                      80     
+  00E6                81     CMPCR1    DATA 0E6H
+  00E7                82     CMPCR2    DATA 0E7H
+                      83     
+  0093                84     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094                85     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091                86     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092                87     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095                88     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+  0096                89     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+  00B1                90     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2                91     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3                92     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+  00B4                93     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9                94     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA                95     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB                96     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC                97     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1                98     P7M1    DATA    0xE1    ;
+  00E2                99     P7M0    DATA    0xE2    ;
+                     100             
+                     101     ;*************  IO¿Ú¶¨Òå    **************/
+                     102     
+                     103     
+                     104     ;*************  ±¾µØ±äÁ¿ÉùÃ÷    **************/
+  0020               105     Flag0           DATA    20H
+  0000               106     B_1ms           BIT     Flag0.0 ;   1ms±êÖ¾
+  0001               107     LowVolFlag      BIT     Flag0.1 ;   µÍµçÑ¹±êÖ¾
+                     108     
+  002E               109     Temp_cnt_H      DATA    2EH     ; ±£´æÓÃµÄÃë¼ÆÊý±äÁ¿
+  002F               110     Temp_cnt_L      DATA    2FH
+                     111     
+  0030               112     LED8            DATA    30H     ;   ÏÔÊ¾»º³å 30H ~ 37H
+  0038               113     display_index   DATA    38H     ;   ÏÔÊ¾Î»Ë÷Òý
+                     114     
+  0039               115     msecond_H       DATA    39H     ;
+  003A               116     msecond_L       DATA    3AH     ;
+                     117     
+  003B               118     Test_cnt_H      DATA    3BH     ; ²âÊÔÓÃµÄÃë¼ÆÊý±äÁ¿
+  003C               119     Test_cnt_L      DATA    3CH
+                     120     
+  003D               121     address_H       DATA    3DH
+  003E               122     address_L       DATA    3EH
+  003F               123     length          DATA    3FH
+A51 MACRO ASSEMBLER  SAVEEEPROM                                                           03/03/2021 15:57:48 PAGE     3
+
+                     124     
+                     125     ;*******************************************************************
+                     126     ;*******************************************************************
+0000                 127             ORG     0000H               ;reset
+0000 020100          128             LJMP    F_Main
+                     129     
+000B                 130             ORG     000BH               ;1  Timer0 interrupt
+000B 0202E6          131             LJMP    F_Timer0_Interrupt
+                     132     
+00AB                 133             ORG     00ABH               ;21 CMP interrupt
+00AB 0201BE          134             LJMP    F_CMP_Interrupt
+                     135     
+                     136     
+                     137     ;*******************************************************************
+                     138     ;*******************************************************************
+                     139     
+                     140     
+                     141     ;******************** Ö÷³ÌÐò **************************/
+0100                 142             ORG     0100H       ;reset
+0100                 143     F_Main:
+0100 E4              144         CLR     A
+0101 F593            145         MOV     P0M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0103 F594            146         MOV     P0M0, A
+0105 F591            147         MOV     P1M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0107 F592            148         MOV     P1M0, A
+0109 F595            149         MOV     P2M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010B F596            150         MOV     P2M0, A
+010D F5B1            151         MOV     P3M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010F F5B2            152         MOV     P3M0, A
+0111 F5B3            153         MOV     P4M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0113 F5B4            154         MOV     P4M0, A
+0115 F5C9            155         MOV     P5M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0117 F5CA            156         MOV     P5M0, A
+0119 F5CB            157         MOV     P6M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+011B F5CC            158         MOV     P6M0, A
+011D F5E1            159         MOV     P7M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+011F F5E2            160         MOV     P7M0, A
+                     161     
+                     162         
+0121 7581D0          163         MOV     SP, #STACK_POIRTER
+0124 75D000          164         MOV     PSW, #0
+                     165         USING   0       ;Ñ¡ÔñµÚ0×éR0~R7
+                     166     
+                     167     ;================= ÓÃ»§³õÊ¼»¯³ÌÐò ====================================
+                     168     
+0127 753800          169         MOV     display_index, #0
+012A 7830            170         MOV     R0, #LED8
+012C 7A08            171         MOV     R2, #8
+012E                 172     L_ClearLoop:
+012E 7610            173         MOV     @R0, #DIS_BLACK     ;ÉÏµçÏûÒþ
+0130 08              174         INC     R0
+0131 DAFB            175         DJNZ    R2, L_ClearLoop
+                     176         
+0133 C28C            177         CLR     TR0
+0135 438E80          178         ORL     AUXR, #(1 SHL 7)    ; Timer0_1T();
+0138 5389FB          179         ANL     TMOD, #NOT 04H      ; Timer0_AsTimer();
+013B 5389FC          180         ANL     TMOD, #NOT 03H      ; Timer0_16bitAutoReload();
+013E 758CA2          181         MOV     TH0, #Timer0_Reload / 256   ;Timer0_Load(Timer0_Reload);
+0141 758A40          182         MOV     TL0, #Timer0_Reload MOD 256
+0144 D2A9            183         SETB    ET0         ; Timer0_InterruptEnable();
+0146 D28C            184         SETB    TR0         ; Timer0_Run();
+                     185     
+0148 53BAF7          186         ANL     P_SW2, #NOT 08H     ; Ñ¡ÔñP3.4×÷Îª±È½ÏÆ÷Êä³ö½Å
+014B 75E750          187         MOV     CMPCR2, #50H        ; ±È½ÏÆ÷ÕýÏòÊä³ö,½ûÖ¹0.1usÂË²¨,±È½ÏÆ÷½á¹û¾­¹ý16¸öÈ¥¶¶Ê±ÖÓºó
+                             Êä³ö
+014E 75E6B2          188         MOV     CMPCR1, #0B2H       ; Ê¹ÄÜ±È½ÏÆ÷Ä£¿é,Ê¹ÄÜ±È½ÏÆ÷±ßÑØÖÐ¶Ï,P3.7ÎªCMP+ÊäÈë½Å,ÄÚ²¿²Î
+A51 MACRO ASSEMBLER  SAVEEEPROM                                                           03/03/2021 15:57:48 PAGE     4
+
+                             ¿¼µçÑ¹ÎªCMP-ÊäÈë½Å,Ê¹ÄÜ±È½ÏÆ÷Êä³ö
+0151 D2AF            189         SETB    EA          ; ´ò¿ª×ÜÖÐ¶Ï
+                     190         
+0153 7AC8            191         MOV     R2, #200    ; delay 200ms
+0155                 192     L_PowerUpDelay:
+0155 3000FD          193         JNB     B_1ms, $    ; µÈ´ý1msµ½
+0158 C200            194         CLR     B_1ms
+015A DAF9            195         DJNZ    R2, L_PowerUpDelay
+                     196     
+015C 753D00          197         MOV     address_H, #HIGH EE_ADDRESS
+015F 753E40          198         MOV     address_L, #LOW  EE_ADDRESS
+0162 753F02          199         MOV     length, #2      ;¶Á³ö2×Ö½Ú
+0165 783B            200         MOV     R0, #Test_cnt_H
+0167 120307          201         LCALL   F_EEPROM_read_n     ;¶ÁN¸ö×Ö½Ú  ;address_H,address_L,R0,length
+016A E53C            202         MOV     A, Test_cnt_L
+016C C3              203         CLR     C
+016D 9410            204         SUBB    A, #LOW 10000
+016F E53B            205         MOV     A, Test_cnt_H
+0171 9427            206         SUBB    A, #HIGH 10000
+0173 4006            207         JC      L_LessThan10000
+0175 753B00          208         MOV     Test_cnt_H, #0
+0178 753C00          209         MOV     Test_cnt_L, #0
+017B                 210     L_LessThan10000:
+                     211     
+017B 12025A          212         LCALL   F_Display       ; ÏÔÊ¾Ãë¼ÆÊý
+                     213         
+                     214     ;=================== Ö÷Ñ­»· ==================================
+017E                 215     L_MainLoop:
+017E 2001FD          216         JB      LowVolFlag, L_MainLoop ;µÍµçÑ¹Ê±²»¹¤×÷
+0181 3000FA          217         JNB     B_1ms, L_MainLoop      ;1msÎ´µ½
+0184 C200            218         CLR     B_1ms
+                     219         
+0186 053A            220         INC     msecond_L       ;msecond + 1
+0188 E53A            221         MOV     A, msecond_L
+018A 7002            222         JNZ     $+4
+018C 0539            223         INC     msecond_H
+                     224         
+018E E53A            225         MOV     A, msecond_L    ;msecond - 1000
+0190 C3              226         CLR     C
+0191 94E8            227         SUBB    A, #LOW 1000
+0193 E539            228         MOV     A, msecond_H
+0195 9403            229         SUBB    A, #HIGH 1000
+0197 40E5            230         JC      L_MainLoop      ;if(msecond < 1000), jmp
+                     231         
+0199 753A00          232         MOV     msecond_L, #0   ;if(msecond >= 1000)
+019C 753900          233         MOV     msecond_H, #0
+                     234     
+019F 053C            235         INC     Test_cnt_L      ;Test_cnt + 1
+01A1 E53C            236         MOV     A, Test_cnt_L
+01A3 7002            237         JNZ     $+4
+01A5 053B            238         INC     Test_cnt_H
+                     239     
+01A7 E53C            240         MOV     A, Test_cnt_L   ;if(Test_cnt > 10000)   Test_cnt = 0;   Ãë¼ÆÊý·¶Î§Îª0~10000
+01A9 C3              241         CLR     C
+01AA 9410            242         SUBB    A, #LOW 10000
+01AC E53B            243         MOV     A, Test_cnt_H
+01AE 9427            244         SUBB    A, #HIGH 10000
+01B0 4006            245         JC      L_LessThan10000A
+01B2 753B00          246         MOV     Test_cnt_H, #0
+01B5 753C00          247         MOV     Test_cnt_L, #0
+01B8                 248     L_LessThan10000A:
+01B8 12025A          249         LCALL   F_Display       ; ÏÔÊ¾Ãë¼ÆÊý
+                     250     
+01BB 02017E          251         LJMP    L_MainLoop
+                     252     
+                     253     ;**********************************************/
+A51 MACRO ASSEMBLER  SAVEEEPROM                                                           03/03/2021 15:57:48 PAGE     5
+
+                     254     
+                     255     
+                     256     ;========================================================================
+                     257     ; º¯Êý: F_CMP_Interrupt
+                     258     ; ÃèÊö: ±È½ÏÆ÷ÖÐ¶Ïº¯Êý.
+                     259     ; ²ÎÊý: non.
+                     260     ; ·µ»Ø: non.
+                     261     ; °æ±¾: V1.0, 2021-3-3
+                     262     ;========================================================================
+01BE                 263     F_CMP_Interrupt:
+01BE C0D0            264         PUSH    PSW
+01C0 C0E0            265         PUSH    ACC
+01C2 C002            266         PUSH    AR2
+                     267     
+01C4 53E6BF          268         ANL     CMPCR1, #NOT 040H      ; ÇåÖÐ¶Ï±êÖ¾
+01C7 E5E6            269         MOV     A, CMPCR1
+01C9 13              270             RRC     A
+01CA 92C7            271             MOV     P4.7,C
+                     272     
+01CC E5E6            273         MOV     A, CMPCR1
+01CE 5401            274             ANL     A, #01H
+01D0 6038            275             JZ      F_CMP_Powerdown
+01D2 300160          276         JNB     LowVolFlag, L_QuitCMP_Init
+01D5 C201            277             CLR     LowVolFlag      ;Çå³ýµÍµçÑ¹±êÖ¾
+                     278             
+01D7 E53B            279             MOV     A, Test_cnt_H
+01D9 652E            280             XRL     A, Temp_cnt_H
+01DB 7006            281             JNZ     F_CMP_Read
+01DD E53C            282             MOV     A, Test_cnt_L
+01DF 652F            283             XRL     A, Temp_cnt_L
+01E1 6052            284             JZ     L_QuitCMP_Init
+01E3                 285     F_CMP_Read:
+01E3 753D00          286         MOV     address_H, #HIGH EE_ADDRESS
+01E6 753E40          287         MOV     address_L, #LOW  EE_ADDRESS
+01E9 753F02          288         MOV     length, #2      ;¶Á³ö2×Ö½Ú
+01EC 783B            289         MOV     R0, #Test_cnt_H
+01EE 120307          290         LCALL   F_EEPROM_read_n     ;¶ÁN¸ö×Ö½Ú  ;address_H,address_L,R0,length
+01F1 E53C            291         MOV     A, Test_cnt_L
+01F3 C3              292         CLR     C
+01F4 9410            293         SUBB    A, #LOW 10000
+01F6 E53B            294         MOV     A, Test_cnt_H
+01F8 9427            295         SUBB    A, #HIGH 10000
+01FA 4006            296         JC      F_CMP_LessThan10000
+01FC 753B00          297         MOV     Test_cnt_H, #0
+01FF 753C00          298         MOV     Test_cnt_L, #0
+0202                 299     F_CMP_LessThan10000:
+0202 853B2E          300         MOV     Temp_cnt_H, Test_cnt_H
+0205 853C2F          301         MOV     Temp_cnt_L, Test_cnt_L
+0208 802B            302             SJMP    L_QuitCMP_Init
+                     303     
+020A                 304     F_CMP_Powerdown:
+020A 75F8FF          305         MOV     P7, #0xff
+                     306     
+020D 200125          307         JB      LowVolFlag, L_QuitCMP_Init
+0210 D201            308             SETB    LowVolFlag      ;ÉèÖÃµÍµçÑ¹±êÖ¾
+                     309     
+0212 E53B            310             MOV     A, Test_cnt_H
+0214 652E            311             XRL     A, Temp_cnt_H
+0216 7006            312             JNZ     F_CMP_Write
+0218 E53C            313             MOV     A, Test_cnt_L
+021A 652F            314             XRL     A, Temp_cnt_L
+021C 6017            315             JZ     L_QuitCMP_Init
+021E                 316     F_CMP_Write:
+021E 853B2E          317         MOV     Temp_cnt_H, Test_cnt_H
+0221 853C2F          318         MOV     Temp_cnt_L, Test_cnt_L
+0224 753D00          319         MOV     address_H, #HIGH EE_ADDRESS
+A51 MACRO ASSEMBLER  SAVEEEPROM                                                           03/03/2021 15:57:48 PAGE     6
+
+0227 753E40          320         MOV     address_L, #LOW  EE_ADDRESS
+022A 120342          321         LCALL   F_EEPROM_SectorErase    ; ²Á³ýÒ»¸öÉÈÇø
+                     322     
+022D 753F02          323         MOV     length, #2
+0230 782E            324         MOV     R0, #Temp_cnt_H
+0232 120366          325         LCALL   F_EEPROM_write_n        ;Ð´N¸ö×Ö½Ú  ;address_H,address_L,R0,length
+                     326     
+0235                 327     L_QuitCMP_Init:
+0235 D002            328         POP     AR2
+0237 D0E0            329         POP     ACC
+0239 D0D0            330         POP     PSW
+023B 32              331         RETI
+                     332     
+                     333     ;========================================================================
+                     334     ; º¯Êý: F_HEX2_DEC
+                     335     ; ÃèÊö: °ÑË«×Ö½ÚÊ®Áù½øÖÆÊý×ª³ÉÊ®½øÖÆBCDÊý.
+                     336     ; ²ÎÊý: (R6 R7): Òª×ª»»µÄË«×Ö½ÚÊ®Áù½øÖÆÊý.
+                     337     ; ·µ»Ø: (R3 R4 R5) = BCDÂë.
+                     338     ; °æ±¾: V1.0, 2013-10-22
+                     339     ;========================================================================
+023C                 340     F_HEX2_DEC:         ;(R6 R7) HEX Change to DEC ---> (R3 R4 R5), use (R2~R7)
+023C 7A10            341             MOV     R2,#16
+023E 7B00            342             MOV     R3,#0
+0240 7C00            343             MOV     R4,#0
+0242 7D00            344             MOV     R5,#0
+                     345     
+0244                 346     L_HEX2_DEC:
+0244 C3              347             CLR     C   
+0245 EF              348             MOV     A,R7
+0246 33              349             RLC     A   
+0247 FF              350             MOV     R7,A
+0248 EE              351             MOV     A,R6
+0249 33              352             RLC     A   
+024A FE              353             MOV     R6,A
+                     354     
+024B ED              355             MOV     A,R5
+024C 3D              356             ADDC    A,R5
+024D D4              357             DA      A   
+024E FD              358             MOV     R5,A
+                     359     
+024F EC              360             MOV     A,R4
+0250 3C              361             ADDC    A,R4
+0251 D4              362             DA      A   
+0252 FC              363             MOV     R4,A
+                     364     
+0253 EB              365             MOV     A,R3
+0254 3B              366             ADDC    A,R3
+0255 D4              367             DA      A   
+0256 FB              368             MOV     R3,A
+                     369     
+0257 DAEB            370             DJNZ    R2,L_HEX2_DEC
+0259 22              371             RET
+                     372     ;**********************************************/
+                     373     
+                     374     ;========================================================================
+                     375     ; º¯Êý: F_Display
+                     376     ; ÃèÊö: ÏÔÊ¾¼ÆÊýº¯Êý.
+                     377     ; ²ÎÊý: non.
+                     378     ; ·µ»Ø: non.
+                     379     ; °æ±¾: V1.0, 2014-1-22
+                     380     ;========================================================================
+025A                 381     F_Display:
+025A AE3B            382         MOV     R6, Test_cnt_H
+025C AF3C            383         MOV     R7, Test_cnt_L
+025E 12023C          384         LCALL   F_HEX2_DEC      ;(R6 R7) HEX Change to DEC ---> (R3 R4 R5), use (R2~R7)
+0261 8B34            385         MOV     LED8+4, R3  ;ÍòÎ»
+A51 MACRO ASSEMBLER  SAVEEEPROM                                                           03/03/2021 15:57:48 PAGE     7
+
+0263 EC              386         MOV     A, R4
+0264 C4              387         SWAP    A
+0265 540F            388         ANL     A, #0x0F
+0267 F533            389         MOV     LED8+3, A
+0269 EC              390         MOV     A, R4
+026A 540F            391         ANL     A, #0x0F
+026C F532            392         MOV     LED8+2, A
+026E ED              393         MOV     A, R5
+026F C4              394         SWAP    A
+0270 540F            395         ANL     A, #0x0F
+0272 F531            396         MOV     LED8+1, A
+0274 ED              397         MOV     A, R5
+0275 540F            398         ANL     A, #0x0F
+0277 F530            399         MOV     LED8+0, A
+                     400         
+0279 7834            401         MOV     R0, #LED8+4
+027B                 402     L_Cut0_Loop:            ;Ïû¸ßÎ»0
+027B E6              403         MOV     A,@R0
+027C 7006            404         JNZ     L_QuitCut0
+027E 7610            405         MOV     @R0, #DIS_BLACK
+0280 18              406         DEC     R0
+0281 B830F7          407         CJNE    R0, #LED8+0, L_Cut0_Loop
+0284                 408     L_QuitCut0: 
+0284 22              409         RET
+                     410     
+                     411     
+                     412     ; *********************** ÏÔÊ¾Ïà¹Ø³ÌÐò ****************************************
+0285                 413     T_Display:                      ;±ê×¼×Ö¿â
+                     414     ;    0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+0285 3F065B4F        415     DB  03FH,006H,05BH,04FH,066H,06DH,07DH,007H,07FH,06FH,077H,07CH,039H,05EH,079H,071H
+0289 666D7D07                
+028D 7F6F777C                
+0291 395E7971                
+                     416     ;  black  -    H    J    K    L    N    o    P    U    t    G    Q    r    M    y
+0295 0040761E        417     DB  000H,040H,076H,01EH,070H,038H,037H,05CH,073H,03EH,078H,03dH,067H,050H,037H,06EH
+0299 7038375C                
+029D 733E783D                
+02A1 6750376E                
+                     418     ;    0.   1.   2.   3.   4.   5.   6.   7.   8.   9.   -1
+02A5 BF86DBCF        419     DB  0BFH,086H,0DBH,0CFH,0E6H,0EDH,0FDH,087H,0FFH,0EFH,046H
+02A9 E6EDFD87                
+02AD FFEF46                  
+                     420     
+02B0                 421     T_COM:
+02B0 01020408        422     DB  001H,002H,004H,008H,010H,020H,040H,080H     ;   Î»Âë
+02B4 10204080                
+                     423     
+                     424     
+                     425     ;//========================================================================
+                     426     ;// º¯Êý: F_DisplayScan
+                     427     ;// ÃèÊö: ÏÔÊ¾É¨Ãè×Ó³ÌÐò¡£
+                     428     ;// ²ÎÊý: none.
+                     429     ;// ·µ»Ø: none.
+                     430     ;// °æ±¾: VER1.0
+                     431     ;// ÈÕÆÚ: 2013-4-1
+                     432     ;// ±¸×¢: ³ýÁËACCCºÍPSWÍâ, ËùÓÃµ½µÄÍ¨ÓÃ¼Ä´æÆ÷¶¼ÈëÕ»
+                     433     ;//========================================================================
+02B8                 434     F_DisplayScan:
+02B8 C083            435         PUSH    DPH     ;DPHÈëÕ»
+02BA C082            436         PUSH    DPL     ;DPLÈëÕ»
+02BC C000            437         PUSH    00H     ;R0 ÈëÕ»
+                     438         
+02BE 9002B0          439         MOV     DPTR, #T_COM
+02C1 E538            440         MOV     A, display_index
+02C3 93              441         MOVC    A, @A+DPTR
+02C4 F4              442         CPL     A
+A51 MACRO ASSEMBLER  SAVEEEPROM                                                           03/03/2021 15:57:48 PAGE     8
+
+02C5 F5F8            443         MOV     P7,A
+                     444         
+02C7 900285          445         MOV     DPTR, #T_Display
+02CA E538            446         MOV     A, display_index
+02CC 2430            447         ADD     A, #LED8
+02CE F8              448         MOV     R0, A
+02CF E6              449         MOV     A, @R0
+02D0 93              450         MOVC    A, @A+DPTR
+02D1 F4              451         CPL     A
+02D2 F5E8            452         MOV     P6,A
+                     453     
+02D4 0538            454         INC     display_index
+02D6 E538            455         MOV     A, display_index
+02D8 54F8            456         ANL     A, #0F8H            ; if(display_index >= 8)
+02DA 6003            457         JZ      L_QuitDisplayScan
+02DC 753800          458         MOV     display_index, #0;  ;8Î»½áÊø»Ø0
+02DF                 459     L_QuitDisplayScan:
+02DF D000            460         POP     00H     ;R0 ³öÕ»
+02E1 D082            461         POP     DPL     ;DPL³öÕ»
+02E3 D083            462         POP     DPH     ;DPH³öÕ»
+02E5 22              463         RET
+                     464     
+                     465     
+                     466     ;*******************************************************************
+                     467     ;**************** ÖÐ¶Ïº¯Êý ***************************************************
+                     468     
+02E6                 469     F_Timer0_Interrupt: ;Timer0 1msÖÐ¶Ïº¯Êý
+02E6 C0D0            470         PUSH    PSW     ;PSWÈëÕ»
+02E8 C0E0            471         PUSH    ACC     ;ACCÈëÕ»
+                     472     
+02EA 200105          473         JB      LowVolFlag, F_QuitTimer0_Int
+02ED 1202B8          474         LCALL   F_DisplayScan   ; 1msÉ¨ÃèÏÔÊ¾Ò»Î»
+02F0 D200            475         SETB    B_1ms           ; 1ms±êÖ¾
+                     476     
+02F2                 477     F_QuitTimer0_Int:
+02F2 D0E0            478         POP     ACC     ;ACC³öÕ»
+02F4 D0D0            479         POP     PSW     ;PSW³öÕ»
+02F6 32              480         RETI
+                     481         
+                     482     
+                     483     
+                     484     ;========================================================================
+                     485     ; º¯Êý: F_DisableEEPROM
+                     486     ; ÃèÊö: ½ûÖ¹·ÃÎÊISP/IAP.
+                     487     ; ²ÎÊý: non.
+                     488     ; ·µ»Ø: non.
+                     489     ; °æ±¾: V1.0, 2012-10-22
+                     490     ;========================================================================
+02F7                 491     F_DisableEEPROM:
+02F7 75C700          492         MOV     IAP_CONTR, #0       ; ½ûÖ¹ISP/IAP²Ù×÷
+02FA 75C500          493         MOV     IAP_CMD,  #0        ; È¥³ýISP/IAPÃüÁî
+02FD 75C600          494         MOV     IAP_TRIG, #0        ; ·ÀÖ¹ISP/IAPÃüÁîÎó´¥·¢
+0300 75C3FF          495         MOV     IAP_ADDRH, #0FFH    ; Çå0µØÖ·¸ß×Ö½Ú
+0303 75C4FF          496         MOV     IAP_ADDRL, #0FFH    ; Çå0µØÖ·µÍ×Ö½Ú£¬Ö¸Ïò·ÇEEPROMÇø£¬·ÀÖ¹Îó²Ù×÷
+0306 22              497         RET
+                     498     
+                     499     ;========================================================================
+                     500     ; º¯Êý: F_EEPROM_read_n
+                     501     ; ÃèÊö: ´ÓÖ¸¶¨EEPROMÊ×µØÖ·¶Á³ön¸ö×Ö½Ú·ÅÖ¸¶¨µÄ»º³å.
+                     502     ; ²ÎÊý: address_H,address_L:  ¶Á³öEEPROMµÄÊ×µØÖ·.
+                     503     ;       R0:                   ¶Á³öÊý¾Ý·Å»º³åµÄÊ×µØÖ·.
+                     504     ;       length:               ¶Á³öµÄ×Ö½Ú³¤¶È.
+                     505     ; ·µ»Ø: non.
+                     506     ; °æ±¾: V1.0, 2012-10-22
+                     507     ;========================================================================
+0307                 508     F_EEPROM_read_n:
+A51 MACRO ASSEMBLER  SAVEEEPROM                                                           03/03/2021 15:57:48 PAGE     9
+
+0307 C002            509         PUSH    AR2
+                     510     
+0309 AA3F            511         MOV     R2, length
+030B 853DC3          512         MOV     IAP_ADDRH, address_H    ; ËÍµØÖ·¸ß×Ö½Ú£¨µØÖ·ÐèÒª¸Ä±äÊ±²ÅÐèÖØÐÂËÍµØÖ·£©
+030E 853EC4          513         MOV     IAP_ADDRL, address_L    ; ËÍµØÖ·µÍ×Ö½Ú
+0311 75C780          514         MOV     IAP_CONTR, #IAP_EN      ; ÔÊÐíISP/IAP²Ù×÷£¬ËÍÒ»´Î¾Í¹»
+0314 75F518          515             MOV     IAP_TPS, #TPS_WAIT      ; ÉèÖÃµÈ´ýÊ±¼ä£¬
+0317 75C501          516         MOV     IAP_CMD, #1             ; ISP¶Á³öÃüÁîËÍ×Ö½Ú¶ÁÃüÁî£¬ÃüÁî²»Ðè¸Ä±äÊ±£¬²»ÐèÖØÐÂËÍÃü
+                             Áî
+031A A2AF            517         MOV     C, EA
+031C 92D5            518         MOV     F0, C   ;±£´æEA
+031E                 519     L_EE_Read_Loop:
+031E C2AF            520         CLR     EA      ; ½ûÖ¹ÖÐ¶Ï
+0320 75C65A          521         MOV     IAP_TRIG, #0x5A         ;ISP´¥·¢ÃüÁî
+0323 75C6A5          522         MOV     IAP_TRIG, #0xA5
+0326 00              523         NOP
+0327 A2D5            524         MOV     C, F0
+0329 92AF            525         MOV     EA, C       ; ÔÊÐíÖÐ¶Ï(Èç¹ûÔÊÐí)
+032B A6C2            526         MOV     @R0, IAP_DATA
+                     527     
+032D E5C4            528         MOV     A, IAP_ADDRL    ;
+032F 2401            529         ADD     A, #1
+0331 F5C4            530         MOV     IAP_ADDRL, A
+0333 E5C3            531         MOV     A, IAP_ADDRH
+0335 3400            532         ADDC    A, #0
+0337 F5C3            533         MOV     IAP_ADDRH, A
+0339 08              534         INC     R0
+033A DAE2            535         DJNZ    R2, L_EE_Read_Loop
+                     536     
+033C 1202F7          537         LCALL   F_DisableEEPROM
+033F D002            538         POP     AR2
+0341 22              539         RET
+                     540     
+                     541     ;========================================================================
+                     542     ; º¯Êý: F_EEPROM_SectorErase
+                     543     ; ÃèÊö: °ÑÖ¸¶¨µØÖ·µÄEEPROMÉÈÇø²Á³ý.
+                     544     ; ²ÎÊý: address_H,address_L:  Òª²Á³ýµÄÉÈÇøEEPROMµÄµØÖ·.
+                     545     ; ·µ»Ø: non.
+                     546     ; °æ±¾: V1.0, 2013-5-10
+                     547     ;========================================================================
+0342                 548     F_EEPROM_SectorErase:
+                     549                                                 ;Ö»ÓÐÉÈÇø²Á³ý£¬Ã»ÓÐ×Ö½Ú²Á³ý£¬512×Ö½Ú/ÉÈÇø¡£
+                     550                                                 ;ÉÈÇøÖÐÈÎÒâÒ»¸ö×Ö½ÚµØÖ·¶¼ÊÇÉÈÇøµØÖ·¡£
+0342 853DC3          551         MOV     IAP_ADDRH, address_H    ; ËÍµØÖ·¸ß×Ö½Ú£¨µØÖ·ÐèÒª¸Ä±äÊ±²ÅÐèÖØÐÂËÍµØÖ·£©
+0345 853EC4          552         MOV     IAP_ADDRL, address_L    ; ËÍµØÖ·µÍ×Ö½Ú
+0348 75C780          553         MOV     IAP_CONTR, #IAP_EN      ; ÔÊÐíISP/IAP²Ù×÷£¬ËÍÒ»´Î¾Í¹»
+034B 75F518          554             MOV     IAP_TPS, #TPS_WAIT      ; ÉèÖÃµÈ´ýÊ±¼ä£¬
+034E 75C503          555         MOV     IAP_CMD, #3     ;ËÍÉÈÇø²Á³ýÃüÁî
+0351 A2AF            556         MOV     C, EA
+0353 92D5            557         MOV     F0, C   ;±£´æEA
+0355 C2AF            558         CLR     EA      ; ½ûÖ¹ÖÐ¶Ï
+0357 75C65A          559         MOV     IAP_TRIG, #0x5A         ;ISP´¥·¢ÃüÁî
+035A 75C6A5          560         MOV     IAP_TRIG, #0xA5
+035D 00              561         NOP
+035E A2D5            562         MOV     C, F0
+0360 92AF            563         MOV     EA, C       ; ÔÊÐíÖÐ¶Ï(Èç¹ûÔÊÐí)
+0362 1202F7          564         LCALL   F_DisableEEPROM
+0365 22              565         RET
+                     566     
+                     567     ;========================================================================
+                     568     ; º¯Êý: F_EEPROM_write_n
+                     569     ; ÃèÊö: °Ñ»º³åµÄn¸ö×Ö½ÚÐ´ÈëÖ¸¶¨Ê×µØÖ·µÄEEPROM.
+                     570     ; ²ÎÊý: address_H,address_L:    Ð´ÈëEEPROMµÄÊ×µØÖ·.
+                     571     ;       R0:                     Ð´ÈëÔ´Êý¾ÝµÄ»º³åµÄÊ×µØÖ·.
+                     572     ;       length:                 Ð´ÈëµÄ×Ö½Ú³¤¶È.
+                     573     ; ·µ»Ø: non.
+A51 MACRO ASSEMBLER  SAVEEEPROM                                                           03/03/2021 15:57:48 PAGE    10
+
+                     574     ; °æ±¾: V1.0, 2014-1-22
+                     575     ;========================================================================
+0366                 576     F_EEPROM_write_n:
+0366 C002            577         PUSH    AR2
+0368 AA3F            578         MOV     R2, length
+036A 853DC3          579         MOV     IAP_ADDRH, address_H    ; ËÍµØÖ·¸ß×Ö½Ú£¨µØÖ·ÐèÒª¸Ä±äÊ±²ÅÐèÖØÐÂËÍµØÖ·£©
+036D 853EC4          580         MOV     IAP_ADDRL, address_L    ; ËÍµØÖ·µÍ×Ö½Ú
+0370 75C780          581         MOV     IAP_CONTR, #IAP_EN      ; ÔÊÐíISP/IAP²Ù×÷£¬ËÍÒ»´Î¾Í¹»
+0373 75F518          582             MOV     IAP_TPS, #TPS_WAIT      ; ÉèÖÃµÈ´ýÊ±¼ä£¬
+0376 75C502          583         MOV     IAP_CMD, #2     ;ËÍ×Ö½ÚÐ´ÃüÁî£¬ÃüÁî²»Ðè¸Ä±äÊ±£¬²»ÐèÖØÐÂËÍÃüÁî
+0379 A2AF            584         MOV     C, EA
+037B 92D5            585         MOV     F0, C   ;±£´æEA
+037D                 586     L_EE_W_Loop:
+037D 86C2            587         MOV     IAP_DATA, @R0   ; ËÍÊý¾Ýµ½IAP_DATA£¬Ö»ÓÐÊý¾Ý¸Ä±äÊ±²ÅÐèÖØÐÂËÍ
+037F C2AF            588         CLR     EA      ; ½ûÖ¹ÖÐ¶Ï
+0381 75C65A          589         MOV     IAP_TRIG, #0x5A         ;ISP´¥·¢ÃüÁî
+0384 75C6A5          590         MOV     IAP_TRIG, #0xA5
+0387 00              591         NOP
+0388 A2D5            592         MOV     C, F0
+038A 92AF            593         MOV     EA, C       ; ÔÊÐíÖÐ¶Ï(Èç¹ûÔÊÐí)
+038C E5C4            594         MOV     A, IAP_ADDRL    ;
+038E 2401            595         ADD     A, #1
+0390 F5C4            596         MOV     IAP_ADDRL, A
+0392 E5C3            597         MOV     A, IAP_ADDRH
+0394 3400            598         ADDC    A, #0
+0396 F5C3            599         MOV     IAP_ADDRH, A
+0398 08              600         INC     R0
+0399 DAE2            601         DJNZ    R2, L_EE_W_Loop
+                     602     
+039B 1202F7          603         LCALL   F_DisableEEPROM
+039E D002            604         POP     AR2
+03A0 22              605         RET
+                     606     
+                     607     
+                     608         END
+                             
+A51 MACRO ASSEMBLER  SAVEEEPROM                                                           03/03/2021 15:57:48 PAGE    11
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E               T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . . .  D ADDR   00E0H   A   
+ADDRESS_H. . . . . .  D ADDR   003DH   A   
+ADDRESS_L. . . . . .  D ADDR   003EH   A   
+AR2. . . . . . . . .  D ADDR   0002H   A   
+AUXR . . . . . . . .  D ADDR   008EH   A   
+B_1MS. . . . . . . .  B ADDR   0020H.0 A   
+CMPCR1 . . . . . . .  D ADDR   00E6H   A   
+CMPCR2 . . . . . . .  D ADDR   00E7H   A   
+DISPLAY_INDEX. . . .  D ADDR   0038H   A   
+DIS_ . . . . . . . .  N NUMB   0011H   A   
+DIS_BLACK. . . . . .  N NUMB   0010H   A   
+DIS_DOT. . . . . . .  N NUMB   0020H   A   
+DPH. . . . . . . . .  D ADDR   0083H   A   
+DPL. . . . . . . . .  D ADDR   0082H   A   
+EA . . . . . . . . .  B ADDR   00A8H.7 A   
+EE_ADDRESS . . . . .  N NUMB   0040H   A   
+ET0. . . . . . . . .  B ADDR   00A8H.1 A   
+F0 . . . . . . . . .  B ADDR   00D0H.5 A   
+FLAG0. . . . . . . .  D ADDR   0020H   A   
+FOSC_KHZ . . . . . .  N NUMB   5DC0H   A   
+F_CMP_INTERRUPT. . .  C ADDR   01BEH   A   
+F_CMP_LESSTHAN10000.  C ADDR   0202H   A   
+F_CMP_POWERDOWN. . .  C ADDR   020AH   A   
+F_CMP_READ . . . . .  C ADDR   01E3H   A   
+F_CMP_WRITE. . . . .  C ADDR   021EH   A   
+F_DISABLEEEPROM. . .  C ADDR   02F7H   A   
+F_DISPLAY. . . . . .  C ADDR   025AH   A   
+F_DISPLAYSCAN. . . .  C ADDR   02B8H   A   
+F_EEPROM_READ_N. . .  C ADDR   0307H   A   
+F_EEPROM_SECTORERASE  C ADDR   0342H   A   
+F_EEPROM_WRITE_N . .  C ADDR   0366H   A   
+F_HEX2_DEC . . . . .  C ADDR   023CH   A   
+F_MAIN . . . . . . .  C ADDR   0100H   A   
+F_QUITTIMER0_INT . .  C ADDR   02F2H   A   
+F_TIMER0_INTERRUPT .  C ADDR   02E6H   A   
+IAP_ADDRH. . . . . .  D ADDR   00C3H   A   
+IAP_ADDRL. . . . . .  D ADDR   00C4H   A   
+IAP_CMD. . . . . . .  D ADDR   00C5H   A   
+IAP_CMD_FAIL . . . .  N NUMB   0010H   A   
+IAP_CONTR. . . . . .  D ADDR   00C7H   A   
+IAP_DATA . . . . . .  D ADDR   00C2H   A   
+IAP_EN . . . . . . .  N NUMB   0080H   A   
+IAP_SWBS . . . . . .  N NUMB   0040H   A   
+IAP_SWRST. . . . . .  N NUMB   0020H   A   
+IAP_TPS. . . . . . .  D ADDR   00F5H   A   
+IAP_TRIG . . . . . .  D ADDR   00C6H   A   
+LED8 . . . . . . . .  D ADDR   0030H   A   
+LENGTH . . . . . . .  D ADDR   003FH   A   
+LOWVOLFLAG . . . . .  B ADDR   0020H.1 A   
+L_CLEARLOOP. . . . .  C ADDR   012EH   A   
+L_CUT0_LOOP. . . . .  C ADDR   027BH   A   
+L_EE_READ_LOOP . . .  C ADDR   031EH   A   
+L_EE_W_LOOP. . . . .  C ADDR   037DH   A   
+L_HEX2_DEC . . . . .  C ADDR   0244H   A   
+L_LESSTHAN10000. . .  C ADDR   017BH   A   
+L_LESSTHAN10000A . .  C ADDR   01B8H   A   
+L_MAINLOOP . . . . .  C ADDR   017EH   A   
+L_POWERUPDELAY . . .  C ADDR   0155H   A   
+L_QUITCMP_INIT . . .  C ADDR   0235H   A   
+L_QUITCUT0 . . . . .  C ADDR   0284H   A   
+A51 MACRO ASSEMBLER  SAVEEEPROM                                                           03/03/2021 15:57:48 PAGE    12
+
+L_QUITDISPLAYSCAN. .  C ADDR   02DFH   A   
+MSECOND_H. . . . . .  D ADDR   0039H   A   
+MSECOND_L. . . . . .  D ADDR   003AH   A   
+P0M0 . . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . . .  D ADDR   0093H   A   
+P1M0 . . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . . .  D ADDR   0095H   A   
+P3M0 . . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . . .  D ADDR   00B1H   A   
+P4 . . . . . . . . .  D ADDR   00C0H   A   
+P4M0 . . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . . .  D ADDR   00B3H   A   
+P5 . . . . . . . . .  D ADDR   00C8H   A   
+P5M0 . . . . . . . .  D ADDR   00CAH   A   
+P5M1 . . . . . . . .  D ADDR   00C9H   A   
+P6 . . . . . . . . .  D ADDR   00E8H   A   
+P6M0 . . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . . .  D ADDR   00CBH   A   
+P7 . . . . . . . . .  D ADDR   00F8H   A   
+P7M0 . . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . . .  D ADDR   00E1H   A   
+PSW. . . . . . . . .  D ADDR   00D0H   A   
+P_SW2. . . . . . . .  D ADDR   00BAH   A   
+SP . . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER. . . .  N NUMB   00D0H   A   
+TEMP_CNT_H . . . . .  D ADDR   002EH   A   
+TEMP_CNT_L . . . . .  D ADDR   002FH   A   
+TEST_CNT_H . . . . .  D ADDR   003BH   A   
+TEST_CNT_L . . . . .  D ADDR   003CH   A   
+TH0. . . . . . . . .  D ADDR   008CH   A   
+TIMER0_RELOAD. . . .  N NUMB   A240H   A   
+TL0. . . . . . . . .  D ADDR   008AH   A   
+TMOD . . . . . . . .  D ADDR   0089H   A   
+TPS_WAIT . . . . . .  N NUMB   0018H   A   
+TR0. . . . . . . . .  B ADDR   0088H.4 A   
+T_COM. . . . . . . .  C ADDR   02B0H   A   
+T_DISPLAY. . . . . .  C ADDR   0285H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

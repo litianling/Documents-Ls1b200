@@ -1,0 +1,748 @@
+A51 MACRO ASSEMBLER  IR_TX                                                                03/11/2021 14:52:49 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN IR-Tx.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE IR-Tx.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* Èç¹ûÒªÔÚ³ÌÐòÖÐÊ¹ÓÃ´Ë´úÂë,ÇëÔÚ³ÌÐòÖÐ×¢Ã÷Ê¹ÓÃÁËSTCµÄ×ÊÁÏ¼°³ÌÐò        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     ;/************* ¹¦ÄÜËµÃ÷    **************
+                      14     
+                      15     ;±¾Àý³Ì»ùÓÚSTC8H8K64UÎªÖ÷¿ØÐ¾Æ¬µÄÊµÑéÏä8½øÐÐ±àÐ´²âÊÔ£¬STC8HÏµÁÐÐ¾Æ¬¿ÉÍ¨ÓÃ²Î¿¼.
+                      16     
+                      17     ;ÓÃ»§¿ÉÒÔÔÚºê¶¨ÒåÖÐ¸Ä±äMCUÖ÷Ê±ÖÓÆµÂÊ. ·¶Î§ 8MHZ ~ 33MHZ.
+                      18     
+                      19     ;ºìÍâ·¢Éä³ÌÐò¡£Ä£ÄâÊÐ³¡ÉÏÓÃÁ¿×î´óµÄNECµÄ±àÂë¡£
+                      20     
+                      21     ;ÓÃ»§¿ÉÒÔÔÚºê¶¨ÒåÖÐÖ¸¶¨ÓÃ»§Âë.
+                      22     
+                      23     ;Ê¹ÓÃPWM4²úÉú38KHZÔØ²¨, 1/3Õ¼¿Õ±È, Ã¿¸ö38KHZÖÜÆÚ·¢Éä¹Ü·¢Éä9us,¹Ø±Õ16.3us.
+                      24     
+                      25     ;Ê¹ÓÃ¿ª·¢°åÉÏµÄ16¸öIOÉ¨Ãè°´¼ü, MCU²»Ë¯Ãß, Á¬ÐøÉ¨Ãè°´¼ü.
+                      26     
+                      27     ;µ±¼ü°´ÏÂ, µÚÒ»Ö¡ÎªÊý¾Ý, ºóÃæµÄÖ¡ÎªÖØ¸´Ö¡,²»´øÊý¾Ý, ¾ßÌå¶¨ÒåÇë×ÔÐÐ²Î¿¼NECµÄ±àÂë×ÊÁÏ.
+                      28     
+                      29     ;¼üÊÍ·Åºó, Í£Ö¹·¢ËÍ.
+                      30     
+                      31     ;******************************************/
+                      32     
+                      33     ;/****************************** ÓÃ»§¶¨Òåºê ***********************************/
+                      34     
+  00D0                35     STACK_POIRTER   EQU     0D0H    ;¶ÑÕ»¿ªÊ¼µØÖ·
+  5DC0                36     Fosc_KHZ        EQU     24000   ;24000KHZ
+                      37     
+                      38     ;*******************************************************************
+                      39     ;*******************************************************************
+                      40     
+  FEB1                41     PWMA_ENO      XDATA   0FEB1H
+  FEB2                42     PWMA_PS       XDATA   0FEB2H
+                      43     
+  FEC0                44     PWMA_CR1      XDATA   0FEC0H
+  FEC1                45     PWMA_CR2      XDATA   0FEC1H
+  FEC2                46     PWMA_SMCR     XDATA   0FEC2H
+  FEC3                47     PWMA_ETR      XDATA   0FEC3H
+  FEC4                48     PWMA_IER      XDATA   0FEC4H
+  FEC5                49     PWMA_SR1      XDATA   0FEC5H
+  FEC6                50     PWMA_SR2      XDATA   0FEC6H
+  FEC7                51     PWMA_EGR      XDATA   0FEC7H
+  FEC8                52     PWMA_CCMR1    XDATA   0FEC8H
+  FEC9                53     PWMA_CCMR2    XDATA   0FEC9H
+  FECA                54     PWMA_CCMR3    XDATA   0FECAH
+  FECB                55     PWMA_CCMR4    XDATA   0FECBH
+  FECC                56     PWMA_CCER1    XDATA   0FECCH
+  FECD                57     PWMA_CCER2    XDATA   0FECDH
+  FECE                58     PWMA_CNTRH    XDATA   0FECEH
+A51 MACRO ASSEMBLER  IR_TX                                                                03/11/2021 14:52:49 PAGE     2
+
+  FECF                59     PWMA_CNTRL    XDATA   0FECFH
+  FED0                60     PWMA_PSCRH    XDATA   0FED0H
+  FED1                61     PWMA_PSCRL    XDATA   0FED1H
+  FED2                62     PWMA_ARRH     XDATA   0FED2H
+  FED3                63     PWMA_ARRL     XDATA   0FED3H
+  FED4                64     PWMA_RCR      XDATA   0FED4H
+  FED5                65     PWMA_CCR1H    XDATA   0FED5H
+  FED6                66     PWMA_CCR1L    XDATA   0FED6H
+  FED7                67     PWMA_CCR2H    XDATA   0FED7H
+  FED8                68     PWMA_CCR2L    XDATA   0FED8H
+  FED9                69     PWMA_CCR3H    XDATA   0FED9H
+  FEDA                70     PWMA_CCR3L    XDATA   0FEDAH
+  FEDB                71     PWMA_CCR4H    XDATA   0FEDBH
+  FEDC                72     PWMA_CCR4L    XDATA   0FEDCH
+  FEDD                73     PWMA_BKR      XDATA   0FEDDH
+  FEDE                74     PWMA_DTR      XDATA   0FEDEH
+  FEDF                75     PWMA_OISR     XDATA   0FEDFH
+                      76     
+                      77     ;*******************************************************************
+  008E                78     AUXR        DATA 08EH
+  00C0                79     P4          DATA 0C0H
+  00C8                80     P5          DATA 0C8H
+  00E8                81     P6          DATA 0E8H
+  00F8                82     P7          DATA 0F8H
+                      83     
+  00A2                84     P_SW1       DATA    0A2H
+  00BA                85     P_SW2       DATA    0BAH
+  00D6                86     T2H         DATA    0D6H
+  00D7                87     T2L         DATA    0D7H
+                      88     
+  0093                89     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094                90     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091                91     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092                92     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095                93     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+  0096                94     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+  00B1                95     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2                96     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3                97     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+  00B4                98     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9                99     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA               100     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB               101     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC               102     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1               103     P7M1    DATA    0xE1    ;
+  00E2               104     P7M0    DATA    0xE2    ;
+                     105     
+                     106     ;*************  IO¿Ú¶¨Òå    **************/
+                     107     
+                     108     
+                     109     ;*************  ±¾µØ±äÁ¿ÉùÃ÷    **************/
+                     110     
+  0030               111     IO_KeyState     DATA    30H ; IOÐÐÁÐ¼ü×´Ì¬±äÁ¿
+  0031               112     IO_KeyState1    DATA    31H
+  0032               113     IO_KeyHoldCnt   DATA    32H ; IO¼ü°´ÏÂ¼ÆÊ±
+  0033               114     KeyCode         DATA    33H ; ¸øÓÃ»§Ê¹ÓÃµÄ¼üÂë, 1~16ÎªADC¼ü£¬ 17~32ÎªIO¼ü
+                     115     
+                     116     
+                     117     
+                     118     
+                     119     
+  0096               120     P_IR_TX   BIT P1.6  ;¶¨ÒåºìÍâ·¢ËÍ¶Ë¿Ú
+                     121     
+  0020               122     FLAG0   DATA    0x20
+  0000               123     B_Space BIT FLAG0.0 ;·¢ËÍ¿ÕÏÐ(ÑÓÊ±)±êÖ¾
+                     124     
+A51 MACRO ASSEMBLER  IR_TX                                                                03/11/2021 14:52:49 PAGE     3
+
+  0036               125     tx_cntH     DATA    0x36    ;·¢ËÍ»ò¿ÕÏÐµÄÂö³å¼ÆÊý(µÈÓÚ38KHZµÄÂö³åÊý£¬¶ÔÓ¦Ê±¼ä), ºìÍâÆµÂÊÎª3
+                             8KHZ, ÖÜÆÚ26.3us
+  0037               126     tx_cntL     DATA    0x37    
+  0038               127     TxTime      DATA    0x38    ;·¢ËÍÊ±¼ä
+                     128     
+                     129     
+                     130     ;*******************************************************************
+                     131     ;*******************************************************************
+0000                 132             ORG     0000H               ;reset
+0000 020100          133             LJMP    F_Main
+                     134     
+00D3                 135             ORG     00D3H               ;26  PWMA interrupt
+00D3 020324          136             LJMP    F_PWMA_Interrupt
+                     137     
+                     138     
+                     139     ;******************** Ö÷³ÌÐò **************************/
+0100                 140             ORG     0100H       ;reset
+0100                 141     F_Main:
+0100 E4              142         CLR     A
+0101 F593            143         MOV     P0M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0103 F594            144         MOV     P0M0, A
+0105 F591            145         MOV     P1M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0107 F592            146         MOV     P1M0, A
+0109 F595            147         MOV     P2M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010B F596            148         MOV     P2M0, A
+010D F5B1            149         MOV     P3M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010F F5B2            150         MOV     P3M0, A
+0111 F5B3            151         MOV     P4M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0113 F5B4            152         MOV     P4M0, A
+0115 F5C9            153         MOV     P5M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0117 F5CA            154         MOV     P5M0, A
+0119 F5CB            155         MOV     P6M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+011B F5CC            156         MOV     P6M0, A
+011D F5E1            157         MOV     P7M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+011F F5E2            158         MOV     P7M0, A
+                     159     
+                     160         
+0121 7581D0          161         MOV     SP, #STACK_POIRTER
+0124 75D000          162         MOV     PSW, #0
+                     163         USING   0       ;Ñ¡ÔñµÚ0×éR0~R7
+                     164     
+                     165     ;================= ÓÃ»§³õÊ¼»¯³ÌÐò ====================================
+                     166     
+0127 1202E0          167         LCALL   F_PWM_Init      ;³õÊ¼»¯PWM
+012A D296            168         SETB    P_IR_TX
+                     169         
+012C D2AF            170         SETB    EA              ;´ò¿ª×ÜÖÐ¶Ï
+                     171         
+012E 753300          172         MOV     KeyCode, #0
+                     173     
+                     174     ;=================== Ö÷Ñ­»· ==================================
+0131                 175     L_Main_Loop:
+0131 741E            176         MOV     A, #30
+0133 1201BC          177         LCALL   F_delay_ms      ;ÑÓÊ±30ms
+0136 1201F2          178         LCALL   F_IO_KeyScan    ;É¨Ãè¼üÅÌ
+                     179     
+0139 E533            180         MOV     A, KeyCode
+013B 60F4            181         JZ      L_Main_Loop     ;ÎÞ¼üÑ­»·
+013D 753800          182         MOV     TxTime, #0      ;
+                     183                                 ;Ò»Ö¡Êý¾Ý×îÐ¡³¤¶È = 9 + 4.5 + 0.5625 + 24 * 1.125 + 8 * 2.25 = 
+                             59.0625 ms
+                     184                                 ;Ò»Ö¡Êý¾Ý×î´ó³¤¶È = 9 + 4.5 + 0.5625 + 8 * 1.125 + 24 * 2.25 = 
+                             77.0625 ms
+0140 753601          185         MOV     tx_cntH, #HIGH 342      ;¶ÔÓ¦9ms£¬Í¬²½Í·        9ms
+0143 753756          186         MOV     tx_cntL, #LOW  342
+0146 120260          187         LCALL   F_IR_TxPulse
+A51 MACRO ASSEMBLER  IR_TX                                                                03/11/2021 14:52:49 PAGE     4
+
+                     188     
+0149 753600          189         MOV     tx_cntH, #HIGH 171      ;¶ÔÓ¦4.5ms£¬Í¬²½Í·¼ä¸ô  4.5ms
+014C 7537AB          190         MOV     tx_cntL, #LOW  171
+014F 120284          191         LCALL   F_IR_TxSpace
+                     192     
+0152 753600          193         MOV     tx_cntH, #HIGH 21       ;·¢ËÍÂö³å           0.5625ms
+0155 753715          194         MOV     tx_cntL, #LOW  21
+0158 120260          195         LCALL   F_IR_TxPulse
+                     196     
+015B 7400            197         MOV     A, #LOW  0xFF00  ;·¢ÓÃ»§ÂëµÍ×Ö½Ú
+015D 1202A8          198         LCALL   F_IR_TxByte
+0160 74FF            199         MOV     A, #HIGH 0xFF00  ;·¢ÓÃ»§Âë¸ß×Ö½Ú
+0162 1202A8          200         LCALL   F_IR_TxByte
+0165 E533            201         MOV     A, KeyCode          ;·¢Êý¾Ý
+0167 1202A8          202         LCALL   F_IR_TxByte
+016A E533            203         MOV     A, KeyCode          ;·¢Êý¾Ý·´Âë
+016C F4              204         CPL     A
+016D 1202A8          205         LCALL   F_IR_TxByte
+                     206     
+0170 E538            207         MOV     A, TxTime
+0172 C3              208         CLR     C
+0173 9438            209         SUBB    A, #56      ;Ò»Ö¡°´×î´ó77ms·¢ËÍ, ²»¹»µÄ»°,²¹³¥Ê±¼ä      108ms
+0175 5011            210         JNC     L_ADJ_Time
+                     211     
+0177 C3              212         CLR     c
+0178 7438            213         MOV     A, #56
+017A 9538            214         SUBB    A, TxTime
+017C F538            215         MOV     TxTime, A
+017E 13              216         RRC     A
+017F 13              217         RRC     A
+0180 13              218         RRC     A
+0181 541F            219         ANL     A, #0x1F
+0183 2538            220         ADD     A, TxTime
+0185 1201BC          221         LCALL   F_delay_ms      ;TxTime = 56 - TxTime;  TxTime = TxTime + TxTime / 8;   delay_m
+                             s(TxTime);
+0188                 222     L_ADJ_Time:
+0188 741F            223         MOV     A, #31          ;delay_ms(31)
+018A 1201BC          224         LCALL   F_delay_ms
+                     225             
+018D                 226     L_WaitKeyRelease:
+018D E530            227         MOV     A, IO_KeyState
+018F 6025            228         JZ      L_ClearKeyCode
+                     229     
+                     230                                 ;¼üÎ´ÊÍ·Å, ·¢ËÍÖØ¸´Ö¡(ÎÞÊý¾Ý)
+0191 753601          231         MOV     tx_cntH, #HIGH 342      ;¶ÔÓ¦9ms£¬Í¬²½Í·        9ms
+0194 753756          232         MOV     tx_cntL, #LOW  342
+0197 120260          233         LCALL   F_IR_TxPulse
+                     234     
+019A 753600          235         MOV     tx_cntH, #HIGH 86       ;¶ÔÓ¦2.25ms£¬Í¬²½Í·¼ä¸ô 2.25ms
+019D 753756          236         MOV     tx_cntL, #LOW  86
+01A0 120284          237         LCALL   F_IR_TxSpace
+                     238     
+01A3 753600          239         MOV     tx_cntH, #HIGH 21       ;·¢ËÍÂö³å           0.5625ms
+01A6 753715          240         MOV     tx_cntL, #LOW  21
+01A9 120260          241         LCALL   F_IR_TxPulse
+                     242     
+01AC 7460            243         MOV     A, #96          ;delay_ms(96)
+01AE 1201BC          244         LCALL   F_delay_ms
+01B1 1201F2          245         LCALL   F_IO_KeyScan    ;É¨Ãè¼üÅÌ
+01B4 80D7            246         SJMP    L_WaitKeyRelease
+                     247     
+01B6                 248     L_ClearKeyCode:
+01B6 753300          249         MOV KeyCode, #0
+                     250     
+01B9 020131          251         LJMP    L_Main_Loop
+                     252     ;===================================================================
+A51 MACRO ASSEMBLER  IR_TX                                                                03/11/2021 14:52:49 PAGE     5
+
+                     253     
+                     254     
+                     255     ;========================================================================
+                     256     ; º¯Êý: F_delay_ms
+                     257     ; ÃèÊö: ÑÓÊ±×Ó³ÌÐò¡£
+                     258     ; ²ÎÊý: ACC: ÑÓÊ±msÊý.
+                     259     ; ·µ»Ø: none.
+                     260     ; °æ±¾: VER1.0
+                     261     ; ÈÕÆÚ: 2013-4-1
+                     262     ; ±¸×¢: ³ýÁËACCCºÍPSWÍâ, ËùÓÃµ½µÄÍ¨ÓÃ¼Ä´æÆ÷¶¼ÈëÕ»±£»¤, ÍË³öÊ±»Ö¸´Ô­À´Êý¾Ý²»¸Ä±ä.
+                     263     ;========================================================================
+01BC                 264     F_delay_ms:
+01BC C002            265         PUSH    02H     ;ÈëÕ»R2
+01BE C003            266         PUSH    03H     ;ÈëÕ»R3
+01C0 C004            267         PUSH    04H     ;ÈëÕ»R4
+                     268     
+01C2 FA              269         MOV     R2,A
+                     270     
+01C3                 271     L_delay_ms_1:
+01C3 7B09            272         MOV     R3, #HIGH (Fosc_KHZ / 10)
+01C5 7C60            273         MOV     R4, #LOW (Fosc_KHZ / 10)
+                     274         
+01C7                 275     L_delay_ms_2:
+01C7 EC              276         MOV     A, R4           ;1T     Total 10T/loop
+01C8 1C              277         DEC     R4              ;1T
+01C9 7001            278         JNZ     L_delay_ms_3    ;3T
+01CB 1B              279         DEC     R3
+01CC                 280     L_delay_ms_3:
+01CC 14              281         DEC     A               ;1T
+01CD 4B              282         ORL     A, R3           ;1T
+01CE 70F7            283         JNZ     L_delay_ms_2    ;3T
+                     284         
+01D0 DAF1            285         DJNZ    R2, L_delay_ms_1
+                     286     
+01D2 D004            287         POP     04H     ;³öÕ»R2
+01D4 D003            288         POP     03H     ;³öÕ»R3
+01D6 D002            289         POP     02H     ;³öÕ»R4
+01D8 22              290         RET
+                     291     
+                     292     
+                     293     ;========================================================================
+                     294     ; º¯Êý: F_IO_KeyDelay
+                     295     ; ÃèÊö: ÐÐÁÐ¼üÉ¨Ãè³ÌÐò.
+                     296     ; ²ÎÊý: none
+                     297     ; ·µ»Ø: ¶Áµ½°´¼ü, KeyCodeÎª·Ç0¼üÂë.
+                     298     ; °æ±¾: V1.0, 2013-11-22
+                     299     ;========================================================================
+                     300     ;/*****************************************************
+                     301     ;   ÐÐÁÐ¼üÉ¨Ãè³ÌÐò
+                     302     ;   Ê¹ÓÃXY²éÕÒ4x4¼üµÄ·½·¨£¬Ö»ÄÜµ¥¼ü£¬ËÙ¶È¿ì
+                     303     ;
+                     304     ;   Y     P04      P05      P06      P07
+                     305     ;          |        |        |        |
+                     306     ;X         |        |        |        |
+                     307     ;P00 ---- K00 ---- K01 ---- K02 ---- K03 ----
+                     308     ;          |        |        |        |
+                     309     ;P01 ---- K04 ---- K05 ---- K06 ---- K07 ----
+                     310     ;          |        |        |        |
+                     311     ;P02 ---- K08 ---- K09 ---- K10 ---- K11 ----
+                     312     ;          |        |        |        |
+                     313     ;P03 ---- K12 ---- K13 ---- K14 ---- K15 ----
+                     314     ;          |        |        |        |
+                     315     ;******************************************************/
+                     316     
+                     317     
+01D9 00010200        318     T_KeyTable:  DB 0,1,2,0,3,0,0,0,4,0,0,0,0,0,0,0
+A51 MACRO ASSEMBLER  IR_TX                                                                03/11/2021 14:52:49 PAGE     6
+
+01DD 03000000                
+01E1 04000000                
+01E5 00000000                
+                     319     
+01E9                 320     F_IO_KeyDelay:
+01E9 C003            321         PUSH    03H     ;R3ÈëÕ»
+01EB 7B3C            322         MOV     R3, #60
+01ED DBFE            323         DJNZ    R3, $   ; (n * 4) T
+01EF D003            324         POP     03H     ;R3³öÕ»
+01F1 22              325         RET
+                     326     
+01F2                 327     F_IO_KeyScan:
+01F2 C006            328         PUSH    06H     ;R6ÈëÕ»
+01F4 C007            329         PUSH    07H     ;R7ÈëÕ»
+                     330     
+01F6 AE31            331         MOV     R6, IO_KeyState1    ; ±£´æÉÏÒ»´Î×´Ì¬
+                     332     
+01F8 7580F0          333         MOV     P0, #0F0H       ;XµÍ£¬¶ÁY
+01FB 1201E9          334         LCALL   F_IO_KeyDelay       ;delay about 250T
+01FE E580            335         MOV     A, P0
+0200 54F0            336         ANL     A, #0F0H
+0202 F531            337         MOV     IO_KeyState1, A     ; IO_KeyState1 = P0 & 0xf0
+                     338     
+0204 75800F          339         MOV     P0, #0FH        ;YµÍ£¬¶ÁX
+0207 1201E9          340         LCALL   F_IO_KeyDelay       ;delay about 250T
+020A E580            341         MOV     A, P0
+020C 540F            342         ANL     A, #0FH
+020E 4531            343         ORL     A, IO_KeyState1         ; IO_KeyState1 |= (P0 & 0x0f)
+0210 F531            344         MOV     IO_KeyState1, A
+0212 6331FF          345         XRL     IO_KeyState1, #0FFH     ; IO_KeyState1 ^= 0xff; È¡·´
+                     346     
+0215 EE              347         MOV     A, R6                   ;if(j == IO_KeyState1), Á¬ÐøÁ½´Î¶ÁÏàµÈ
+0216 B5313F          348         CJNE    A, IO_KeyState1, L_QuitCheckIoKey   ;²»ÏàµÈ, jmp
+                     349         
+0219 AE30            350         MOV     R6, IO_KeyState     ;ÔÝ´æIO_KeyState
+021B 853130          351         MOV     IO_KeyState, IO_KeyState1
+021E E530            352         MOV     A, IO_KeyState
+0220 6033            353         JZ      L_NoIoKeyPress      ; if(IO_KeyState != 0), ÓÐ¼ü°´ÏÂ
+                     354     
+0222 EE              355         MOV     A, R6   
+0223 600E            356         JZ      L_CalculateIoKey    ;if(R6 == 0)    F0 = 1; µÚÒ»´Î°´ÏÂ
+0225 EE              357         MOV     A, R6   
+0226 B5302F          358         CJNE    A, IO_KeyState, L_QuitCheckIoKey    ; if(j != IO_KeyState), jmp
+                     359         
+0229 0532            360         INC     IO_KeyHoldCnt   ; if(++IO_KeyHoldCnt >= 20),    1ÃëºóÖØ¼ü
+022B E532            361         MOV     A, IO_KeyHoldCnt
+022D B41428          362         CJNE    A, #20, L_QuitCheckIoKey
+0230 753212          363         MOV     IO_KeyHoldCnt, #18;
+0233                 364     L_CalculateIoKey:
+0233 E530            365         MOV     A, IO_KeyState
+0235 C4              366         SWAP    A       ;R6 = T_KeyTable[IO_KeyState >> 4];
+0236 540F            367         ANL     A, #0x0F
+0238 9001D9          368         MOV     DPTR, #T_KeyTable
+023B 93              369         MOVC    A, @A+DPTR
+023C FE              370         MOV     R6, A
+                     371         
+023D 6019            372         JZ      L_QuitCheckIoKey    ; if(R6 == 0)
+023F E530            373         MOV     A, IO_KeyState
+0241 540F            374         ANL     A, #0x0F
+0243 93              375         MOVC    A, @A+DPTR
+0244 FF              376         MOV     R7, A
+0245 6011            377         JZ      L_QuitCheckIoKey    ; if(T_KeyTable[IO_KeyState& 0x0f] == 0)
+                     378         
+0247 EE              379         MOV     A, R6       ;KeyCode = (j - 1) * 4 + T_KeyTable[IO_KeyState & 0x0f] + 16;   //¼
+                             ÆËã¼üÂë£¬17~32
+0248 25E0            380         ADD     A, ACC
+A51 MACRO ASSEMBLER  IR_TX                                                                03/11/2021 14:52:49 PAGE     7
+
+024A 25E0            381         ADD     A, ACC
+024C FE              382         MOV     R6, A
+024D EF              383         MOV     A, R7
+024E 2E              384         ADD     A, R6
+024F 240C            385         ADD     A, #12
+0251 F533            386         MOV     KeyCode, A
+0253 8003            387         SJMP    L_QuitCheckIoKey
+                     388         
+0255                 389     L_NoIoKeyPress:
+0255 753200          390         MOV     IO_KeyHoldCnt, #0
+                     391     
+0258                 392     L_QuitCheckIoKey:
+0258 7580FF          393         MOV     P0, #0xFF
+025B D007            394         POP     07H     ;R7³öÕ»
+025D D006            395         POP     06H     ;R6³öÕ»
+025F 22              396         RET
+                     397     
+                     398     ;========================================================================
+                     399     ; º¯Êý: F_IR_TxPulse
+                     400     ; ÃèÊö: ·¢ËÍÂö³åº¯Êý.
+                     401     ; ²ÎÊý: tx_cntH, tx_cntL: Òª·¢ËÍµÄ38KÖÜÆÚÊý
+                     402     ; ·µ»Ø: none.
+                     403     ; °æ±¾: V1.0, 2013-11-22
+                     404     ;========================================================================
+0260                 405     F_IR_TxPulse:
+0260 43BA80          406         ORL     P_SW2, #080H        ;Ê¹ÄÜ·ÃÎÊXFR
+0263 C200            407         CLR     B_Space
+                     408     
+0265 7400            409         MOV     A,#00                 ;Ð´ CCMRx Ç°±ØÐëÏÈÇåÁã CCxE ¹Ø±ÕÍ¨µÀ
+0267 90FECD          410         MOV     DPTR,#PWMA_CCER2
+026A F0              411         MOVX    @DPTR,A
+026B 7460            412         MOV     A,#060H               ;ÉèÖÃ PWM4 Ä£Ê½1 Êä³ö
+026D 90FECB          413         MOV     DPTR,#PWMA_CCMR4
+0270 F0              414         MOVX    @DPTR,A
+0271 74B0            415         MOV     A,#0B0H               ;Ê¹ÄÜ CC4E Í¨µÀ, µÍµçÆ½ÓÐÐ§
+0273 90FECD          416         MOV     DPTR,#PWMA_CCER2
+0276 F0              417         MOVX    @DPTR,A
+0277 7410            418         MOV     A,#010H               ;Ê¹ÄÜ²¶»ñ/±È½Ï 4 ÖÐ¶Ï
+0279 90FEC4          419         MOV     DPTR,#PWMA_IER
+027C F0              420         MOVX    @DPTR,A
+                     421     
+027D 3000FD          422         JNB     B_Space, $   ;µÈ´ý½áÊø
+0280 53BA7F          423         ANL     P_SW2, #NOT 080H    ;½ûÖ¹·ÃÎÊXFR
+0283 22              424         RET
+                     425     
+                     426     ;========================================================================
+                     427     ; º¯Êý: F_IR_TxSpace
+                     428     ; ÃèÊö: ·¢ËÍ¿ÕÏÐº¯Êý.
+                     429     ; ²ÎÊý: tx_cntH, tx_cntL: Òª·¢ËÍµÄ38KÖÜÆÚÊý
+                     430     ; ·µ»Ø: none.
+                     431     ; °æ±¾: V1.0, 2013-11-22
+                     432     ;========================================================================
+0284                 433     F_IR_TxSpace:
+0284 43BA80          434         ORL     P_SW2, #080H        ;Ê¹ÄÜ·ÃÎÊXFR
+0287 C200            435         CLR     B_Space
+                     436     
+0289 7400            437         MOV     A,#00                 ;Ð´ CCMRx Ç°±ØÐëÏÈÇåÁã CCxE ¹Ø±ÕÍ¨µÀ
+028B 90FECD          438         MOV     DPTR,#PWMA_CCER2
+028E F0              439         MOVX    @DPTR,A
+028F 7440            440         MOV     A,#040H               ;ÉèÖÃ PWM4 Ç¿ÖÆÎªÎÞÐ§µçÆ½
+0291 90FECB          441         MOV     DPTR,#PWMA_CCMR4
+0294 F0              442         MOVX    @DPTR,A
+0295 74B0            443         MOV     A,#0B0H               ;Ê¹ÄÜ CC4E Í¨µÀ, µÍµçÆ½ÓÐÐ§
+0297 90FECD          444         MOV     DPTR,#PWMA_CCER2
+029A F0              445         MOVX    @DPTR,A
+029B 7410            446         MOV     A,#010H               ;Ê¹ÄÜ²¶»ñ/±È½Ï 4 ÖÐ¶Ï
+A51 MACRO ASSEMBLER  IR_TX                                                                03/11/2021 14:52:49 PAGE     8
+
+029D 90FEC4          447         MOV     DPTR,#PWMA_IER
+02A0 F0              448         MOVX    @DPTR,A
+                     449     
+02A1 3000FD          450         JNB     B_Space, $   ;µÈ´ý½áÊø
+02A4 53BA7F          451         ANL     P_SW2, #NOT 080H    ;½ûÖ¹·ÃÎÊXFR
+02A7 22              452         RET
+                     453     
+                     454     ;========================================================================
+                     455     ; º¯Êý: F_IR_TxByte
+                     456     ; ÃèÊö: ·¢ËÍÒ»¸ö×Ö½Úº¯Êý.
+                     457     ; ²ÎÊý: ACC: Òª·¢ËÍµÄ×Ö½Ú
+                     458     ; ·µ»Ø: none.
+                     459     ; °æ±¾: V1.0, 2013-11-22
+                     460     ;========================================================================
+02A8                 461     F_IR_TxByte:
+02A8 C004            462         PUSH    AR4
+02AA C005            463         PUSH    AR5
+                     464     
+02AC 7C08            465         MOV     R4, #8
+02AE FD              466         MOV     R5, A
+02AF                 467     L_IR_TxByteLoop:
+02AF ED              468         MOV     A, R5
+02B0 30E00F          469         JNB     ACC.0, L_IR_TxByte_0
+02B3 753600          470         MOV     tx_cntH, #HIGH 63       ;·¢ËÍÊý¾Ý1
+02B6 75373F          471         MOV     tx_cntL, #LOW  63
+02B9 120284          472         LCALL   F_IR_TxSpace
+02BC 0538            473         INC     TxTime          ;TxTime += 2;   //Êý¾Ý1¶ÔÓ¦ 1.6875 + 0.5625 ms
+02BE 0538            474         INC     TxTime
+02C0 800B            475         SJMP    L_IR_TxByte_Pause
+02C2                 476     L_IR_TxByte_0:
+02C2 753600          477         MOV     tx_cntH, #HIGH 21       ;·¢ËÍÊý¾Ý0
+02C5 753715          478         MOV     tx_cntL, #LOW  21
+02C8 120284          479         LCALL   F_IR_TxSpace
+02CB 0538            480         INC     TxTime          ;Êý¾Ý0¶ÔÓ¦ 0.5625 + 0.5625 ms
+02CD                 481     L_IR_TxByte_Pause:
+02CD 753600          482         MOV     tx_cntH, #HIGH 21       ;·¢ËÍÂö³å
+02D0 753715          483         MOV     tx_cntL, #LOW  21
+02D3 120260          484         LCALL   F_IR_TxPulse        ;Âö³å¶¼ÊÇ0.5625ms
+02D6 ED              485         MOV     A, R5
+02D7 03              486         RR      A               ;ÏÂÒ»¸öÎ»
+02D8 FD              487         MOV     R5, A
+02D9 DCD4            488         DJNZ    R4, L_IR_TxByteLoop
+02DB D005            489         POP     AR5
+02DD D004            490         POP     AR4
+                     491         
+02DF 22              492         RET
+                     493     
+                     494     ;========================================================================
+                     495     ; º¯Êý: F_PWM_Init
+                     496     ; ÃèÊö: PWM³õÊ¼»¯³ÌÐò.
+                     497     ; ²ÎÊý: none
+                     498     ; ·µ»Ø: none.
+                     499     ; °æ±¾: V1.0, 2013-11-22
+                     500     ;========================================================================
+02E0                 501     F_PWM_Init:
+02E0 43BA80          502         ORL     P_SW2, #080H        ;Ê¹ÄÜ·ÃÎÊXFR
+                     503     
+02E3 7400            504         MOV     A,#00H              ;Ð´ CCMRx Ç°±ØÐëÏÈÇåÁã CCxE ¹Ø±ÕÍ¨µÀ
+02E5 90FECD          505         MOV     DPTR,#PWMA_CCER2
+02E8 F0              506         MOVX    @DPTR,A
+02E9 7460            507         MOV     A,#060H             ;ÉèÖÃ PWM4 Ä£Ê½1 Êä³ö
+02EB 90FECB          508         MOV     DPTR,#PWMA_CCMR4
+02EE F0              509         MOVX    @DPTR,A
+                     510     
+02EF 7402            511         MOV     A,#2                ;ÉèÖÃÖÜÆÚÊ±¼ä
+02F1 90FED2          512         MOV     DPTR,#PWMA_ARRH
+A51 MACRO ASSEMBLER  IR_TX                                                                03/11/2021 14:52:49 PAGE     9
+
+02F4 F0              513         MOVX    @DPTR,A
+02F5 7477            514         MOV     A,#077H
+02F7 90FED3          515         MOV     DPTR,#PWMA_ARRL
+02FA F0              516         MOVX    @DPTR,A
+02FB 7400            517         MOV     A,#0                ;ÉèÖÃÕ¼¿Õ±ÈÊ±¼ä
+02FD 90FEDB          518         MOV     DPTR,#PWMA_CCR4H
+0300 F0              519         MOVX    @DPTR,A
+0301 74D2            520         MOV     A,#210
+0303 90FEDC          521         MOV     DPTR,#PWMA_CCR4L
+0306 F0              522         MOVX    @DPTR,A
+                     523     
+0307 7440            524         MOV     A,#040H             ;Ê¹ÄÜ PWM4P Êä³ö
+0309 90FEB1          525         MOV     DPTR,#PWMA_ENO
+030C F0              526         MOVX    @DPTR,A
+030D 7400            527         MOV     A,#00H              ;¸ß¼¶ PWM Í¨µÀ 4P Êä³ö½ÅÑ¡ÔñÎ», 0x00:P1.6, 0x40:P2.6, 0x80:
+                             P6.6, 0xC0:P3.4
+030F 90FEB2          528         MOV     DPTR,#PWMA_PS
+0312 F0              529         MOVX    @DPTR,A
+0313 7480            530         MOV     A,#080H             ;Ê¹ÄÜÖ÷Êä³ö
+0315 90FEDD          531         MOV     DPTR,#PWMA_BKR
+0318 F0              532         MOVX    @DPTR,A
+                     533     
+0319 90FEC0          534         MOV     DPTR,#PWMA_CR1
+031C E0              535         MOVX    A,@DPTR
+031D 4401            536         ORL     A,#01H              ;¿ªÊ¼¼ÆÊ±
+031F F0              537         MOVX    @DPTR,A
+                     538     
+0320 53BA7F          539         ANL     P_SW2, #NOT 080H    ;½ûÖ¹·ÃÎÊXFR
+0323 22              540         RET
+                     541     
+                     542     ;========================================================================
+                     543     ; º¯Êý: F_PWMA_Interrupt
+                     544     ; ÃèÊö: PWMAÖÐ¶Ï´¦Àí³ÌÐò.
+                     545     ; ²ÎÊý: None
+                     546     ; ·µ»Ø: none.
+                     547     ; °æ±¾: V1.0, 2012-11-22
+                     548     ;========================================================================
+0324                 549     F_PWMA_Interrupt:
+0324 C0D0            550         PUSH    PSW
+0326 C0E0            551         PUSH    ACC
+0328 C0BA            552         PUSH    P_SW2
+032A 43BA80          553         ORL     P_SW2, #080H  ;Ê¹ÄÜ·ÃÎÊXFR
+                     554     
+032D 90FEC5          555         MOV     DPTR,#PWMA_SR1 ;¼ì²â´Ó»ú×´Ì¬
+0330 E0              556         MOVX    A,@DPTR
+0331 30E42C          557         JNB     ACC.4,F_PWMA_QuitInt
+0334 E4              558         CLR     A
+0335 F0              559         MOVX    @DPTR,A
+                     560     
+0336 E537            561         MOV     A, tx_cntL
+0338 1537            562         DEC     tx_cntL       ;tx_cnt - 1
+033A 7002            563         JNZ     $+4
+033C 1536            564         DEC     tx_cntH
+                     565         
+033E E537            566         MOV     A, tx_cntL
+0340 701E            567         JNZ     F_PWMA_QuitInt
+0342 E536            568         MOV     A, tx_cntH
+0344 701A            569         JNZ     F_PWMA_QuitInt
+                     570     
+0346 7400            571         MOV     A,#00                 ;Ð´ CCMRx Ç°±ØÐëÏÈÇåÁã CCxE ¹Ø±ÕÍ¨µÀ
+0348 90FECD          572         MOV     DPTR,#PWMA_CCER2
+034B F0              573         MOVX    @DPTR,A
+034C 7440            574         MOV     A,#040H               ;ÉèÖÃ PWM4 Ç¿ÖÆÎªÎÞÐ§µçÆ½
+034E 90FECB          575         MOV     DPTR,#PWMA_CCMR4
+0351 F0              576         MOVX    @DPTR,A
+0352 74B0            577         MOV     A,#0B0H               ;Ê¹ÄÜ CC4E Í¨µÀ, µÍµçÆ½ÓÐÐ§
+A51 MACRO ASSEMBLER  IR_TX                                                                03/11/2021 14:52:49 PAGE    10
+
+0354 90FECD          578         MOV     DPTR,#PWMA_CCER2
+0357 F0              579         MOVX    @DPTR,A
+0358 7400            580         MOV     A,#00H                ;¹Ø±ÕÖÐ¶Ï
+035A 90FEC4          581         MOV     DPTR,#PWMA_IER
+035D F0              582         MOVX    @DPTR,A
+                     583     
+035E D200            584         SETB    B_Space        ;ÉèÖÃ½áÊø±êÖ¾
+                     585     
+0360                 586     F_PWMA_QuitInt:
+0360 D0BA            587         POP     P_SW2
+0362 D0E0            588         POP     ACC
+0364 D0D0            589         POP     PSW
+0366 32              590         RETI
+                     591     
+                     592         END
+                             
+A51 MACRO ASSEMBLER  IR_TX                                                                03/11/2021 14:52:49 PAGE    11
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . .  D ADDR   00E0H   A   
+AR4. . . . . . . .  D ADDR   0004H   A   
+AR5. . . . . . . .  D ADDR   0005H   A   
+AUXR . . . . . . .  D ADDR   008EH   A   
+B_SPACE. . . . . .  B ADDR   0020H.0 A   
+EA . . . . . . . .  B ADDR   00A8H.7 A   
+FLAG0. . . . . . .  D ADDR   0020H   A   
+FOSC_KHZ . . . . .  N NUMB   5DC0H   A   
+F_DELAY_MS . . . .  C ADDR   01BCH   A   
+F_IO_KEYDELAY. . .  C ADDR   01E9H   A   
+F_IO_KEYSCAN . . .  C ADDR   01F2H   A   
+F_IR_TXBYTE. . . .  C ADDR   02A8H   A   
+F_IR_TXPULSE . . .  C ADDR   0260H   A   
+F_IR_TXSPACE . . .  C ADDR   0284H   A   
+F_MAIN . . . . . .  C ADDR   0100H   A   
+F_PWMA_INTERRUPT .  C ADDR   0324H   A   
+F_PWMA_QUITINT . .  C ADDR   0360H   A   
+F_PWM_INIT . . . .  C ADDR   02E0H   A   
+IO_KEYHOLDCNT. . .  D ADDR   0032H   A   
+IO_KEYSTATE. . . .  D ADDR   0030H   A   
+IO_KEYSTATE1 . . .  D ADDR   0031H   A   
+KEYCODE. . . . . .  D ADDR   0033H   A   
+L_ADJ_TIME . . . .  C ADDR   0188H   A   
+L_CALCULATEIOKEY .  C ADDR   0233H   A   
+L_CLEARKEYCODE . .  C ADDR   01B6H   A   
+L_DELAY_MS_1 . . .  C ADDR   01C3H   A   
+L_DELAY_MS_2 . . .  C ADDR   01C7H   A   
+L_DELAY_MS_3 . . .  C ADDR   01CCH   A   
+L_IR_TXBYTELOOP. .  C ADDR   02AFH   A   
+L_IR_TXBYTE_0. . .  C ADDR   02C2H   A   
+L_IR_TXBYTE_PAUSE.  C ADDR   02CDH   A   
+L_MAIN_LOOP. . . .  C ADDR   0131H   A   
+L_NOIOKEYPRESS . .  C ADDR   0255H   A   
+L_QUITCHECKIOKEY .  C ADDR   0258H   A   
+L_WAITKEYRELEASE .  C ADDR   018DH   A   
+P0 . . . . . . . .  D ADDR   0080H   A   
+P0M0 . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . .  D ADDR   0093H   A   
+P1 . . . . . . . .  D ADDR   0090H   A   
+P1M0 . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . .  D ADDR   0095H   A   
+P3M0 . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . .  D ADDR   00B1H   A   
+P4 . . . . . . . .  D ADDR   00C0H   A   
+P4M0 . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . .  D ADDR   00B3H   A   
+P5 . . . . . . . .  D ADDR   00C8H   A   
+P5M0 . . . . . . .  D ADDR   00CAH   A   
+P5M1 . . . . . . .  D ADDR   00C9H   A   
+P6 . . . . . . . .  D ADDR   00E8H   A   
+P6M0 . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . .  D ADDR   00CBH   A   
+P7 . . . . . . . .  D ADDR   00F8H   A   
+P7M0 . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . .  D ADDR   00E1H   A   
+PSW. . . . . . . .  D ADDR   00D0H   A   
+PWMA_ARRH. . . . .  X ADDR   FED2H   A   
+PWMA_ARRL. . . . .  X ADDR   FED3H   A   
+A51 MACRO ASSEMBLER  IR_TX                                                                03/11/2021 14:52:49 PAGE    12
+
+PWMA_BKR . . . . .  X ADDR   FEDDH   A   
+PWMA_CCER1 . . . .  X ADDR   FECCH   A   
+PWMA_CCER2 . . . .  X ADDR   FECDH   A   
+PWMA_CCMR1 . . . .  X ADDR   FEC8H   A   
+PWMA_CCMR2 . . . .  X ADDR   FEC9H   A   
+PWMA_CCMR3 . . . .  X ADDR   FECAH   A   
+PWMA_CCMR4 . . . .  X ADDR   FECBH   A   
+PWMA_CCR1H . . . .  X ADDR   FED5H   A   
+PWMA_CCR1L . . . .  X ADDR   FED6H   A   
+PWMA_CCR2H . . . .  X ADDR   FED7H   A   
+PWMA_CCR2L . . . .  X ADDR   FED8H   A   
+PWMA_CCR3H . . . .  X ADDR   FED9H   A   
+PWMA_CCR3L . . . .  X ADDR   FEDAH   A   
+PWMA_CCR4H . . . .  X ADDR   FEDBH   A   
+PWMA_CCR4L . . . .  X ADDR   FEDCH   A   
+PWMA_CNTRH . . . .  X ADDR   FECEH   A   
+PWMA_CNTRL . . . .  X ADDR   FECFH   A   
+PWMA_CR1 . . . . .  X ADDR   FEC0H   A   
+PWMA_CR2 . . . . .  X ADDR   FEC1H   A   
+PWMA_DTR . . . . .  X ADDR   FEDEH   A   
+PWMA_EGR . . . . .  X ADDR   FEC7H   A   
+PWMA_ENO . . . . .  X ADDR   FEB1H   A   
+PWMA_ETR . . . . .  X ADDR   FEC3H   A   
+PWMA_IER . . . . .  X ADDR   FEC4H   A   
+PWMA_OISR. . . . .  X ADDR   FEDFH   A   
+PWMA_PS. . . . . .  X ADDR   FEB2H   A   
+PWMA_PSCRH . . . .  X ADDR   FED0H   A   
+PWMA_PSCRL . . . .  X ADDR   FED1H   A   
+PWMA_RCR . . . . .  X ADDR   FED4H   A   
+PWMA_SMCR. . . . .  X ADDR   FEC2H   A   
+PWMA_SR1 . . . . .  X ADDR   FEC5H   A   
+PWMA_SR2 . . . . .  X ADDR   FEC6H   A   
+P_IR_TX. . . . . .  B ADDR   0090H.6 A   
+P_SW1. . . . . . .  D ADDR   00A2H   A   
+P_SW2. . . . . . .  D ADDR   00BAH   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER. . .  N NUMB   00D0H   A   
+T2H. . . . . . . .  D ADDR   00D6H   A   
+T2L. . . . . . . .  D ADDR   00D7H   A   
+TXTIME . . . . . .  D ADDR   0038H   A   
+TX_CNTH. . . . . .  D ADDR   0036H   A   
+TX_CNTL. . . . . .  D ADDR   0037H   A   
+T_KEYTABLE . . . .  C ADDR   01D9H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

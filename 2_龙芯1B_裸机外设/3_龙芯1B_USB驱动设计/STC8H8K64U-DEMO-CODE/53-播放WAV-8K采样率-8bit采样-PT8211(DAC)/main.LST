@@ -1,0 +1,200 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              03/15/2021 15:14:55 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          /*---------------------------------------------------------------------*/
+   2          /* --- STC MCU Limited ------------------------------------------------*/
+   3          /* --- STC 1T Series MCU Demo Programme -------------------------------*/
+   4          /* --- Mobile: (86)13922805190 ----------------------------------------*/
+   5          /* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+   6          /* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+   7          /* --- Web: www.STCMCU.com --------------------------------------------*/
+   8          /* --- Web: www.STCMCUDATA.com  ---------------------------------------*/
+   9          /* --- QQ:  800003751 -------------------------------------------------*/
+  10          /* 如果要在程序中使用此代码,请在程序中注明使用了STC的资料及程序        */
+  11          /*---------------------------------------------------------------------*/
+  12          
+  13          #define   MAIN_Fosc   24000000L //定义主时钟
+  14          #include  "STC8Hxxx.h"
+  15          
+  16          #include  "music-8bit-8K-wave.h"
+  17          
+  18          
+  19          /*************  功能说明  **************
+  20          
+  21          使用STC8H系列MCU外接立体声DAC PT8211(TM8211) 播放8位WAVE语音.
+  22          
+  23          语音参数: 8k采样 单声道, 码率64kb/s, 时长6.4秒.
+  24          
+  25          ******************************************/
+  26          
+  27          /*************  本地常量声明  **************/
+  28          
+  29          
+  30          /*************  本地变量声明  **************/
+  31          sbit  P_TM8211_BCK = P0^2;  //PIN1--BCK   8--RCH    4--GND
+  32          sbit  P_TM8211_WS  = P0^1;  //PIN2--WS    7--NC   5--VDD
+  33          sbit  P_TM8211_DIN = P0^0;  //PIN3--DIN   6--LCH
+  34          
+  35          u16   play_lenth;
+  36          u16   LastSample;
+  37          u16   PlayCnt;
+  38          u8  code *MusicPoint;
+  39          bit B_Play;
+  40          u8  DAC_Cnt;
+  41          
+  42          
+  43          
+  44          /*************  本地函数声明  **************/
+  45          void  LoadMusic(void);
+  46          u8    Timer0_Config(u16 reload);  //reload是重装值, 返回0正确, 返回1装载值过大错误.
+  47          
+  48          
+  49          
+  50          /*************  外部函数和变量声明 *****************/
+  51          
+  52          
+  53          
+  54          
+  55          /******************** 主函数**************************/
+C51 COMPILER V9.59.0.0   MAIN                                                              03/15/2021 15:14:55 PAGE 2   
+
+  56          void main(void)
+  57          {
+  58   1        P0n_standard(0xff); //设置为准双向口
+  59   1        P1n_standard(0xff); //设置为准双向口
+  60   1        P2n_standard(0xff); //设置为准双向口
+  61   1        P3n_standard(0xff); //设置为准双向口
+  62   1        P4n_standard(0xff); //设置为准双向口
+  63   1        P5n_standard(0xff); //设置为准双向口
+  64   1      
+  65   1        Timer0_Config(MAIN_Fosc / 8000);  //t=0: reload值是主时钟周期数,  (中断频率, 8000次/秒)
+  66   1      
+  67   1        EA = 1;     //允许全局中断
+  68   1        
+  69   1        
+  70   1        while (1)
+  71   1        {
+  72   2          if(!B_Play) LoadMusic();
+  73   2          NOP(10);
+  74   2        }
+  75   1      }
+  76          
+  77          
+  78          //========================================================================
+  79          // 函数: void LoadWave(void)
+  80          // 描述: 装载一段wav
+  81          // 参数: none.
+  82          // 返回: none.
+  83          // 版本: VER1.0
+  84          // 日期: 2014-8-15
+  85          // 备注: 
+  86          //========================================================================
+  87          void  LoadMusic(void)
+  88          {
+  89   1        MusicPoint = Music;
+  90   1      
+  91   1        play_lenth = ((u16)MusicPoint[41] << 8) + MusicPoint[40];
+  92   1        MusicPoint += 44;
+  93   1      
+  94   1        PlayCnt = 0;
+  95   1        B_Play = 1;
+  96   1      }
+  97          
+  98          
+  99          void TM8211_Wbyte(u8 dat)
+ 100          {
+ 101   1        ACC = dat;
+ 102   1      
+ 103   1        P_TM8211_DIN = ACC7;  NOP(1); P_TM8211_BCK = 1; NOP(1); P_TM8211_BCK = 0; //6*8+7=55T
+ 104   1        P_TM8211_DIN = ACC6;  NOP(1); P_TM8211_BCK = 1; NOP(1); P_TM8211_BCK = 0; 
+ 105   1        P_TM8211_DIN = ACC5;  NOP(1); P_TM8211_BCK = 1; NOP(1); P_TM8211_BCK = 0; 
+ 106   1        P_TM8211_DIN = ACC4;  NOP(1); P_TM8211_BCK = 1; NOP(1); P_TM8211_BCK = 0; 
+ 107   1        P_TM8211_DIN = ACC3;  NOP(1); P_TM8211_BCK = 1; NOP(1); P_TM8211_BCK = 0; 
+ 108   1        P_TM8211_DIN = ACC2;  NOP(1); P_TM8211_BCK = 1; NOP(1); P_TM8211_BCK = 0; 
+ 109   1        P_TM8211_DIN = ACC1;  NOP(1); P_TM8211_BCK = 1; NOP(1); P_TM8211_BCK = 0; 
+ 110   1        P_TM8211_DIN = ACC0;  NOP(1); P_TM8211_BCK = 1; NOP(1); P_TM8211_BCK = 0; 
+ 111   1      }
+ 112          
+ 113          
+ 114          //========================================================================
+ 115          // 函数:u8  Timer0_Config(u8 t, u32 reload)
+ 116          // 描述: timer0初始化函数.
+ 117          // 参数: reload: 重装值.
+C51 COMPILER V9.59.0.0   MAIN                                                              03/15/2021 15:14:55 PAGE 3   
+
+ 118          // 返回: 0: 初始化正确, 1: 重装值过大, 初始化错误.
+ 119          // 版本: V1.0, 2018-12-20
+ 120          //========================================================================
+ 121          u8  Timer0_Config(u16 reload) //reload是重装值
+ 122          {
+ 123   1        TR0 = 0;  //停止计数
+ 124   1      
+ 125   1        if(reload >= (65536UL * 12))  return 1; //值过大, 返回错误
+ 126   1        if(reload < 65536UL)  AUXR |= 0x80;   //1T mode
+ 127   1        else
+ 128   1        {
+ 129   2          AUXR &= ~0x80;  //12T mode
+ 130   2          reload = reload / 12;
+ 131   2        }
+ 132   1        reload = 65536UL - reload;
+ 133   1        TH0 = (u8)(reload >> 8);
+ 134   1        TL0 = (u8)(reload);
+ 135   1      
+ 136   1        ET0 = 1;  //允许中断
+ 137   1      //  PT0 = 1;  //高优先级中断
+ 138   1        TMOD = (TMOD & ~0x03) | 0;  //工作模式, 0: 16位自动重装, 1: 16位定时/计数, 2: 8位自动重装, 3: 16位自动重装
+             -, 不可屏蔽中断
+ 139   1      //  TMOD |=  0x04;  //对外计数或分频
+ 140   1      //  INT_CLKO |=  0x01;  //输出时钟
+ 141   1        TR0 = 1;  //开始运行
+ 142   1        return 0;
+ 143   1      }
+ 144          
+ 145          //========================================================================
+ 146          // 函数: void timer0_int (void) interrupt TIMER0_VECTOR
+ 147          // 描述:  timer0中断函数.
+ 148          // 参数: none.
+ 149          // 返回: none.
+ 150          // 版本: V1.0, 2018-12-20
+ 151          //========================================================================
+ 152          void timer0_ISR (void) interrupt TIMER0_VECTOR
+ 153          {
+ 154   1        u16 j;
+ 155   1        
+ 156   1        if(B_Play)
+ 157   1        {
+ 158   2          j = ((u16)*MusicPoint << 8) + 32768;  //8位无符号wav数据转16位有符号整数
+ 159   2          TM8211_Wbyte((u8)(j >> 8)); //输出DAC
+ 160   2          TM8211_Wbyte((u8)j);
+ 161   2          P_TM8211_WS = 0;
+ 162   2          NOP(2);         //另一个声道, 如果没有数据, 则两个声道输出相同(单声道)
+ 163   2          P_TM8211_WS = 1;
+ 164   2      
+ 165   2          MusicPoint++; //指向下一个数据
+ 166   2          if(++PlayCnt >= play_lenth) B_Play = 0;
+ 167   2        }
+ 168   1      }
+ 169          
+ 170          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    383    ----
+   CONSTANT SIZE    =  51145    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      9       2
+C51 COMPILER V9.59.0.0   MAIN                                                              03/15/2021 15:14:55 PAGE 4   
+
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

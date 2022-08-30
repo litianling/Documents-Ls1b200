@@ -1,0 +1,133 @@
+====================================================================================
+====================================================================================
+
+RT本地串口输出分析
+
+    rt_kprintf在RTT4/src/kservice.c中实现，调用了rt_hw_console_output(rt_log_buf);输出缓存数据
+    在上述文件中弱定义空函数RT_WEAK void rt_hw_console_output(const char *str)
+    	该函数真正实现是在ls1x-drv/console/console.c文件中，并且调用console_putstr输出字符串。
+    console_putstr又调用console_putch函数输出单个字符。
+
+===============================
+
+将RT输出重定向到屏幕（增加一个输出路径，原控制台路径不删除）
+
+    在main.c与bsp.c文件中打开与屏幕相关的定义
+    在主函数中初始化fb的使用  fb_open();  fb_cons_clear();
+    在ls1x-drv/console/console.c文件中console_putstr()函数下调用fb_cons_putc(*s);函数
+    【注】由于在启动引导代码中就要输出RT版本号，先于fb_cons_putc(*s)所以要加限制条件
+	在ls1x-drv/fb/ls1x_fb_utils.c添加全局变量fb_print_lock=1，在fb_open函数解锁，在fb_cons_putc判断
+
+
+
+====================================================================================
+====================================================================================
+
+RT本地串口输入分析
+
+    在RTT4/components/finsh/shell.c文件下507行的函数finish_thread_entry就是空闲时输入命令行的钩子函数。
+    在该函数中调用了ch = finsh_getchar();从控制台获取字符，finsh_getchar又调用了rt_hw_console_getchar()函数。
+    该rt_hw_console_getchar()函数在ls1x-drv/console/console.c文件中实现，调用console_getch()函数……
+
+===============================
+
+改进为键盘输入，整体思想改rt_hw_console_getchar()函数
+
+    首先要添加键盘驱动
+	在include/bsp.h第108行打开USB定义
+    	手动添加文件夹 fat 和 usb
+    	添加libc下lwmem.c、lwmem.h
+    	在项目/编译选项中添加头文件路径2个
+    	手动更改lwmem_initialize(unsigned int size)函数给堆栈空间赋值大小
+
+    在主函数中初始化
+   	lwmem_initialize(0);                    // 把存储器空间初始化为堆栈【*】参数0无用
+    	LS1B_MUX_CTRL1 &= ~MUX_CTRL1_USB_SHUT;  // GPIO_MAX_CTRL1[11]=0，打开USB
+    	delay_ms(1);
+    	LS1B_MUX_CTRL1 |= MUX_CTRL1_USB_RESET;  // GPIO_MAX_CTRL1[31]=1，USB复位
+    	delay_ms(1);
+    	usb_init();                             // USB模块初始化【*】
+    	drv_usb_kbd_init();                     // 键盘的驱动初始化【*】只和第一个键盘创建连接（一旦初始化一个就退出）
+
+    去掉键盘输入的回显
+    	在usb/common/usb_kbd.c文件下函数usb_kbd_translate()的第275行
+
+    改rt_hw_console_getchar函数
+    	改为return usb_kbd_getc();
+
+
+
+====================================================================================
+====================================================================================
+
+显示优化
+
+    退格不擦除原有数据，退格--打印空格，但是原来的打印空格函数不对，chr=20改为chr=0x20
+	改完之后也不对，用黑色方块代替
+
+    更新方向键显示：原始方向键切换命令和方向键显示重合
+	注释掉RTT4/components/finsh/shell.c文件下459行，改成rt_kprintf("\r");
+
+    增加光标显示，显示一个白色方块
+	更改ls1x-drv/fb/ls1x_fb_utils.c文件，下的函数fb_cons_putc
+	光标正常显示：显示黑色块（擦除当前光标）-->显示字符-->向后移动光标-->显示白色块（显示新的光标）
+	退格：显示黑色块（擦除当前光标）-->向前移动光标-->显示白色块（显示新的光标）
+
+    几个按键单次点击输入有问题，在usb/common/usb_kbd.c文件下第400行函数usb_kbd_service_key（）中打补丁
+	else if((old[i] > 3)&&(old[i] != new_[i]))
+    	{
+	    res |= usb_kbd_translate(data, old[i], data->new_[0], pressed);          // 将扫描码转换为 ASCII【*】（放入队列）
+    	}
+
+    在屏幕输出调整完毕的时候同时向屏幕和串口输出浪费资源
+	注释掉ls1x-drv/console/console.c文件中console_putstr（）函数下第67行console_putch(*s++)；改66行*s为*s++
+
+    屏幕输出%s类型字符串有长度限制
+	fat/part_dos.c文件中dos_test（）函数下第435行，printf外边套循环加偏移量，非空就输出。
+
+    颜色输出函数效果不正确
+	注释掉ls1x-drv/fb/ls1x_fb_utils.c文件中fb_set_fgcolor（）函数fb_set_color(coloridx & ~XORMODE, value);
+	注释掉ls1x-drv/fb/ls1x_fb_utils.c文件中fb_set_bgcolor（）函数fb_set_color(coloridx & ~XORMODE, value);
+
+
+
+====================================================================================
+====================================================================================
+
+调度优化
+
+    在运行实时性很高的程序（比如游戏）时，因为需要及时检测输入，所以要求此程序单独执行，但是进入钩子函数轮询键盘会大大降低实时性
+	创建一个调度器的锁scheduler_lock，进入实时程序上锁，进入钩子函数时如果调度锁定就立即挂起钩子函数，继续执行实时程序，退出解锁
+	主函数中创建这个锁以及他的修改、获取函数
+		int scheduler_lock = 0;
+		void change_scheduler_lock(int val)
+		{
+		    scheduler_lock = val;
+		    printk("scheduler_lock is %d",scheduler_lock);
+		}
+		int get_scheduler_lock()
+		{
+		    return scheduler_lock;
+		}
+	在RTT4/components/finish/shell.c文件中钩子函数finsh_thread_entry（）第555行读取调度锁，判决是否要立即释放资源
+		extern int get_scheduler_lock();
+       		while(get_scheduler_lock())
+        		{
+		   rt_thread_sleep(1000);
+		}
+	在对实时性要求高的程序中上锁解锁（例如kernel-samples/push_box.c文件中）
+		extern int change_scheduler_lock(int val);
+		change_scheduler_lock(1);
+		/***  执行程序  ***/
+		change_scheduler_lock(0);
+
+
+
+====================================================================================
+====================================================================================
+
+程序移植
+
+    输入重定向，输出重定向，延时重定向，根据Ls1b特点做好功能开发
+
+

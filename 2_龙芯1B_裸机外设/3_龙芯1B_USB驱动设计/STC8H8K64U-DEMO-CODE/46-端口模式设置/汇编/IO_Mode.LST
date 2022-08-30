@@ -1,0 +1,99 @@
+A51 MACRO ASSEMBLER  IO_MODE                                                              03/15/2021 15:05:43 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN IO_Mode.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE IO_Mode.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* 如果要在程序中使用此代码,请在程序中注明使用了STC的资料及程序        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     ;/************* 功能说明    **************
+                      14     
+                      15     ;单纯的IO口初始化，端口模式配置参考程序.
+                      16     
+                      17     ;******************************************/
+                      18     
+  0094                19     P0M0        DATA    094H
+  0093                20     P0M1        DATA    093H
+  0092                21     P1M0        DATA    092H
+  0091                22     P1M1        DATA    091H
+  0096                23     P2M0        DATA    096H
+  0095                24     P2M1        DATA    095H
+  00B2                25     P3M0        DATA    0B2H
+  00B1                26     P3M1        DATA    0B1H
+  00B4                27     P4M0        DATA    0B4H
+  00B3                28     P4M1        DATA    0B3H
+  00CA                29     P5M0        DATA    0CAH
+  00C9                30     P5M1        DATA    0C9H
+  00CC                31     P6M0        DATA    0CCH
+  00CB                32     P6M1        DATA    0CBH
+  00E2                33     P7M0        DATA    0E2H
+  00E1                34     P7M1        DATA    0E1H
+                      35     
+0000                  36                 ORG     0000H
+0000 020100           37                 LJMP    MAIN
+                      38     
+0100                  39                 ORG     0100H
+0100                  40     MAIN:
+0100 75813F           41                 MOV     SP,#3FH
+                      42     
+0103 759400           43                 MOV     P0M0,#00H                   ;设置P0.0~P0.7为双向口模式
+0106 759300           44                 MOV     P0M1,#00H
+                      45     
+0109 7592FF           46                 MOV     P1M0,#0FFH                  ;设置P1.0~P1.7为推挽输出模式
+010C 759100           47                 MOV     P1M1,#00H
+                      48     
+010F 759600           49                 MOV     P2M0,#00H                   ;设置P2.0~P2.7为高阻输入模式
+0112 7595FF           50                 MOV     P2M1,#0FFH
+                      51     
+0115 75B2FF           52                 MOV     P3M0,#0FFH                  ;设置P3.0~P3.7为开漏模式
+0118 75B1FF           53                 MOV     P3M1,#0FFH
+                      54     
+011B 80FE             55                 JMP     $
+                      56     
+                      57                 END
+                             
+A51 MACRO ASSEMBLER  IO_MODE                                                              03/15/2021 15:05:43 PAGE     2
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+MAIN . . . . . . .  C ADDR   0100H   A   
+P0M0 . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . .  D ADDR   0093H   A   
+P1M0 . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . .  D ADDR   0095H   A   
+P3M0 . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . .  D ADDR   00B1H   A   
+P4M0 . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . .  D ADDR   00B3H   A   
+P5M0 . . . . . . .  D ADDR   00CAH   A   
+P5M1 . . . . . . .  D ADDR   00C9H   A   
+P6M0 . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . .  D ADDR   00CBH   A   
+P7M0 . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . .  D ADDR   00E1H   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

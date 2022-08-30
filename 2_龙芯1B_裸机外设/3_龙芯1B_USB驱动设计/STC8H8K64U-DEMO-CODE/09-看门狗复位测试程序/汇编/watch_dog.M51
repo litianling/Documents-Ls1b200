@@ -1,0 +1,200 @@
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                    03/09/2021  15:55:21  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22.2.0, INVOKED BY:
+C:\KEIL_V5\C51\BIN\BL51.EXE watch_dog.obj TO watch_dog RAMSIZE (256)
+
+
+INPUT MODULES INCLUDED:
+  watch_dog.obj (WATCH_DOG)
+
+
+LINK MAP OF MODULE:  watch_dog (WATCH_DOG)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     01EEH     ABSOLUTE     
+
+
+
+SYMBOL TABLE OF MODULE:  watch_dog (WATCH_DOG)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        WATCH_DOG
+  D:008EH         SYMBOL        AUXR
+  D:0038H         SYMBOL        DISPLAY_INDEX
+  N:0011H         SYMBOL        DIS_
+  N:0010H         SYMBOL        DIS_BLACK
+  N:0020H         SYMBOL        DIS_DOT
+  D:0083H         SYMBOL        DPH
+  D:0082H         SYMBOL        DPL
+  N:0010H         SYMBOL        D_CLR_WDT
+  N:0020H         SYMBOL        D_EN_WDT
+  N:0008H         SYMBOL        D_IDLE_WDT
+  N:0080H         SYMBOL        D_WDT_FLAG
+  N:0006H         SYMBOL        D_WDT_SCALE_128
+  N:0003H         SYMBOL        D_WDT_SCALE_16
+  N:0000H         SYMBOL        D_WDT_SCALE_2
+  N:0007H         SYMBOL        D_WDT_SCALE_256
+  N:0004H         SYMBOL        D_WDT_SCALE_32
+  N:0001H         SYMBOL        D_WDT_SCALE_4
+  N:0005H         SYMBOL        D_WDT_SCALE_64
+  N:0002H         SYMBOL        D_WDT_SCALE_8
+  N:5DC0H         SYMBOL        FOSC_KHZ
+  C:0170H         SYMBOL        F_DELAY_MS
+  C:01C0H         SYMBOL        F_DISPLAYSCAN
+  C:0100H         SYMBOL        F_MAIN
+  D:0030H         SYMBOL        LED8
+  C:012EH         SYMBOL        L_CLEARLOOP
+  C:016DH         SYMBOL        L_CNT1000_NOTZERO
+  C:0177H         SYMBOL        L_DELAY_MS_1
+  C:017BH         SYMBOL        L_DELAY_MS_2
+  C:0180H         SYMBOL        L_DELAY_MS_3
+  C:013FH         SYMBOL        L_MAINLOOP
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  03/09/2021  15:55:21  PAGE 2
+
+
+  C:01E7H         SYMBOL        L_QUITDISPLAYSCAN
+  C:0151H         SYMBOL        L_QUITWATCHDOG
+  D:0039H         SYMBOL        MS_CNT_H
+  D:003AH         SYMBOL        MS_CNT_L
+  D:0094H         SYMBOL        P0M0
+  D:0093H         SYMBOL        P0M1
+  D:0092H         SYMBOL        P1M0
+  D:0091H         SYMBOL        P1M1
+  D:0096H         SYMBOL        P2M0
+  D:0095H         SYMBOL        P2M1
+  D:00B2H         SYMBOL        P3M0
+  D:00B1H         SYMBOL        P3M1
+  D:00C0H         SYMBOL        P4
+  D:00B4H         SYMBOL        P4M0
+  D:00B3H         SYMBOL        P4M1
+  D:00C8H         SYMBOL        P5
+  D:00CAH         SYMBOL        P5M0
+  D:00C9H         SYMBOL        P5M1
+  D:00E8H         SYMBOL        P6
+  D:00CCH         SYMBOL        P6M0
+  D:00CBH         SYMBOL        P6M1
+  D:00F8H         SYMBOL        P7
+  D:00E2H         SYMBOL        P7M0
+  D:00E1H         SYMBOL        P7M1
+  D:00D0H         SYMBOL        PSW
+  D:0081H         SYMBOL        SP
+  N:00D0H         SYMBOL        STACK_POIRTER
+  D:003BH         SYMBOL        TES_CNT
+  C:01B8H         SYMBOL        T_COM
+  C:018DH         SYMBOL        T_DISPLAY
+  D:00C1H         SYMBOL        WDT_CONTR
+  C:0000H         LINE#         92
+  C:0100H         LINE#         103
+  C:0101H         LINE#         104
+  C:0103H         LINE#         105
+  C:0105H         LINE#         106
+  C:0107H         LINE#         107
+  C:0109H         LINE#         108
+  C:010BH         LINE#         109
+  C:010DH         LINE#         110
+  C:010FH         LINE#         111
+  C:0111H         LINE#         112
+  C:0113H         LINE#         113
+  C:0115H         LINE#         114
+  C:0117H         LINE#         115
+  C:0119H         LINE#         116
+  C:011BH         LINE#         117
+  C:011DH         LINE#         118
+  C:011FH         LINE#         119
+  C:0121H         LINE#         122
+  C:0124H         LINE#         123
+  C:0127H         LINE#         128
+  C:012AH         LINE#         129
+  C:012CH         LINE#         130
+  C:012EH         LINE#         132
+  C:0130H         LINE#         133
+  C:0131H         LINE#         134
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  03/09/2021  15:55:21  PAGE 3
+
+
+  C:0133H         LINE#         136
+  C:0136H         LINE#         137
+  C:0139H         LINE#         139
+  C:013CH         LINE#         140
+  C:013FH         LINE#         144
+  C:0141H         LINE#         145
+  C:0144H         LINE#         146
+  C:0147H         LINE#         148
+  C:0149H         LINE#         149
+  C:014AH         LINE#         150
+  C:014CH         LINE#         151
+  C:014EH         LINE#         152
+  C:0151H         LINE#         155
+  C:0153H         LINE#         156
+  C:0154H         LINE#         157
+  C:0156H         LINE#         158
+  C:0158H         LINE#         159
+  C:015AH         LINE#         160
+  C:015CH         LINE#         161
+  C:015EH         LINE#         162
+  C:0160H         LINE#         163
+  C:0162H         LINE#         164
+  C:0165H         LINE#         165
+  C:0168H         LINE#         166
+  C:016AH         LINE#         167
+  C:016DH         LINE#         170
+  C:0170H         LINE#         185
+  C:0172H         LINE#         186
+  C:0174H         LINE#         187
+  C:0176H         LINE#         189
+  C:0177H         LINE#         192
+  C:0179H         LINE#         193
+  C:017BH         LINE#         196
+  C:017CH         LINE#         197
+  C:017DH         LINE#         198
+  C:017FH         LINE#         199
+  C:0180H         LINE#         201
+  C:0181H         LINE#         202
+  C:0182H         LINE#         203
+  C:0184H         LINE#         205
+  C:0186H         LINE#         207
+  C:0188H         LINE#         208
+  C:018AH         LINE#         209
+  C:018CH         LINE#         210
+  C:01C0H         LINE#         237
+  C:01C2H         LINE#         238
+  C:01C4H         LINE#         239
+  C:01C6H         LINE#         241
+  C:01C9H         LINE#         242
+  C:01CBH         LINE#         243
+  C:01CCH         LINE#         244
+  C:01CDH         LINE#         245
+  C:01CFH         LINE#         247
+  C:01D2H         LINE#         248
+  C:01D4H         LINE#         249
+  C:01D6H         LINE#         250
+  C:01D7H         LINE#         251
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  03/09/2021  15:55:21  PAGE 4
+
+
+  C:01D8H         LINE#         252
+  C:01D9H         LINE#         253
+  C:01DAH         LINE#         254
+  C:01DCH         LINE#         256
+  C:01DEH         LINE#         257
+  C:01E0H         LINE#         258
+  C:01E2H         LINE#         259
+  C:01E4H         LINE#         260
+  C:01E7H         LINE#         263
+  C:01E9H         LINE#         264
+  C:01EBH         LINE#         265
+  C:01EDH         LINE#         266
+  -------         ENDMOD        WATCH_DOG
+
+Program Size: data=8.0 xdata=0 code=494
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

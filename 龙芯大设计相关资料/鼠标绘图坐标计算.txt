@@ -1,0 +1,10 @@
+x = fb->curCol*(CONS_FONT_WIDTH+COL_GAP);
+y = fb->curRow*(CONS_FONT_HEIGHT+ROW_GAP);
+
+	分辨率	间隔		区域			逻辑坐标		像素坐标
+横（列）	800	COL_GAP	  0	CONS_FONT_WIDTH	   8	Col    max100	mouse_x
+竖（行）	480	ROW_GAP	  0	CONS_FONT_HEIGHT  16	Row   max30	mouse_y
+
+	分辨率	间隔		区域			逻辑坐标		像素坐标
+横（列）	800	COL_GAP	  0	CONS_FONT_WIDTH	   8	Col    max 800/8-1	mouse_x
+竖（行）	480	ROW_GAP	  0	CONS_FONT_HEIGHT  8	Row   max 480/8-1	mouse_y

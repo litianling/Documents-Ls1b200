@@ -1,0 +1,722 @@
+A51 MACRO ASSEMBLER  POWNDOWNSAVE                                                         03/02/2021 17:48:48 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN PownDownSave.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE PownDownSave.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* 如果要在程序中使用此代码,请在程序中注明使用了STC的资料及程序        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     
+                      14     ;*************  功能说明    **************
+                      15     
+                      16     ;本例程基于STC8H8K64U为主控芯片的实验箱8进行编写测试，STC8G、STC8H系列芯片可通用参考.
+                      17     
+                      18     ;用STC的MCU的IO方式驱动8位数码管。
+                      19     
+                      20     ;使用Timer0的16位自动重装来产生1ms节拍,程序运行于这个节拍下, 用户修改MCU主时钟频率时,自动定
+                             时于1ms.
+                      21     
+                      22     ;用户可以在"用户定义宏"中按具体的MCU修改掉电保存的EEPROM地址。
+                      23     
+                      24     ;显示效果为: 上电后显示秒计数, 计数范围为0~10000，显示在右边的5个数码管.
+                      25     
+                      26     ;当掉电后，MCU进入低压中断，对秒计数进行保存。MCU上电时读出秒计数继续显示。
+                      27     
+                      28     ;用户可以在"用户定义宏"中选择滤波电容大还是小。
+                      29     ;大的电容(比如1000uF)，则掉电后保持的时间长，可以在低压中断中擦除后(需要20多ms时间)然后写入
+                             。
+                      30     ;小的电容，则掉电后保持的时间短, 则必须在主程序初始化时先擦除.
+                      31     
+                      32     ;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                      33     ;注意：下载时，下载界面"硬件选项"中下面的项要固定如下设置:
+                      34     
+                      35     ;不勾选 允许低压复位(禁止低压中断)
+                      36     
+                      37     ;设置用户EEPROM大小，并确保"用户定义宏"中设定的地址在EEPROM设置的大小范围之内
+                      38     
+                      39     ;选择时钟 24MHZ (用户可自行修改频率)
+                      40     ;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                      41     
+                      42     
+                      43     ;******************************************
+                      44     
+                      45     ;/****************************** 用户定义宏 ***********************************/
+                      46     
+  5DC0                47     Fosc_KHZ    EQU 24000   ;24MHZ
+                      48     
+  00D0                49     STACK_POIRTER   EQU     0D0H    ; 堆栈开始地址
+                      50     
+  0000                51     LargeCapacitor  EQU     0       ; 0: 滤波电容比较小,  1: 滤波电容比较大
+                      52     
+  A240                53     Timer0_Reload   EQU     (65536 - Fosc_KHZ)  ; Timer 0 中断频率, 1000次/秒
+                      54     
+  0040                55     EE_ADDRESS      EQU     0040H  ;保存的地址
+                      56     
+A51 MACRO ASSEMBLER  POWNDOWNSAVE                                                         03/02/2021 17:48:48 PAGE     2
+
+  0020                57     DIS_DOT         EQU     020H
+  0010                58     DIS_BLACK       EQU     010H
+  0011                59     DIS_            EQU     011H
+                      60     
+                      61     ;*******************************************************************
+                      62     ;*******************************************************************
+                      63     
+  0080                64     IAP_EN          EQU     (1 SHL 7)
+  0040                65     IAP_SWBS        EQU     (1 SHL 6)
+  0020                66     IAP_SWRST       EQU     (1 SHL 5)
+  0010                67     IAP_CMD_FAIL    EQU     (1 SHL 4)
+                      68     
+  0018                69     TPS_WAIT        EQU     24   ;24MHZ / 1000000
+                      70     
+  008E                71     AUXR      DATA 08EH
+  00C0                72     P4        DATA 0C0H
+  00C8                73     P5        DATA 0C8H
+  00E8                74     P6        DATA 0E8H
+  00F8                75     P7        DATA 0F8H
+                      76     
+  00C2                77     IAP_DATA  DATA 0C2H
+  00C3                78     IAP_ADDRH DATA 0C3H
+  00C4                79     IAP_ADDRL DATA 0C4H
+  00C5                80     IAP_CMD   DATA 0C5H
+  00C6                81     IAP_TRIG  DATA 0C6H
+  00C7                82     IAP_CONTR DATA 0C7H
+  00F5                83     IAP_TPS   DATA 0F5H
+                      84     
+  00AE                85     ELVD    BIT IE.6    ; 低压监测中断允许位
+  00BE                86     PLVD    BIT IP.6    ; 低压中断 优先级设定位
+                      87     
+  0093                88     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094                89     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091                90     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092                91     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095                92     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+  0096                93     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+  00B1                94     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2                95     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3                96     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+  00B4                97     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9                98     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA                99     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB               100     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC               101     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1               102     P7M1    DATA    0xE1    ;
+  00E2               103     P7M0    DATA    0xE2    ;
+                     104             
+                     105     ;*************  IO口定义    **************/
+                     106     
+                     107     
+                     108     ;*************  本地变量声明    **************/
+  0020               109     Flag0           DATA    20H
+  0000               110     B_1ms           BIT     Flag0.0 ;   1ms标志
+                     111     
+  0030               112     LED8            DATA    30H     ;   显示缓冲 30H ~ 37H
+  0038               113     display_index   DATA    38H     ;   显示位索引
+                     114     
+  0039               115     msecond_H       DATA    39H     ;
+  003A               116     msecond_L       DATA    3AH     ;
+                     117     
+  003B               118     Test_cnt_H      DATA    3BH     ; 测试用的秒计数变量
+  003C               119     Test_cnt_L      DATA    3CH
+                     120     
+  003D               121     address_H       DATA    3DH
+  003E               122     address_L       DATA    3EH
+A51 MACRO ASSEMBLER  POWNDOWNSAVE                                                         03/02/2021 17:48:48 PAGE     3
+
+  003F               123     length          DATA    3FH
+                     124     
+                     125     ;*******************************************************************
+                     126     ;*******************************************************************
+0000                 127             ORG     0000H               ;reset
+0000 020100          128             LJMP    F_Main
+                     129     
+000B                 130             ORG     000BH               ;1  Timer0 interrupt
+000B 020292          131             LJMP    F_Timer0_Interrupt
+                     132     
+0033                 133             ORG     0033H               ;6  Low Voltage Detect interrupt
+0033 0201BC          134             LJMP    F_LVD_Interrupt
+                     135     
+                     136     
+                     137     
+                     138     ;*******************************************************************
+                     139     ;*******************************************************************
+                     140     
+                     141     
+                     142     ;******************** 主程序 **************************/
+0100                 143             ORG     0100H       ;reset
+0100                 144     F_Main:
+0100 E4              145         CLR     A
+0101 F593            146         MOV     P0M1, A     ;设置为准双向口
+0103 F594            147         MOV     P0M0, A
+0105 F591            148         MOV     P1M1, A     ;设置为准双向口
+0107 F592            149         MOV     P1M0, A
+0109 F595            150         MOV     P2M1, A     ;设置为准双向口
+010B F596            151         MOV     P2M0, A
+010D F5B1            152         MOV     P3M1, A     ;设置为准双向口
+010F F5B2            153         MOV     P3M0, A
+0111 F5B3            154         MOV     P4M1, A     ;设置为准双向口
+0113 F5B4            155         MOV     P4M0, A
+0115 F5C9            156         MOV     P5M1, A     ;设置为准双向口
+0117 F5CA            157         MOV     P5M0, A
+0119 F5CB            158         MOV     P6M1, A     ;设置为准双向口
+011B F5CC            159         MOV     P6M0, A
+011D F5E1            160         MOV     P7M1, A     ;设置为准双向口
+011F F5E2            161         MOV     P7M0, A
+                     162     
+                     163         
+0121 7581D0          164         MOV     SP, #STACK_POIRTER
+0124 75D000          165         MOV     PSW, #0
+                     166         USING   0       ;选择第0组R0~R7
+                     167     
+                     168     ;================= 用户初始化程序 ====================================
+                     169     
+0127 753800          170         MOV     display_index, #0
+012A 7830            171         MOV     R0, #LED8
+012C 7A08            172         MOV     R2, #8
+012E                 173     L_ClearLoop:
+012E 7610            174         MOV     @R0, #DIS_BLACK     ;上电消隐
+0130 08              175         INC     R0
+0131 DAFB            176         DJNZ    R2, L_ClearLoop
+                     177         
+0133 C28C            178         CLR     TR0
+0135 438E80          179         ORL     AUXR, #(1 SHL 7)    ; Timer0_1T();
+0138 5389FB          180         ANL     TMOD, #NOT 04H      ; Timer0_AsTimer();
+013B 5389FC          181         ANL     TMOD, #NOT 03H      ; Timer0_16bitAutoReload();
+013E 758CA2          182         MOV     TH0, #Timer0_Reload / 256   ;Timer0_Load(Timer0_Reload);
+0141 758A40          183         MOV     TL0, #Timer0_Reload MOD 256
+0144 D2A9            184         SETB    ET0         ; Timer0_InterruptEnable();
+0146 D28C            185         SETB    TR0         ; Timer0_Run();
+0148 D2AF            186         SETB    EA          ; 打开总中断
+                     187         
+014A 7AC8            188         MOV     R2, #200    ; delay 200ms
+A51 MACRO ASSEMBLER  POWNDOWNSAVE                                                         03/02/2021 17:48:48 PAGE     4
+
+014C                 189     L_PowerUpDelay:
+014C 3000FD          190         JNB     B_1ms, $    ; 等待1ms到
+014F C200            191         CLR     B_1ms
+0151 DAF9            192         DJNZ    R2, L_PowerUpDelay
+                     193     
+0153 753D00          194         MOV     address_H, #HIGH EE_ADDRESS
+0156 753E40          195         MOV     address_L, #LOW  EE_ADDRESS
+0159 753F02          196         MOV     length, #2      ;读出2字节
+015C 783B            197         MOV     R0, #Test_cnt_H
+015E 1202B0          198         LCALL   F_EEPROM_read_n     ;读N个字节  ;address_H,address_L,R0,length
+0161 E53C            199         MOV     A, Test_cnt_L
+0163 C3              200         CLR     C
+0164 9410            201         SUBB    A, #LOW 10000
+0166 E53B            202         MOV     A, Test_cnt_H
+0168 9427            203         SUBB    A, #HIGH 10000
+016A 4006            204         JC      L_LessThan10000
+016C 753B00          205         MOV     Test_cnt_H, #0
+016F 753C00          206         MOV     Test_cnt_L, #0
+0172                 207     L_LessThan10000:
+                     208     
+                     209     IF  (LargeCapacitor == 0)   ;滤波电容比较小，电容保持时间比较短，则先擦除
+0172 1202EB          210         LCALL   F_EEPROM_SectorErase    ; 擦除一个扇区
+                     211     ENDIF
+                     212         
+0175 120206          213         LCALL   F_Display       ; 显示秒计数
+                     214         
+0178 5387DF          215         ANL     PCON, #NOT (1 SHL 5)    ; 低压检测标志清0
+017B D2AE            216         SETB    ELVD        ; 低压监测中断允许
+017D D2BE            217         SETB    PLVD        ; 低压中断 优先级高
+                     218         
+                     219     
+                     220     ;=================== 主循环 ==================================
+017F                 221     L_MainLoop:
+017F 3000FD          222         JNB     B_1ms,  L_MainLoop      ;1ms未到
+0182 C200            223         CLR     B_1ms
+                     224         
+0184 053A            225         INC     msecond_L       ;msecond + 1
+0186 E53A            226         MOV     A, msecond_L
+0188 7002            227         JNZ     $+4
+018A 0539            228         INC     msecond_H
+                     229         
+018C E53A            230         MOV     A, msecond_L    ;msecond - 1000
+018E C3              231         CLR     C
+018F 94E8            232         SUBB    A, #LOW 1000
+0191 E539            233         MOV     A, msecond_H
+0193 9403            234         SUBB    A, #HIGH 1000
+0195 40E8            235         JC      L_MainLoop      ;if(msecond < 1000), jmp
+                     236         
+0197 753A00          237         MOV     msecond_L, #0   ;if(msecond >= 1000)
+019A 753900          238         MOV     msecond_H, #0
+                     239     
+019D 053C            240         INC     Test_cnt_L      ;Test_cnt + 1
+019F E53C            241         MOV     A, Test_cnt_L
+01A1 7002            242         JNZ     $+4
+01A3 053B            243         INC     Test_cnt_H
+                     244     
+01A5 E53C            245         MOV     A, Test_cnt_L   ;if(Test_cnt > 10000)   Test_cnt = 0;   秒计数范围为0~10000
+01A7 C3              246         CLR     C
+01A8 9410            247         SUBB    A, #LOW 10000
+01AA E53B            248         MOV     A, Test_cnt_H
+01AC 9427            249         SUBB    A, #HIGH 10000
+01AE 4006            250         JC      L_LessThan10000A
+01B0 753B00          251         MOV     Test_cnt_H, #0
+01B3 753C00          252         MOV     Test_cnt_L, #0
+01B6                 253     L_LessThan10000A:
+01B6 120206          254         LCALL   F_Display       ; 显示秒计数
+A51 MACRO ASSEMBLER  POWNDOWNSAVE                                                         03/02/2021 17:48:48 PAGE     5
+
+                     255     
+01B9 02017F          256         LJMP    L_MainLoop
+                     257     
+                     258     ;**********************************************/
+                     259     
+                     260     
+                     261     ;========================================================================
+                     262     ; 函数: F_LVD_Interrupt
+                     263     ; 描述: 低压中断函数.
+                     264     ; 参数: non.
+                     265     ; 返回: non.
+                     266     ; 版本: V1.0, 2014-1-22
+                     267     ;========================================================================
+01BC                 268     F_LVD_Interrupt:
+01BC C0D0            269         PUSH    PSW
+01BE C0E0            270         PUSH    ACC
+01C0 C002            271         PUSH    AR2
+                     272     
+01C2 75F8FF          273         MOV     P7, #0xff
+                     274         
+01C5 753D00          275         MOV     address_H, #HIGH EE_ADDRESS
+01C8 753E40          276         MOV     address_L, #LOW  EE_ADDRESS
+                     277     IF  (LargeCapacitor == 1)   ;滤波电容比较大，电容保持时间比较长(50ms以上)，则在中断里擦除
+                                 LCALL   F_EEPROM_SectorErase    ; 擦除一个扇区
+                             ENDIF
+01CB 753F02          280         MOV     length, #2
+01CE 783B            281         MOV     R0, #Test_cnt_H
+01D0 12030F          282         LCALL   F_EEPROM_write_n        ;写N个字节  ;address_H,address_L,R0,length
+                     283     
+01D3                 284     L_LVD_CheckLoop:        ; 检测是否仍然低电压
+01D3 E587            285         MOV     A, PCON
+01D5 5387DF          286         ANL     PCON, #NOT (1 SHL 5)    ; 低压检测标志清0
+01D8 30E506          287         JNB     ACC.5, L_QuitLVD_Init
+01DB 7AFA            288         MOV     R2, #250
+01DD DAFE            289         DJNZ    R2, $           ;延时一下
+01DF 80F2            290         SJMP    L_LVD_CheckLoop
+01E1                 291     L_QuitLVD_Init:
+                     292     
+01E1 D002            293         POP     AR2
+01E3 D0E0            294         POP     ACC
+01E5 D0D0            295         POP     PSW
+01E7 32              296         RETI
+                     297     
+                     298     
+                     299     
+                     300     ;========================================================================
+                     301     ; 函数: F_HEX2_DEC
+                     302     ; 描述: 把双字节十六进制数转成十进制BCD数.
+                     303     ; 参数: (R6 R7): 要转换的双字节十六进制数.
+                     304     ; 返回: (R3 R4 R5) = BCD码.
+                     305     ; 版本: V1.0, 2013-10-22
+                     306     ;========================================================================
+01E8                 307     F_HEX2_DEC:         ;(R6 R7) HEX Change to DEC ---> (R3 R4 R5), use (R2~R7)
+01E8 7A10            308             MOV     R2,#16
+01EA 7B00            309             MOV     R3,#0
+01EC 7C00            310             MOV     R4,#0
+01EE 7D00            311             MOV     R5,#0
+                     312     
+01F0                 313     L_HEX2_DEC:
+01F0 C3              314             CLR     C   
+01F1 EF              315             MOV     A,R7
+01F2 33              316             RLC     A   
+01F3 FF              317             MOV     R7,A
+01F4 EE              318             MOV     A,R6
+01F5 33              319             RLC     A   
+01F6 FE              320             MOV     R6,A
+A51 MACRO ASSEMBLER  POWNDOWNSAVE                                                         03/02/2021 17:48:48 PAGE     6
+
+                     321     
+01F7 ED              322             MOV     A,R5
+01F8 3D              323             ADDC    A,R5
+01F9 D4              324             DA      A   
+01FA FD              325             MOV     R5,A
+                     326     
+01FB EC              327             MOV     A,R4
+01FC 3C              328             ADDC    A,R4
+01FD D4              329             DA      A   
+01FE FC              330             MOV     R4,A
+                     331     
+01FF EB              332             MOV     A,R3
+0200 3B              333             ADDC    A,R3
+0201 D4              334             DA      A   
+0202 FB              335             MOV     R3,A
+                     336     
+0203 DAEB            337             DJNZ    R2,L_HEX2_DEC
+0205 22              338             RET
+                     339     ;**********************************************/
+                     340     
+                     341     ;========================================================================
+                     342     ; 函数: F_Display
+                     343     ; 描述: 显示计数函数.
+                     344     ; 参数: non.
+                     345     ; 返回: non.
+                     346     ; 版本: V1.0, 2014-1-22
+                     347     ;========================================================================
+0206                 348     F_Display:
+0206 AE3B            349         MOV     R6, Test_cnt_H
+0208 AF3C            350         MOV     R7, Test_cnt_L
+020A 1201E8          351         LCALL   F_HEX2_DEC      ;(R6 R7) HEX Change to DEC ---> (R3 R4 R5), use (R2~R7)
+020D 8B34            352         MOV     LED8+4, R3  ;万位
+020F EC              353         MOV     A, R4
+0210 C4              354         SWAP    A
+0211 540F            355         ANL     A, #0x0F
+0213 F533            356         MOV     LED8+3, A
+0215 EC              357         MOV     A, R4
+0216 540F            358         ANL     A, #0x0F
+0218 F532            359         MOV     LED8+2, A
+021A ED              360         MOV     A, R5
+021B C4              361         SWAP    A
+021C 540F            362         ANL     A, #0x0F
+021E F531            363         MOV     LED8+1, A
+0220 ED              364         MOV     A, R5
+0221 540F            365         ANL     A, #0x0F
+0223 F530            366         MOV     LED8+0, A
+                     367         
+0225 7834            368         MOV     R0, #LED8+4
+0227                 369     L_Cut0_Loop:            ;消高位0
+0227 E6              370         MOV     A,@R0
+0228 7006            371         JNZ     L_QuitCut0
+022A 7610            372         MOV     @R0, #DIS_BLACK
+022C 18              373         DEC     R0
+022D B830F7          374         CJNE    R0, #LED8+0, L_Cut0_Loop
+0230                 375     L_QuitCut0: 
+0230 22              376         RET
+                     377     
+                     378     
+                     379     ; *********************** 显示相关程序 ****************************************
+0231                 380     T_Display:                      ;标准字库
+                     381     ;    0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+0231 3F065B4F        382     DB  03FH,006H,05BH,04FH,066H,06DH,07DH,007H,07FH,06FH,077H,07CH,039H,05EH,079H,071H
+0235 666D7D07                
+0239 7F6F777C                
+023D 395E7971                
+                     383     ;  black  -    H    J    K    L    N    o    P    U    t    G    Q    r    M    y
+A51 MACRO ASSEMBLER  POWNDOWNSAVE                                                         03/02/2021 17:48:48 PAGE     7
+
+0241 0040761E        384     DB  000H,040H,076H,01EH,070H,038H,037H,05CH,073H,03EH,078H,03dH,067H,050H,037H,06EH
+0245 7038375C                
+0249 733E783D                
+024D 6750376E                
+                     385     ;    0.   1.   2.   3.   4.   5.   6.   7.   8.   9.   -1
+0251 BF86DBCF        386     DB  0BFH,086H,0DBH,0CFH,0E6H,0EDH,0FDH,087H,0FFH,0EFH,046H
+0255 E6EDFD87                
+0259 FFEF46                  
+                     387     
+025C                 388     T_COM:
+025C 01020408        389     DB  001H,002H,004H,008H,010H,020H,040H,080H     ;   位码
+0260 10204080                
+                     390     
+                     391     
+                     392     ;//========================================================================
+                     393     ;// 函数: F_DisplayScan
+                     394     ;// 描述: 显示扫描子程序。
+                     395     ;// 参数: none.
+                     396     ;// 返回: none.
+                     397     ;// 版本: VER1.0
+                     398     ;// 日期: 2013-4-1
+                     399     ;// 备注: 除了ACCC和PSW外, 所用到的通用寄存器都入栈
+                     400     ;//========================================================================
+0264                 401     F_DisplayScan:
+0264 C083            402         PUSH    DPH     ;DPH入栈
+0266 C082            403         PUSH    DPL     ;DPL入栈
+0268 C000            404         PUSH    00H     ;R0 入栈
+                     405         
+026A 90025C          406         MOV     DPTR, #T_COM
+026D E538            407         MOV     A, display_index
+026F 93              408         MOVC    A, @A+DPTR
+0270 F4              409         CPL     A
+0271 F5F8            410         MOV     P7,A
+                     411         
+0273 900231          412         MOV     DPTR, #T_Display
+0276 E538            413         MOV     A, display_index
+0278 2430            414         ADD     A, #LED8
+027A F8              415         MOV     R0, A
+027B E6              416         MOV     A, @R0
+027C 93              417         MOVC    A, @A+DPTR
+027D F4              418         CPL     A
+027E F5E8            419         MOV     P6,A
+                     420     
+0280 0538            421         INC     display_index
+0282 E538            422         MOV     A, display_index
+0284 54F8            423         ANL     A, #0F8H            ; if(display_index >= 8)
+0286 6003            424         JZ      L_QuitDisplayScan
+0288 753800          425         MOV     display_index, #0;  ;8位结束回0
+028B                 426     L_QuitDisplayScan:
+028B D000            427         POP     00H     ;R0 出栈
+028D D082            428         POP     DPL     ;DPL出栈
+028F D083            429         POP     DPH     ;DPH出栈
+0291 22              430         RET
+                     431     
+                     432     
+                     433     ;*******************************************************************
+                     434     ;**************** 中断函数 ***************************************************
+                     435     
+0292                 436     F_Timer0_Interrupt: ;Timer0 1ms中断函数
+0292 C0D0            437         PUSH    PSW     ;PSW入栈
+0294 C0E0            438         PUSH    ACC     ;ACC入栈
+                     439     
+0296 120264          440         LCALL   F_DisplayScan   ; 1ms扫描显示一位
+0299 D200            441         SETB    B_1ms           ; 1ms标志
+                     442     
+029B D0E0            443         POP     ACC     ;ACC出栈
+A51 MACRO ASSEMBLER  POWNDOWNSAVE                                                         03/02/2021 17:48:48 PAGE     8
+
+029D D0D0            444         POP     PSW     ;PSW出栈
+029F 32              445         RETI
+                     446         
+                     447     
+                     448     
+                     449     ;========================================================================
+                     450     ; 函数: F_DisableEEPROM
+                     451     ; 描述: 禁止访问ISP/IAP.
+                     452     ; 参数: non.
+                     453     ; 返回: non.
+                     454     ; 版本: V1.0, 2012-10-22
+                     455     ;========================================================================
+02A0                 456     F_DisableEEPROM:
+02A0 75C700          457         MOV     IAP_CONTR, #0       ; 禁止ISP/IAP操作
+02A3 75C500          458         MOV     IAP_CMD,  #0        ; 去除ISP/IAP命令
+02A6 75C600          459         MOV     IAP_TRIG, #0        ; 防止ISP/IAP命令误触发
+02A9 75C3FF          460         MOV     IAP_ADDRH, #0FFH    ; 清0地址高字节
+02AC 75C4FF          461         MOV     IAP_ADDRL, #0FFH    ; 清0地址低字节，指向非EEPROM区，防止误操作
+02AF 22              462         RET
+                     463     
+                     464     ;========================================================================
+                     465     ; 函数: F_EEPROM_read_n
+                     466     ; 描述: 从指定EEPROM首地址读出n个字节放指定的缓冲.
+                     467     ; 参数: address_H,address_L:  读出EEPROM的首地址.
+                     468     ;       R0:                   读出数据放缓冲的首地址.
+                     469     ;       length:               读出的字节长度.
+                     470     ; 返回: non.
+                     471     ; 版本: V1.0, 2012-10-22
+                     472     ;========================================================================
+02B0                 473     F_EEPROM_read_n:
+02B0 C002            474         PUSH    AR2
+                     475     
+02B2 AA3F            476         MOV     R2, length
+02B4 853DC3          477         MOV     IAP_ADDRH, address_H    ; 送地址高字节（地址需要改变时才需重新送地址）
+02B7 853EC4          478         MOV     IAP_ADDRL, address_L    ; 送地址低字节
+02BA 75C780          479         MOV     IAP_CONTR, #IAP_EN      ; 允许ISP/IAP操作，送一次就够
+02BD 75F518          480             MOV     IAP_TPS, #TPS_WAIT      ; 设置等待时间，
+02C0 75C501          481         MOV     IAP_CMD, #1             ; ISP读出命令送字节读命令，命令不需改变时，不需重新送命
+                             令
+02C3 A2AF            482         MOV     C, EA
+02C5 92D5            483         MOV     F0, C   ;保存EA
+02C7                 484     L_EE_Read_Loop:
+02C7 C2AF            485         CLR     EA      ; 禁止中断
+02C9 75C65A          486         MOV     IAP_TRIG, #0x5A         ;ISP触发命令
+02CC 75C6A5          487         MOV     IAP_TRIG, #0xA5
+02CF 00              488         NOP
+02D0 A2D5            489         MOV     C, F0
+02D2 92AF            490         MOV     EA, C       ; 允许中断(如果允许)
+02D4 A6C2            491         MOV     @R0, IAP_DATA
+                     492     
+02D6 E5C4            493         MOV     A, IAP_ADDRL    ;
+02D8 2401            494         ADD     A, #1
+02DA F5C4            495         MOV     IAP_ADDRL, A
+02DC E5C3            496         MOV     A, IAP_ADDRH
+02DE 3400            497         ADDC    A, #0
+02E0 F5C3            498         MOV     IAP_ADDRH, A
+02E2 08              499         INC     R0
+02E3 DAE2            500         DJNZ    R2, L_EE_Read_Loop
+                     501     
+02E5 1202A0          502         LCALL   F_DisableEEPROM
+02E8 D002            503         POP     AR2
+02EA 22              504         RET
+                     505     
+                     506     ;========================================================================
+                     507     ; 函数: F_EEPROM_SectorErase
+                     508     ; 描述: 把指定地址的EEPROM扇区擦除.
+A51 MACRO ASSEMBLER  POWNDOWNSAVE                                                         03/02/2021 17:48:48 PAGE     9
+
+                     509     ; 参数: address_H,address_L:  要擦除的扇区EEPROM的地址.
+                     510     ; 返回: non.
+                     511     ; 版本: V1.0, 2013-5-10
+                     512     ;========================================================================
+02EB                 513     F_EEPROM_SectorErase:
+                     514                                                 ;只有扇区擦除，没有字节擦除，512字节/扇区。
+                     515                                                 ;扇区中任意一个字节地址都是扇区地址。
+02EB 853DC3          516         MOV     IAP_ADDRH, address_H    ; 送地址高字节（地址需要改变时才需重新送地址）
+02EE 853EC4          517         MOV     IAP_ADDRL, address_L    ; 送地址低字节
+02F1 75C780          518         MOV     IAP_CONTR, #IAP_EN      ; 允许ISP/IAP操作，送一次就够
+02F4 75F518          519             MOV     IAP_TPS, #TPS_WAIT      ; 设置等待时间，
+02F7 75C503          520         MOV     IAP_CMD, #3     ;送扇区擦除命令
+02FA A2AF            521         MOV     C, EA
+02FC 92D5            522         MOV     F0, C   ;保存EA
+02FE C2AF            523         CLR     EA      ; 禁止中断
+0300 75C65A          524         MOV     IAP_TRIG, #0x5A         ;ISP触发命令
+0303 75C6A5          525         MOV     IAP_TRIG, #0xA5
+0306 00              526         NOP
+0307 A2D5            527         MOV     C, F0
+0309 92AF            528         MOV     EA, C       ; 允许中断(如果允许)
+030B 1202A0          529         LCALL   F_DisableEEPROM
+030E 22              530         RET
+                     531     
+                     532     ;========================================================================
+                     533     ; 函数: F_EEPROM_write_n
+                     534     ; 描述: 把缓冲的n个字节写入指定首地址的EEPROM.
+                     535     ; 参数: address_H,address_L:    写入EEPROM的首地址.
+                     536     ;       R0:                     写入源数据的缓冲的首地址.
+                     537     ;       length:                 写入的字节长度.
+                     538     ; 返回: non.
+                     539     ; 版本: V1.0, 2014-1-22
+                     540     ;========================================================================
+030F                 541     F_EEPROM_write_n:
+030F C002            542         PUSH    AR2
+0311 AA3F            543         MOV     R2, length
+0313 853DC3          544         MOV     IAP_ADDRH, address_H    ; 送地址高字节（地址需要改变时才需重新送地址）
+0316 853EC4          545         MOV     IAP_ADDRL, address_L    ; 送地址低字节
+0319 75C780          546         MOV     IAP_CONTR, #IAP_EN      ; 允许ISP/IAP操作，送一次就够
+031C 75F518          547             MOV     IAP_TPS, #TPS_WAIT      ; 设置等待时间，
+031F 75C502          548         MOV     IAP_CMD, #2     ;送字节写命令，命令不需改变时，不需重新送命令
+0322 A2AF            549         MOV     C, EA
+0324 92D5            550         MOV     F0, C   ;保存EA
+0326                 551     L_EE_W_Loop:
+0326 86C2            552         MOV     IAP_DATA, @R0   ; 送数据到IAP_DATA，只有数据改变时才需重新送
+0328 C2AF            553         CLR     EA      ; 禁止中断
+032A 75C65A          554         MOV     IAP_TRIG, #0x5A         ;ISP触发命令
+032D 75C6A5          555         MOV     IAP_TRIG, #0xA5
+0330 00              556         NOP
+0331 A2D5            557         MOV     C, F0
+0333 92AF            558         MOV     EA, C       ; 允许中断(如果允许)
+0335 E5C4            559         MOV     A, IAP_ADDRL    ;
+0337 2401            560         ADD     A, #1
+0339 F5C4            561         MOV     IAP_ADDRL, A
+033B E5C3            562         MOV     A, IAP_ADDRH
+033D 3400            563         ADDC    A, #0
+033F F5C3            564         MOV     IAP_ADDRH, A
+0341 08              565         INC     R0
+0342 DAE2            566         DJNZ    R2, L_EE_W_Loop
+                     567     
+0344 1202A0          568         LCALL   F_DisableEEPROM
+0347 D002            569         POP     AR2
+0349 22              570         RET
+                     571     
+                     572     
+                     573         END
+                             
+A51 MACRO ASSEMBLER  POWNDOWNSAVE                                                         03/02/2021 17:48:48 PAGE    10
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E               T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . . .  D ADDR   00E0H   A   
+ADDRESS_H. . . . . .  D ADDR   003DH   A   
+ADDRESS_L. . . . . .  D ADDR   003EH   A   
+AR2. . . . . . . . .  D ADDR   0002H   A   
+AUXR . . . . . . . .  D ADDR   008EH   A   
+B_1MS. . . . . . . .  B ADDR   0020H.0 A   
+DISPLAY_INDEX. . . .  D ADDR   0038H   A   
+DIS_ . . . . . . . .  N NUMB   0011H   A   
+DIS_BLACK. . . . . .  N NUMB   0010H   A   
+DIS_DOT. . . . . . .  N NUMB   0020H   A   
+DPH. . . . . . . . .  D ADDR   0083H   A   
+DPL. . . . . . . . .  D ADDR   0082H   A   
+EA . . . . . . . . .  B ADDR   00A8H.7 A   
+EE_ADDRESS . . . . .  N NUMB   0040H   A   
+ELVD . . . . . . . .  B ADDR   00A8H.6 A   
+ET0. . . . . . . . .  B ADDR   00A8H.1 A   
+F0 . . . . . . . . .  B ADDR   00D0H.5 A   
+FLAG0. . . . . . . .  D ADDR   0020H   A   
+FOSC_KHZ . . . . . .  N NUMB   5DC0H   A   
+F_DISABLEEEPROM. . .  C ADDR   02A0H   A   
+F_DISPLAY. . . . . .  C ADDR   0206H   A   
+F_DISPLAYSCAN. . . .  C ADDR   0264H   A   
+F_EEPROM_READ_N. . .  C ADDR   02B0H   A   
+F_EEPROM_SECTORERASE  C ADDR   02EBH   A   
+F_EEPROM_WRITE_N . .  C ADDR   030FH   A   
+F_HEX2_DEC . . . . .  C ADDR   01E8H   A   
+F_LVD_INTERRUPT. . .  C ADDR   01BCH   A   
+F_MAIN . . . . . . .  C ADDR   0100H   A   
+F_TIMER0_INTERRUPT .  C ADDR   0292H   A   
+IAP_ADDRH. . . . . .  D ADDR   00C3H   A   
+IAP_ADDRL. . . . . .  D ADDR   00C4H   A   
+IAP_CMD. . . . . . .  D ADDR   00C5H   A   
+IAP_CMD_FAIL . . . .  N NUMB   0010H   A   
+IAP_CONTR. . . . . .  D ADDR   00C7H   A   
+IAP_DATA . . . . . .  D ADDR   00C2H   A   
+IAP_EN . . . . . . .  N NUMB   0080H   A   
+IAP_SWBS . . . . . .  N NUMB   0040H   A   
+IAP_SWRST. . . . . .  N NUMB   0020H   A   
+IAP_TPS. . . . . . .  D ADDR   00F5H   A   
+IAP_TRIG . . . . . .  D ADDR   00C6H   A   
+IE . . . . . . . . .  D ADDR   00A8H   A   
+IP . . . . . . . . .  D ADDR   00B8H   A   
+LARGECAPACITOR . . .  N NUMB   0000H   A   
+LED8 . . . . . . . .  D ADDR   0030H   A   
+LENGTH . . . . . . .  D ADDR   003FH   A   
+L_CLEARLOOP. . . . .  C ADDR   012EH   A   
+L_CUT0_LOOP. . . . .  C ADDR   0227H   A   
+L_EE_READ_LOOP . . .  C ADDR   02C7H   A   
+L_EE_W_LOOP. . . . .  C ADDR   0326H   A   
+L_HEX2_DEC . . . . .  C ADDR   01F0H   A   
+L_LESSTHAN10000. . .  C ADDR   0172H   A   
+L_LESSTHAN10000A . .  C ADDR   01B6H   A   
+L_LVD_CHECKLOOP. . .  C ADDR   01D3H   A   
+L_MAINLOOP . . . . .  C ADDR   017FH   A   
+L_POWERUPDELAY . . .  C ADDR   014CH   A   
+L_QUITCUT0 . . . . .  C ADDR   0230H   A   
+L_QUITDISPLAYSCAN. .  C ADDR   028BH   A   
+L_QUITLVD_INIT . . .  C ADDR   01E1H   A   
+MSECOND_H. . . . . .  D ADDR   0039H   A   
+MSECOND_L. . . . . .  D ADDR   003AH   A   
+A51 MACRO ASSEMBLER  POWNDOWNSAVE                                                         03/02/2021 17:48:48 PAGE    11
+
+P0M0 . . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . . .  D ADDR   0093H   A   
+P1M0 . . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . . .  D ADDR   0095H   A   
+P3M0 . . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . . .  D ADDR   00B1H   A   
+P4 . . . . . . . . .  D ADDR   00C0H   A   
+P4M0 . . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . . .  D ADDR   00B3H   A   
+P5 . . . . . . . . .  D ADDR   00C8H   A   
+P5M0 . . . . . . . .  D ADDR   00CAH   A   
+P5M1 . . . . . . . .  D ADDR   00C9H   A   
+P6 . . . . . . . . .  D ADDR   00E8H   A   
+P6M0 . . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . . .  D ADDR   00CBH   A   
+P7 . . . . . . . . .  D ADDR   00F8H   A   
+P7M0 . . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . . .  D ADDR   00E1H   A   
+PCON . . . . . . . .  D ADDR   0087H   A   
+PLVD . . . . . . . .  B ADDR   00B8H.6 A   
+PSW. . . . . . . . .  D ADDR   00D0H   A   
+SP . . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER. . . .  N NUMB   00D0H   A   
+TEST_CNT_H . . . . .  D ADDR   003BH   A   
+TEST_CNT_L . . . . .  D ADDR   003CH   A   
+TH0. . . . . . . . .  D ADDR   008CH   A   
+TIMER0_RELOAD. . . .  N NUMB   A240H   A   
+TL0. . . . . . . . .  D ADDR   008AH   A   
+TMOD . . . . . . . .  D ADDR   0089H   A   
+TPS_WAIT . . . . . .  N NUMB   0018H   A   
+TR0. . . . . . . . .  B ADDR   0088H.4 A   
+T_COM. . . . . . . .  C ADDR   025CH   A   
+T_DISPLAY. . . . . .  C ADDR   0231H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

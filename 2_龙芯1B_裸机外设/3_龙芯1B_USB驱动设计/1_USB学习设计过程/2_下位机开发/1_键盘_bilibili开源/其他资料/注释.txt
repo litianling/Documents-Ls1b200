@@ -1,0 +1,7 @@
+USB_INT_ST  	只读模式，USB中断状态
+MASK_UIS_TOKEN 	只读模式，USB设备模式下接收到的当前令牌PID位掩码
+MASK_UIS_ENDP	只读模式，USB设备模式下当前传输端点号的位掩码
+UIS_TOKEN_IN	当前USB设备模式收到的第一位令牌PID代码
+
+USB_RX_LEN	只读模式，USB接收长度
+USB_SETUP_REQ	USB设置请求数据包（结构体）

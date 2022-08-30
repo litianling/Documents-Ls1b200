@@ -1,0 +1,119 @@
+C51 COMPILER V9.59.0.0   ADC                                                               02/08/2021 11:45:00 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE ADC
+OBJECT MODULE PLACED IN .\Out_File\adc.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\Device\adc.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Device;..\Libra
+                    -ries) DEBUG OBJECTEXTEND PRINT(.\adc.lst) TABS(2) OBJECT(.\Out_File\adc.obj)
+
+line level    source
+
+   1          
+   2          /*************  技术支持与购买说明    **************
+   3          产品主页：http://tw51.haohaodada.com
+   4          淘宝搜索：天问51，可购买。目前基础版99元，带彩屏标准备版149元
+   5          技术支持QQ群一：1138055784
+   6          ******************************************/
+   7          
+   8          #include "adc.h"
+   9          #include "sys.h"
+  10          
+  11          uint8  setbit = 0;
+  12          
+  13          //--------------------------------------------------------------------------------------------------------
+             ------------
+  14          //  @brief      ADC初始化
+  15          //  @param      adcn            选择ADC通道
+  16          //  @param      speed         ADC时钟频率
+  17          //  @return     void
+  18          //  Sample usage:               adc_init(ADC_P10,ADC_SYSclk_DIV_2);//初始化P1.0为ADC功能,ADC时钟频率：SYSc
+             -lk/2
+  19          //--------------------------------------------------------------------------------------------------------
+             ------------
+  20          void adc_init(ADC_Name adcn, ADC_CLK speed, ADC_bit sbi)
+  21          {
+  22   1        setbit = sbi;
+  23   1        ADC_CONTR |= 1 << 7;  //1 ：打开 ADC 电源
+  24   1        if (adcn > 15) 
+  25   1        {
+  26   2          adcn = adcn - 16;
+  27   2          //IO口需要设置为高阻输入
+  28   2          P3M0 &= ~(1 << (adcn & 0x07));
+  29   2          P3M1 |= (1 << (adcn & 0x07));
+  30   2      
+  31   2      
+  32   2        }
+  33   1        else {
+  34   2          if ((adcn >> 3) == 1) //P0.0
+  35   2          {
+  36   3            //IO口需要设置为高阻输入
+  37   3            P0M0 &= ~(1 << (adcn & 0x07));
+  38   3            P0M1 |= (1 << (adcn & 0x07));
+  39   3          }
+  40   2          else if ((adcn >> 3) == 0) //P1.0 
+  41   2          {
+  42   3            //IO口需要设置为高阻输入
+  43   3            P1M0 &= ~(1 << (adcn & 0x07));
+  44   3            P1M1 |= (1 << (adcn & 0x07));
+  45   3          }
+  46   2        }
+  47   1      
+  48   1        ADCCFG |= speed & 0x0F; //ADC时钟频率SYSclk/2/speed&0x0F;
+  49   1      
+  50   1        ADCCFG |= 1 << 5;   //转换结果右对齐。 ADC_RES 保存结果的高 2 位， ADC_RESL 保存结果的低 8 位。
+  51   1      
+C51 COMPILER V9.59.0.0   ADC                                                               02/08/2021 11:45:00 PAGE 2   
+
+  52   1      }
+  53          
+  54          
+  55          
+  56          //--------------------------------------------------------------------------------------------------------
+             ------------
+  57          //  @brief      ADC转换一次
+  58          //  @param      adcn            选择ADC通道
+  59          //  @param      resolution      分辨率
+  60          //  @return     void
+  61          //  Sample usage:               adc_convert(ADC_P10, ADC_10BIT);
+  62          //--------------------------------------------------------------------------------------------------------
+             ------------
+  63          uint16 adc_read(ADC_Name adcn)
+  64          {
+  65   1        uint16 adc_value;
+  66   1        if (adcn > 15)adcn = adcn - 8;
+  67   1      
+  68   1        ADC_CONTR &= (0xF0);  //清除ADC_CHS[3:0] ： ADC 模拟通道选择位
+  69   1        ADC_CONTR |= adcn;
+  70   1      
+  71   1        ADC_CONTR |= 0x40;  // 启动 AD 转换
+  72   1        while (!(ADC_CONTR & 0x20));  // 查询 ADC 完成标志
+  73   1        ADC_CONTR &= ~0x20;  // 清完成标志
+  74   1      
+  75   1      
+  76   1        adc_value = ADC_RES;  //存储 ADC 的 10 位结果的高 2 位
+  77   1        adc_value <<= 8;
+  78   1        adc_value |= ADC_RESL;  //存储 ADC 的 10 位结果的低 8 位
+  79   1      
+  80   1        ADC_RES = 0;
+  81   1        ADC_RESL = 0;
+  82   1      
+  83   1        adc_value >>= setbit;//取多少位
+  84   1      
+  85   1      
+  86   1        return adc_value;
+  87   1      }
+  88          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    178    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      1    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

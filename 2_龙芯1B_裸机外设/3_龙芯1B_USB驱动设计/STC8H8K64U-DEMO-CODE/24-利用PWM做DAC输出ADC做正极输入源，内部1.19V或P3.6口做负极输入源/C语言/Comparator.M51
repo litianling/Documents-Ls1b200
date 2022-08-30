@@ -1,0 +1,489 @@
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                    03/03/2021  17:22:17  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22.2.0, INVOKED BY:
+C:\KEIL_V5\C51\BIN\BL51.EXE Comparator.obj TO Comparator RAMSIZE (256)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  Comparator.obj (COMPARATOR)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C_STARTUP)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C?CLDPTR)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C?IMUL)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C?UIDIV)
+
+
+LINK MAP OF MODULE:  Comparator (COMPARATOR)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     000FH     UNIT         ?DT?COMPARATOR
+            DATA    0017H     0003H     UNIT         _DATA_GROUP_
+                    001AH     0006H                  *** GAP ***
+            BIT     0020H.0   0000H.2   UNIT         ?BI?COMPARATOR
+                    0020H.2   0000H.6                *** GAP ***
+            IDATA   0021H     0001H     UNIT         ?STACK
+
+            * * * * * * *  X D A T A   M E M O R Y  * * * * * * *
+            XDATA   0000H     0080H     UNIT         ?XD?COMPARATOR
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     0008H     UNIT         ?PR?_UART1_TXBYTE?COMPARATOR
+            CODE    000BH     0003H     ABSOLUTE     
+            CODE    000EH     0013H     UNIT         ?PR?ADC_CONFIG?COMPARATOR
+                    0021H     0002H                  *** GAP ***
+            CODE    0023H     0003H     ABSOLUTE     
+            CODE    0026H     0080H     UNIT         ?C?LIB_CODE
+                    00A6H     0005H                  *** GAP ***
+            CODE    00ABH     0003H     ABSOLUTE     
+            CODE    00AEH     01FBH     UNIT         ?PR?MAIN?COMPARATOR
+            CODE    02A9H     00E5H     UNIT         ?CO?COMPARATOR
+            CODE    038EH     0043H     UNIT         ?PR?_UART1_CONFIG?COMPARATOR
+            CODE    03D1H     003EH     UNIT         ?PR?UART1_INT?COMPARATOR
+            CODE    040FH     003DH     UNIT         ?PR?PWM_CONFIG?COMPARATOR
+            CODE    044CH     0037H     UNIT         ?PR?DISPLAYSCAN?COMPARATOR
+            CODE    0483H     0025H     UNIT         ?PR?TIMER0?COMPARATOR
+            CODE    04A8H     0024H     UNIT         ?PR?_GET_ADC12BITRESULT?COMPARATOR
+            CODE    04CCH     0021H     UNIT         ?PR?CMP_CONFIG?COMPARATOR
+            CODE    04EDH     001AH     UNIT         ?PR?_SETTIMER2BAUDRAYE?COMPARATOR
+            CODE    0507H     0013H     UNIT         ?PR?_PRINTSTRING1?COMPARATOR
+            CODE    051AH     0011H     UNIT         ?PR?CMP_ISR?COMPARATOR
+            CODE    052BH     000FH     UNIT         ?PR?_UPDATEPWM?COMPARATOR
+            CODE    053AH     000EH     UNIT         ?PR?TIMER0_CONFIG?COMPARATOR
+            CODE    0548H     000CH     UNIT         ?C_C51STARTUP
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  03/03/2021  17:22:17  PAGE 2
+
+
+
+
+
+OVERLAY MAP OF MODULE:   Comparator (COMPARATOR)
+
+
+SEGMENT                                      DATA_GROUP 
+  +--> CALLED SEGMENT                      START    LENGTH
+----------------------------------------------------------
+?PR?TIMER0?COMPARATOR                      -----    -----
+  +--> ?PR?DISPLAYSCAN?COMPARATOR
+
+?PR?DISPLAYSCAN?COMPARATOR                 -----    -----
+  +--> ?CO?COMPARATOR
+
+*** NEW ROOT ***************************************************
+
+?C_C51STARTUP                              -----    -----
+  +--> ?PR?MAIN?COMPARATOR
+
+?PR?MAIN?COMPARATOR                        0017H    0003H
+  +--> ?PR?TIMER0_CONFIG?COMPARATOR
+  +--> ?PR?ADC_CONFIG?COMPARATOR
+  +--> ?PR?PWM_CONFIG?COMPARATOR
+  +--> ?PR?CMP_CONFIG?COMPARATOR
+  +--> ?PR?_UART1_CONFIG?COMPARATOR
+  +--> ?CO?COMPARATOR
+  +--> ?PR?_PRINTSTRING1?COMPARATOR
+  +--> ?PR?_GET_ADC12BITRESULT?COMPARATOR
+  +--> ?PR?_UPDATEPWM?COMPARATOR
+
+?PR?_UART1_CONFIG?COMPARATOR               -----    -----
+  +--> ?PR?_SETTIMER2BAUDRAYE?COMPARATOR
+
+?PR?_PRINTSTRING1?COMPARATOR               -----    -----
+  +--> ?PR?_UART1_TXBYTE?COMPARATOR
+
+
+
+SYMBOL TABLE OF MODULE:  Comparator (COMPARATOR)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        COMPARATOR
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0093H         PUBLIC        P0M1
+  D:0092H         PUBLIC        P1M0
+  D:0096H         PUBLIC        P2M0
+  D:0091H         PUBLIC        P1M1
+  D:0080H         PUBLIC        P0
+  D:00B2H         PUBLIC        P3M0
+  D:0095H         PUBLIC        P2M1
+  D:0090H         PUBLIC        P1
+  D:00B4H         PUBLIC        P4M0
+  D:00B1H         PUBLIC        P3M1
+  D:00A0H         PUBLIC        P2
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  03/03/2021  17:22:17  PAGE 3
+
+
+  D:00CAH         PUBLIC        P5M0
+  D:00B3H         PUBLIC        P4M1
+  D:00B0H         PUBLIC        P3
+  D:00CCH         PUBLIC        P6M0
+  D:00C9H         PUBLIC        P5M1
+  D:00C0H         PUBLIC        P4
+  D:00E2H         PUBLIC        P7M0
+  D:00CBH         PUBLIC        P6M1
+  D:00C8H         PUBLIC        P5
+  B:0020H.0       PUBLIC        B_TX1_Busy
+  D:00E1H         PUBLIC        P7M1
+  D:00E8H         PUBLIC        P6
+  B:00A8H.7       PUBLIC        EA
+  D:00F8H         PUBLIC        P7
+  D:0008H         PUBLIC        RX1_TimeOut
+  D:00A2H         PUBLIC        P_SW1
+  D:00BAH         PUBLIC        P_SW2
+  D:0009H         PUBLIC        LED8
+  C:053AH         PUBLIC        Timer0_config
+  C:0386H         PUBLIC        T_COM
+  D:00BDH         PUBLIC        ADC_RES
+  C:04EDH         PUBLIC        _SetTimer2Baudraye
+  B:00A8H.4       PUBLIC        ES
+  X:0000H         PUBLIC        RX1_Buffer
+  D:00DEH         PUBLIC        ADCCFG
+  B:0098H.0       PUBLIC        RI
+  C:03D1H         PUBLIC        UART1_int
+  C:052BH         PUBLIC        _UpdatePwm
+  B:0098H.1       PUBLIC        TI
+  C:000EH         PUBLIC        ADC_config
+  C:00AEH         PUBLIC        main
+  D:00E6H         PUBLIC        CMPCR1
+  D:0011H         PUBLIC        adc
+  D:00E7H         PUBLIC        CMPCR2
+  D:00BCH         PUBLIC        ADC_CONTR
+  D:0099H         PUBLIC        SBUF
+  C:0003H         PUBLIC        _UART1_TxByte
+  B:0020H.1       PUBLIC        B_1ms
+  D:0098H         PUBLIC        SCON
+  D:0089H         PUBLIC        TMOD
+  C:04CCH         PUBLIC        CMP_config
+  D:0013H         PUBLIC        cnt200ms
+  B:00C0H.7       PUBLIC        P47
+  C:0507H         PUBLIC        _PrintString1
+  D:00AFH         PUBLIC        IE2
+  D:008EH         PUBLIC        AUXR
+  C:038EH         PUBLIC        _UART1_config
+  B:00A8H.1       PUBLIC        ET0
+  B:00A8H.3       PUBLIC        ET1
+  D:008CH         PUBLIC        TH0
+  D:008DH         PUBLIC        TH1
+  D:00D6H         PUBLIC        TH2
+  C:040FH         PUBLIC        PWM_config
+  C:035BH         PUBLIC        t_display
+  D:008AH         PUBLIC        TL0
+  D:008BH         PUBLIC        TL1
+  D:00D7H         PUBLIC        TL2
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  03/03/2021  17:22:17  PAGE 4
+
+
+  C:0483H         PUBLIC        timer0
+  B:0088H.4       PUBLIC        TR0
+  B:0088H.6       PUBLIC        TR1
+  D:00BEH         PUBLIC        ADC_RESL
+  C:044CH         PUBLIC        DisplayScan
+  D:0014H         PUBLIC        RX1_Cnt
+  D:0015H         PUBLIC        TX1_Cnt
+  B:0098H.4       PUBLIC        REN
+  C:051AH         PUBLIC        CMP_Isr
+  C:04A8H         PUBLIC        _Get_ADC12bitResult
+  B:00D0H.5       PUBLIC        F0
+  D:0016H         PUBLIC        display_index
+  D:008FH         PUBLIC        INT_CLKO
+  D:0094H         PUBLIC        P0M0
+  -------         PROC          CMP_ISR
+  C:051AH         LINE#         211
+  C:051EH         LINE#         213
+  C:0521H         LINE#         214
+  C:0526H         LINE#         215
+  -------         ENDPROC       CMP_ISR
+  -------         PROC          MAIN
+  -------         DO            
+  D:0017H         SYMBOL        i
+  D:0018H         SYMBOL        j
+  -------         ENDDO         
+  C:00AEH         LINE#         218
+  C:00AEH         LINE#         219
+  C:00AEH         LINE#         223
+  C:00B3H         LINE#         224
+  C:00B7H         LINE#         225
+  C:00BBH         LINE#         226
+  C:00BFH         LINE#         227
+  C:00C3H         LINE#         228
+  C:00C7H         LINE#         229
+  C:00CBH         LINE#         230
+  C:00D0H         LINE#         232
+  C:00D3H         LINE#         233
+  C:00D6H         LINE#         234
+  C:00D9H         LINE#         235
+  C:00DCH         LINE#         236
+  C:00E1H         LINE#         238
+  C:00E4H         LINE#         239
+  C:00E6H         LINE#         241
+  C:00FEH         LINE#         243
+  C:0101H         LINE#         244
+  C:0104H         LINE#         245
+  C:0107H         LINE#         246
+  C:010AH         LINE#         248
+  C:0113H         LINE#         250
+  C:0113H         LINE#         251
+  C:0113H         LINE#         252
+  C:0116H         LINE#         253
+  C:0116H         LINE#         254
+  C:0118H         LINE#         255
+  C:0125H         LINE#         256
+  C:0125H         LINE#         257
+  C:0128H         LINE#         258
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  03/03/2021  17:22:17  PAGE 5
+
+
+  C:0131H         LINE#         259
+  C:0147H         LINE#         260
+  C:014AH         LINE#         261
+  C:0164H         LINE#         262
+  C:017EH         LINE#         263
+  C:018BH         LINE#         264
+  C:018BH         LINE#         266
+  C:0199H         LINE#         267
+  C:0199H         LINE#         268
+  C:01A2H         LINE#         269
+  C:01A2H         LINE#         270
+  C:01BFH         LINE#         271
+  C:01BFH         LINE#         272
+  C:01C1H         LINE#         273
+  C:01C6H         LINE#         274
+  C:01CFH         LINE#         275
+  C:01CFH         LINE#         276
+  C:01E7H         LINE#         277
+  C:01E7H         LINE#         278
+  C:020CH         LINE#         279
+  C:020EH         LINE#         281
+  C:020EH         LINE#         282
+  C:0210H         LINE#         283
+  C:0219H         LINE#         284
+  C:021BH         LINE#         285
+  C:021BH         LINE#         286
+  C:021FH         LINE#         287
+  C:0225H         LINE#         288
+  C:0225H         LINE#         289
+  C:0238H         LINE#         291
+  C:0238H         LINE#         292
+  C:023FH         LINE#         293
+  C:0268H         LINE#         294
+  C:026BH         LINE#         295
+  C:0285H         LINE#         296
+  C:0292H         LINE#         297
+  C:0298H         LINE#         298
+  C:0298H         LINE#         299
+  C:0298H         LINE#         300
+  C:029AH         LINE#         301
+  C:02A3H         LINE#         302
+  C:02A6H         LINE#         303
+  C:02A6H         LINE#         304
+  C:02A6H         LINE#         305
+  C:02A6H         LINE#         306
+  -------         ENDPROC       MAIN
+  -------         PROC          TIMER0_CONFIG
+  C:053AH         LINE#         316
+  C:053AH         LINE#         317
+  C:053AH         LINE#         318
+  C:053DH         LINE#         319
+  C:0540H         LINE#         320
+  C:0543H         LINE#         321
+  C:0545H         LINE#         322
+  C:0547H         LINE#         323
+  -------         ENDPROC       TIMER0_CONFIG
+  -------         PROC          ADC_CONFIG
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  03/03/2021  17:22:17  PAGE 6
+
+
+  C:000EH         LINE#         332
+  C:000EH         LINE#         333
+  C:000EH         LINE#         334
+  C:0011H         LINE#         335
+  C:0017H         LINE#         336
+  C:001AH         LINE#         337
+  C:001DH         LINE#         338
+  C:0020H         LINE#         339
+  -------         ENDPROC       ADC_CONFIG
+  -------         PROC          PWM_CONFIG
+  C:040FH         LINE#         348
+  C:040FH         LINE#         349
+  C:040FH         LINE#         350
+  C:0412H         LINE#         351
+  C:0417H         LINE#         352
+  C:041DH         LINE#         353
+  C:0423H         LINE#         355
+  C:0428H         LINE#         356
+  C:042BH         LINE#         357
+  C:042FH         LINE#         358
+  C:0433H         LINE#         359
+  C:0439H         LINE#         360
+  C:043BH         LINE#         361
+  C:0441H         LINE#         363
+  C:0448H         LINE#         364
+  C:044BH         LINE#         365
+  -------         ENDPROC       PWM_CONFIG
+  -------         PROC          CMP_CONFIG
+  C:04CCH         LINE#         374
+  C:04CCH         LINE#         375
+  C:04CCH         LINE#         376
+  C:04CFH         LINE#         377
+  C:04D2H         LINE#         379
+  C:04D5H         LINE#         382
+  C:04D8H         LINE#         383
+  C:04DAH         LINE#         384
+  C:04DDH         LINE#         391
+  C:04E0H         LINE#         393
+  C:04E3H         LINE#         397
+  C:04E6H         LINE#         398
+  C:04E9H         LINE#         400
+  C:04ECH         LINE#         401
+  -------         ENDPROC       CMP_CONFIG
+  -------         PROC          _UART1_TXBYTE
+  D:0007H         SYMBOL        dat
+  C:0003H         LINE#         410
+  C:0003H         LINE#         411
+  C:0003H         LINE#         412
+  C:0005H         LINE#         413
+  C:0007H         LINE#         414
+  C:000AH         LINE#         415
+  -------         ENDPROC       _UART1_TXBYTE
+  -------         PROC          _PRINTSTRING1
+  D:0001H         SYMBOL        puts
+  C:0507H         LINE#         426
+  C:0507H         LINE#         427
+  C:0507H         LINE#         428
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  03/03/2021  17:22:17  PAGE 7
+
+
+  C:0519H         LINE#         429
+  -------         ENDPROC       _PRINTSTRING1
+  -------         PROC          _SETTIMER2BAUDRAYE
+  D:0004H         SYMBOL        dat
+  C:04EDH         LINE#         440
+  C:04F1H         LINE#         441
+  C:04F1H         LINE#         442
+  C:04F4H         LINE#         443
+  C:04F7H         LINE#         444
+  C:04FAH         LINE#         445
+  C:04FCH         LINE#         446
+  C:0500H         LINE#         447
+  C:0503H         LINE#         448
+  C:0506H         LINE#         449
+  -------         ENDPROC       _SETTIMER2BAUDRAYE
+  -------         PROC          _UART1_CONFIG
+  D:0007H         SYMBOL        brt
+  C:038EH         LINE#         460
+  C:038EH         LINE#         461
+  C:038EH         LINE#         463
+  C:0393H         LINE#         464
+  C:0393H         LINE#         465
+  C:0396H         LINE#         466
+  C:039DH         LINE#         467
+  C:039FH         LINE#         471
+  C:039FH         LINE#         472
+  C:03A1H         LINE#         473
+  C:03A4H         LINE#         474
+  C:03A7H         LINE#         475
+  C:03AAH         LINE#         476
+  C:03ADH         LINE#         477
+  C:03B0H         LINE#         478
+  C:03B3H         LINE#         479
+  C:03B5H         LINE#         480
+  C:03B8H         LINE#         481
+  C:03BAH         LINE#         482
+  C:03BAH         LINE#         485
+  C:03C2H         LINE#         487
+  C:03C4H         LINE#         488
+  C:03C6H         LINE#         489
+  C:03C9H         LINE#         490
+  C:03C9H         LINE#         493
+  C:03CBH         LINE#         494
+  C:03CEH         LINE#         495
+  C:03D0H         LINE#         496
+  -------         ENDPROC       _UART1_CONFIG
+  -------         PROC          UART1_INT
+  C:03D1H         LINE#         507
+  C:03D9H         LINE#         509
+  C:03DCH         LINE#         510
+  C:03DCH         LINE#         511
+  C:03DEH         LINE#         512
+  C:03ECH         LINE#         513
+  C:03FAH         LINE#         514
+  C:03FCH         LINE#         515
+  C:03FFH         LINE#         516
+  C:03FFH         LINE#         518
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  03/03/2021  17:22:17  PAGE 8
+
+
+  C:0402H         LINE#         519
+  C:0402H         LINE#         520
+  C:0404H         LINE#         521
+  C:0406H         LINE#         522
+  C:0406H         LINE#         523
+  -------         ENDPROC       UART1_INT
+  -------         PROC          DISPLAYSCAN
+  C:044CH         LINE#         526
+  C:044CH         LINE#         527
+  C:044CH         LINE#         528
+  C:0465H         LINE#         529
+  C:0472H         LINE#         530
+  C:0482H         LINE#         531
+  -------         ENDPROC       DISPLAYSCAN
+  -------         PROC          TIMER0
+  C:0483H         LINE#         535
+  C:0494H         LINE#         537
+  C:0497H         LINE#         538
+  C:0499H         LINE#         539
+  -------         ENDPROC       TIMER0
+  -------         PROC          _GET_ADC12BITRESULT
+  D:0007H         SYMBOL        channel
+  C:04A8H         LINE#         549
+  C:04A8H         LINE#         550
+  C:04A8H         LINE#         551
+  C:04ABH         LINE#         552
+  C:04ADH         LINE#         554
+  C:04B6H         LINE#         555
+  C:04B7H         LINE#         556
+  C:04B8H         LINE#         557
+  C:04B9H         LINE#         558
+  C:04BAH         LINE#         560
+  C:04C0H         LINE#         561
+  C:04C3H         LINE#         562
+  C:04CBH         LINE#         563
+  -------         ENDPROC       _GET_ADC12BITRESULT
+  -------         PROC          _UPDATEPWM
+  D:0006H         SYMBOL        pwm_value
+  C:052BH         LINE#         572
+  C:052BH         LINE#         573
+  C:052BH         LINE#         574
+  C:052EH         LINE#         575
+  C:0533H         LINE#         576
+  C:0536H         LINE#         577
+  C:0539H         LINE#         578
+  -------         ENDPROC       _UPDATEPWM
+  -------         ENDMOD        COMPARATOR
+
+  -------         MODULE        ?C?CLDPTR
+  C:0026H         PUBLIC        ?C?CLDPTR
+  -------         ENDMOD        ?C?CLDPTR
+
+  -------         MODULE        ?C?IMUL
+  C:003FH         PUBLIC        ?C?IMUL
+  -------         ENDMOD        ?C?IMUL
+
+  -------         MODULE        ?C?UIDIV
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  03/03/2021  17:22:17  PAGE 9
+
+
+  C:0051H         PUBLIC        ?C?UIDIV
+  -------         ENDMOD        ?C?UIDIV
+
+Program Size: data=27.2 xdata=128 code=1357
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

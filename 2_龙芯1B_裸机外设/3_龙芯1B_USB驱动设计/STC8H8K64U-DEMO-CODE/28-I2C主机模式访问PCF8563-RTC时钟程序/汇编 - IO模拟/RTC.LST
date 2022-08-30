@@ -1,0 +1,1038 @@
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN RTC.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE RTC.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* Èç¹ûÒªÔÚ³ÌÐòÖÐÊ¹ÓÃ´Ë´úÂë,ÇëÔÚ³ÌÐòÖÐ×¢Ã÷Ê¹ÓÃÁËSTCµÄ×ÊÁÏ¼°³ÌÐò        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     
+                      14     ;*************  ¹¦ÄÜËµÃ÷    **************
+                      15     
+                      16     ;±¾Àý³Ì»ùÓÚSTC8H8K64UÎªÖ÷¿ØÐ¾Æ¬µÄÊµÑéÏä8½øÐÐ±àÐ´²âÊÔ£¬STC8G¡¢STC8HÏµÁÐÐ¾Æ¬¿ÉÍ¨ÓÃ²Î¿¼.
+                      17     
+                      18     ;¶ÁÐ´RTC, ICÎªPCF8563.
+                      19     
+                      20     ;ÓÃSTCµÄMCUµÄIO·½Ê½Çý¶¯8Î»ÊýÂë¹Ü¡£
+                      21     
+                      22     ;Ê¹ÓÃTimer0µÄ16Î»×Ô¶¯ÖØ×°À´²úÉú1ms½ÚÅÄ,³ÌÐòÔËÐÐÓÚÕâ¸ö½ÚÅÄÏÂ, ÓÃ»§ÐÞ¸ÄMCUÖ÷Ê±ÖÓÆµÂÊÊ±,×Ô¶¯¶¨
+                             Ê±ÓÚ1ms.
+                      23     
+                      24     ;8Î»ÊýÂë¹ÜÏÔÊ¾Ê±¼ä(Ð¡Ê±-·ÖÖÓ-Ãë).
+                      25     
+                      26     ;ÐÐÁÐÉ¨Ãè°´¼ü¼üÂëÎª17~32.
+                      27     
+                      28     ;°´¼üÖ»Ö§³Öµ¥¼ü°´ÏÂ, ²»Ö§³Ö¶à¼üÍ¬Ê±°´ÏÂ, ÄÇÑù½«»áÓÐ²»¿ÉÔ¤ÖªµÄ½á¹û.
+                      29     
+                      30     ;¼ü°´ÏÂ³¬¹ý1Ãëºó,½«ÒÔ10¼ü/ÃëµÄËÙ¶ÈÌá¹©ÖØ¼üÊä³ö. ÓÃ»§Ö»ÐèÒª¼ì²âKeyCodeÊÇ·ñ·Ç0À´ÅÐ¶Ï¼üÊÇ·ñ°´Ï
+                             Â.
+                      31     
+                      32     ;µ÷ÕûÊ±¼ä¼ü:
+                      33     ;¼üÂë17: Ð¡Ê±+.
+                      34     ;¼üÂë18: Ð¡Ê±-.
+                      35     ;¼üÂë19: ·ÖÖÓ+.
+                      36     ;¼üÂë20: ·ÖÖÓ-.
+                      37     
+                      38     ;ÏÂÔØÊ±, Ñ¡ÔñÊ±ÖÓ 24MHZ (ÓÃ»§¿É×ÔÐÐÐÞ¸ÄÆµÂÊ).
+                      39     
+                      40     ;******************************************/
+                      41     
+                      42     ;/****************************** ÓÃ»§¶¨Òåºê ***********************************/
+                      43     
+  5DC0                44     Fosc_KHZ    EQU 24000   ;24000KHZ
+                      45     
+  00D0                46     STACK_POIRTER   EQU     0D0H    ;¶ÑÕ»¿ªÊ¼µØÖ·
+                      47     
+  A240                48     Timer0_Reload   EQU     (65536 - Fosc_KHZ)  ; Timer 0 ÖÐ¶ÏÆµÂÊ, 1000´Î/Ãë
+                      49     
+  0020                50     DIS_DOT         EQU     020H
+  0010                51     DIS_BLACK       EQU     010H
+  0011                52     DIS_            EQU     011H
+                      53     
+                      54     ;*******************************************************************
+                      55     ;*******************************************************************
+                      56     
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE     2
+
+  008E                57     AUXR      DATA 08EH
+  00C0                58     P4        DATA 0C0H
+  00C8                59     P5        DATA 0C8H
+  00E8                60     P6        DATA 0E8H
+  00F8                61     P7        DATA 0F8H
+                      62     
+  0093                63     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094                64     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091                65     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092                66     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095                67     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+  0096                68     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+  00B1                69     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2                70     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3                71     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+  00B4                72     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9                73     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA                74     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB                75     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC                76     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1                77     P7M1    DATA    0xE1    ;
+  00E2                78     P7M0    DATA    0xE2    ;
+                      79             
+  00BA                80     P_SW2   DATA    0BAH
+                      81     
+                      82     ;*************  IO¿Ú¶¨Òå    **************/
+                      83     
+                      84     
+                      85     ;*************  ±¾µØ±äÁ¿ÉùÃ÷    **************/
+  0020                86     Flag0           DATA    20H
+  0000                87     B_1ms           BIT     Flag0.0 ;   1ms±êÖ¾
+                      88     
+  0030                89     LED8            DATA    30H     ;   ÏÔÊ¾»º³å 30H ~ 37H
+  0038                90     display_index   DATA    38H     ;   ÏÔÊ¾Î»Ë÷Òý
+                      91     
+  0039                92     hour            DATA    39H     ;RTC±äÁ¿
+  003A                93     minute          DATA    3AH
+  003B                94     second          DATA    3BH     ;
+  003C                95     msecond_H       DATA    3CH     ;
+  003D                96     msecond_L       DATA    3DH     ;
+                      97     
+  003E                98     IO_KeyState     DATA    3EH ; IOÐÐÁÐ¼ü×´Ì¬±äÁ¿
+  003F                99     IO_KeyState1    DATA    3FH
+  0040               100     IO_KeyHoldCnt   DATA    40H ; IO¼ü°´ÏÂ¼ÆÊ±
+  0041               101     KeyCode         DATA    41H ; ¸øÓÃ»§Ê¹ÓÃµÄ¼üÂë, 1~16ÎªADC¼ü£¬ 17~32ÎªIO¼ü
+                     102     
+  0042               103     RTC             DATA    42H ;Á¬Ðø3¸ö×Ö½Ú, ¶ÁÐ´RTCÊ±Ê¹ÓÃ
+  0045               104     cnt50ms         DATA    45H;
+                     105     
+                     106     
+                     107     ;*******************************************************************
+                     108     ;*******************************************************************
+0000                 109             ORG     0000H               ;reset
+0000 020100          110             LJMP    F_Main
+                     111     
+                     112     
+000B                 113             ORG     000BH               ;1  Timer0 interrupt
+000B 02030B          114             LJMP    F_Timer0_Interrupt
+                     115     
+                     116     
+                     117     ;*******************************************************************
+                     118     ;*******************************************************************
+                     119     
+                     120     
+                     121     ;******************** Ö÷³ÌÐò **************************/
+0100                 122             ORG     0100H       ;reset
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE     3
+
+0100                 123     F_Main:
+0100 E4              124         CLR     A
+0101 F593            125         MOV     P0M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0103 F594            126         MOV     P0M0, A
+0105 F591            127         MOV     P1M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0107 F592            128         MOV     P1M0, A
+0109 F595            129         MOV     P2M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010B F596            130         MOV     P2M0, A
+010D F5B1            131         MOV     P3M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010F F5B2            132         MOV     P3M0, A
+0111 F5B3            133         MOV     P4M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0113 F5B4            134         MOV     P4M0, A
+0115 F5C9            135         MOV     P5M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0117 F5CA            136         MOV     P5M0, A
+0119 F5CB            137         MOV     P6M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+011B F5CC            138         MOV     P6M0, A
+011D F5E1            139         MOV     P7M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+011F F5E2            140         MOV     P7M0, A
+                     141     
+                     142         
+0121 7581D0          143         MOV     SP, #STACK_POIRTER
+0124 75D000          144         MOV     PSW, #0     ;Ñ¡ÔñµÚ0×éR0~R7
+                     145         USING   0       ;Ñ¡ÔñµÚ0×éR0~R7
+                     146     
+                     147     ;================= ÓÃ»§³õÊ¼»¯³ÌÐò ====================================
+                     148     
+0127 753800          149         MOV     display_index, #0
+012A 7830            150         MOV     R0, #LED8
+012C 7A08            151         MOV     R2, #8
+012E                 152     L_ClearLoop:
+012E 7610            153         MOV     @R0, #DIS_BLACK     ;ÉÏµçÏûÒþ
+0130 08              154         INC     R0
+0131 DAFB            155         DJNZ    R2, L_ClearLoop
+                     156         
+0133 C28C            157         CLR     TR0
+0135 438E80          158         ORL     AUXR, #(1 SHL 7)    ; Timer0_1T();
+0138 5389FB          159         ANL     TMOD, #NOT 04H      ; Timer0_AsTimer();
+013B 5389FC          160         ANL     TMOD, #NOT 03H      ; Timer0_16bitAutoReload();
+013E 758CA2          161         MOV     TH0, #Timer0_Reload / 256   ;Timer0_Load(Timer0_Reload);
+0141 758A40          162         MOV     TL0, #Timer0_Reload MOD 256
+0144 D2A9            163         SETB    ET0         ; Timer0_InterruptEnable();
+0146 D28C            164         SETB    TR0         ; Timer0_Run();
+0148 D2AF            165         SETB    EA          ; ´ò¿ª×ÜÖÐ¶Ï
+                     166         
+                     167     ;   MOV     hour,   #12 ; ³õÊ¼»¯Ê±¼äÖµ
+                     168     ;   MOV     minute, #0
+                     169     ;   MOV     second, #0
+                     170     ;   LCALL   F_DisplayRTC
+                     171         
+014A 120451          172         LCALL   F_ReadRTC   ;¶ÁRTC
+014D C2D5            173         CLR     F0
+                     174     
+014F E53B            175         MOV     A, second   ;if(second >= 60)   F0 = 1; //´íÎó
+0151 C3              176         CLR     C
+0152 943C            177         SUBB    A, #60
+0154 4002            178         JC      $+4
+0156 D2D5            179         SETB    F0
+                     180     
+0158 E53A            181         MOV     A, minute   ;if(minute >= 60)   F0 = 1; //´íÎó
+015A C3              182         CLR     C
+015B 943C            183         SUBB    A, #60
+015D 4002            184         JC      $+4
+015F D2D5            185         SETB    F0
+                     186     
+0161 E539            187         MOV     A, hour     ;if(hour   >= 24)   F0 = 1; //´íÎó
+0163 C3              188         CLR     C
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE     4
+
+0164 9418            189         SUBB    A, #24
+0166 4002            190         JC      $+4
+0168 D2D5            191         SETB    F0
+                     192     
+016A 30D50C          193         JNB     F0, L_RTC_NoErr
+016D 75390C          194         MOV     hour, #12       ;ÓÐ´íÎó, Ä¬ÈÏ12:00:00
+0170 753B00          195         MOV     second, #0      ;
+0173 753A00          196         MOV     minute, #0      ;
+0176 120494          197         LCALL   F_WriteRTC      ;Ð´ÈëRTC
+0179                 198     L_RTC_NoErr:
+                     199     
+0179 120425          200         LCALL   F_DisplayRTC
+017C 753211          201         MOV     LED8+2, #DIS_;
+017F 753511          202         MOV     LED8+5, #DIS_;
+                     203     
+0182 E4              204         CLR     A
+0183 F53E            205         MOV     IO_KeyState, A
+0185 F53F            206         MOV     IO_KeyState1, A
+0187 F540            207         MOV     IO_KeyHoldCnt, A
+0189 F541            208         MOV     KeyCode, A      ; ¸øÓÃ»§Ê¹ÓÃµÄ¼üÂë, 17~32ÓÐÐ§
+018B 754532          209         MOV     cnt50ms, #50
+                     210     
+                     211     ;=====================================================
+                     212     
+                     213     ;=================== Ö÷Ñ­»· ==================================
+018E                 214     L_Main_Loop:
+018E 3000FD          215         JNB     B_1ms,  L_Main_Loop     ;1msÎ´µ½
+0191 C200            216         CLR     B_1ms
+                     217         
+                     218     ;=================== ¼ì²â1000msÊÇ·ñµ½ ==================================
+0193 053D            219         INC     msecond_L       ;msecond + 1
+0195 E53D            220         MOV     A, msecond_L
+0197 7002            221         JNZ     L_Check1000ms
+0199 053C            222         INC     msecond_H
+019B                 223     L_Check1000ms:
+019B C3              224         CLR     C
+019C E53D            225         MOV     A, msecond_L    ;msecond - 1000
+019E 94E8            226         SUBB    A, #LOW 1000
+01A0 E53C            227         MOV     A, msecond_H
+01A2 9403            228         SUBB    A, #HIGH 1000
+01A4 400C            229         JC      L_Quit_Check_1000ms     ;if(msecond < 1000), jmp
+                     230         
+                     231     ;================= 1000msµ½£¬ ´¦ÀíRTC ====================================
+01A6 753D00          232         MOV     msecond_L, #0   ;if(msecond >= 1000)
+01A9 753C00          233         MOV     msecond_H, #0
+                     234     
+01AC 120451          235         LCALL   F_ReadRTC   ;¶ÁRTC
+01AF 120425          236         LCALL   F_DisplayRTC
+01B2                 237     L_Quit_Check_1000ms:
+                     238     
+                     239     ;======================= 50msÉ¨ÃèÒ»´ÎÐÐÁÐ¼üÅÌ ==============================
+01B2                 240     L_Read_IO_Key:
+01B2 D54506          241         DJNZ    cnt50ms, L_Quit_Read_IO_Key     ; (cnt50ms - 1) != 0, jmp
+01B5 754532          242         MOV     cnt50ms, #50    ;
+01B8 12023C          243         LCALL   F_IO_KeyScan    ;50msÉ¨ÃèÒ»´ÎÐÐÁÐ¼üÅÌ
+01BB                 244     L_Quit_Read_IO_Key:
+                     245     ;=====================================================
+                     246     
+                     247     
+                     248     ;=====================================================
+01BB                 249     L_KeyProcess:
+01BB E541            250         MOV     A, KeyCode
+01BD 6061            251         JZ      L_Quit_KeyProcess
+                     252                             ;ÓÐ¼ü°´ÏÂ
+01BF E541            253         MOV     A, KeyCode
+01C1 B41112          254         CJNE    A, #17, L_Quit_K17
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE     5
+
+01C4 0539            255         INC     hour        ;if(KeyCode == 17)  hour +1
+01C6 E539            256         MOV     A, hour
+01C8 C3              257         CLR     C
+01C9 9418            258         SUBB    A, #24
+01CB 4003            259         JC      L_K17_Display
+01CD 753900          260         MOV     hour, #0
+01D0                 261     L_K17_Display:
+01D0 120494          262         LCALL   F_WriteRTC
+01D3 120425          263         LCALL   F_DisplayRTC
+01D6                 264     L_Quit_K17:
+                     265     
+01D6 E541            266         MOV     A, KeyCode
+01D8 B41210          267         CJNE    A, #18, L_Quit_K18
+01DB 1539            268         DEC     hour    ; hour - 1
+01DD E539            269         MOV     A, hour
+01DF B4FF03          270         CJNE    A, #255, L_K18_Display
+01E2 753917          271         MOV     hour, #23
+01E5                 272     L_K18_Display:
+01E5 120494          273         LCALL   F_WriteRTC
+01E8 120425          274         LCALL   F_DisplayRTC
+01EB                 275     L_Quit_K18:
+                     276     
+01EB E541            277         MOV     A, KeyCode
+01ED B41315          278         CJNE    A, #19, L_Quit_K19
+01F0 753B00          279         MOV     second, #0      ;µ÷Õû·ÖÖÓÊ±Çå³ýÃë
+01F3 053A            280         INC     minute  ; minute + 1
+01F5 E53A            281         MOV     A, minute
+01F7 C3              282         CLR     C
+01F8 943C            283         SUBB    A, #60
+01FA 4003            284         JC      L_K19_Display
+01FC 753A00          285         MOV     minute, #0
+01FF                 286     L_K19_Display:
+01FF 120494          287         LCALL   F_WriteRTC
+0202 120425          288         LCALL   F_DisplayRTC
+0205                 289     L_Quit_K19:
+                     290     
+0205 E541            291         MOV     A, KeyCode
+0207 B41413          292         CJNE    A, #20, L_Quit_K20
+020A 753B00          293         MOV     second, #0      ;µ÷Õû·ÖÖÓÊ±Çå³ýÃë
+020D 153A            294         DEC     minute  ; minute - 1
+020F E53A            295         MOV     A, minute
+0211 B4FF03          296         CJNE    A, #255, L_K20_Display
+0214 753A3B          297         MOV     minute, #59
+0217                 298     L_K20_Display:
+0217 120494          299         LCALL   F_WriteRTC
+021A 120425          300         LCALL   F_DisplayRTC
+021D                 301     L_Quit_K20:
+                     302     
+021D 754100          303         MOV     KeyCode, #0
+0220                 304     L_Quit_KeyProcess:
+                     305     
+0220 02018E          306         LJMP    L_Main_Loop
+                     307     
+                     308     ;**********************************************/
+                     309     
+                     310     
+                     311     ;/*****************************************************
+                     312     ;   ÐÐÁÐ¼üÉ¨Ãè³ÌÐò
+                     313     ;   Ê¹ÓÃXY²éÕÒ4x4¼üµÄ·½·¨£¬Ö»ÄÜµ¥¼ü£¬ËÙ¶È¿ì
+                     314     ;
+                     315     ;   Y     P04      P05      P06      P07
+                     316     ;          |        |        |        |
+                     317     ;X         |        |        |        |
+                     318     ;P00 ---- K00 ---- K01 ---- K02 ---- K03 ----
+                     319     ;          |        |        |        |
+                     320     ;P01 ---- K04 ---- K05 ---- K06 ---- K07 ----
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE     6
+
+                     321     ;          |        |        |        |
+                     322     ;P02 ---- K08 ---- K09 ---- K10 ---- K11 ----
+                     323     ;          |        |        |        |
+                     324     ;P03 ---- K12 ---- K13 ---- K14 ---- K15 ----
+                     325     ;          |        |        |        |
+                     326     ;******************************************************/
+                     327     
+                     328     
+0223 00010200        329     T_KeyTable:  DB 0,1,2,0,3,0,0,0,4,0,0,0,0,0,0,0
+0227 03000000                
+022B 04000000                
+022F 00000000                
+                     330     
+0233                 331     F_IO_KeyDelay:
+0233 C003            332         PUSH    03H     ;R3ÈëÕ»
+0235 7B3C            333         MOV     R3, #60
+0237 DBFE            334         DJNZ    R3, $   ; (n * 4) T
+0239 D003            335         POP     03H     ;R3³öÕ»
+023B 22              336         RET
+                     337     
+023C                 338     F_IO_KeyScan:   ;50ms call
+023C C006            339         PUSH    06H     ;R6ÈëÕ»
+023E C007            340         PUSH    07H     ;R7ÈëÕ»
+                     341     
+0240 AE3F            342         MOV     R6, IO_KeyState1    ; ±£´æÉÏÒ»´Î×´Ì¬
+                     343     
+0242 7580F0          344         MOV     P0, #0F0H       ;XµÍ£¬¶ÁY
+0245 120233          345         LCALL   F_IO_KeyDelay       ;delay about 250T
+0248 E580            346         MOV     A, P0
+024A 54F0            347         ANL     A, #0F0H
+024C F53F            348         MOV     IO_KeyState1, A     ; IO_KeyState1 = P0 & 0xf0
+                     349     
+024E 75800F          350         MOV     P0, #0FH        ;YµÍ£¬¶ÁX
+0251 120233          351         LCALL   F_IO_KeyDelay       ;delay about 250T
+0254 E580            352         MOV     A, P0
+0256 540F            353         ANL     A, #0FH
+0258 453F            354         ORL     A, IO_KeyState1         ; IO_KeyState1 |= (P0 & 0x0f)
+025A F53F            355         MOV     IO_KeyState1, A
+025C 633FFF          356         XRL     IO_KeyState1, #0FFH     ; IO_KeyState1 ^= 0xff; È¡·´
+                     357     
+025F EE              358         MOV     A, R6                   ;if(j == IO_KeyState1), Á¬ÐøÁ½´Î¶ÁÏàµÈ
+0260 B53F3F          359         CJNE    A, IO_KeyState1, L_QuitCheckIoKey   ;²»ÏàµÈ, jmp
+                     360         
+0263 AE3E            361         MOV     R6, IO_KeyState     ;ÔÝ´æIO_KeyState
+0265 853F3E          362         MOV     IO_KeyState, IO_KeyState1
+0268 E53E            363         MOV     A, IO_KeyState
+026A 6033            364         JZ      L_NoIoKeyPress      ; if(IO_KeyState != 0), ÓÐ¼ü°´ÏÂ
+                     365     
+026C EE              366         MOV     A, R6   
+026D 600E            367         JZ      L_CalculateIoKey    ;if(R6 == 0)    F0 = 1; µÚÒ»´Î°´ÏÂ
+026F EE              368         MOV     A, R6   
+0270 B53E2F          369         CJNE    A, IO_KeyState, L_QuitCheckIoKey    ; if(j != IO_KeyState), jmp
+                     370         
+0273 0540            371         INC     IO_KeyHoldCnt   ; if(++IO_KeyHoldCnt >= 20),    1ÃëºóÖØ¼ü
+0275 E540            372         MOV     A, IO_KeyHoldCnt
+0277 B41428          373         CJNE    A, #20, L_QuitCheckIoKey
+027A 754012          374         MOV     IO_KeyHoldCnt, #18;
+027D                 375     L_CalculateIoKey:
+027D E53E            376         MOV     A, IO_KeyState
+027F C4              377         SWAP    A       ;R6 = T_KeyTable[IO_KeyState >> 4];
+0280 540F            378         ANL     A, #0x0F
+0282 900223          379         MOV     DPTR, #T_KeyTable
+0285 93              380         MOVC    A, @A+DPTR
+0286 FE              381         MOV     R6, A
+                     382         
+0287 6019            383         JZ      L_QuitCheckIoKey    ; if(R6 == 0)
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE     7
+
+0289 E53E            384         MOV     A, IO_KeyState
+028B 540F            385         ANL     A, #0x0F
+028D 93              386         MOVC    A, @A+DPTR
+028E FF              387         MOV     R7, A
+028F 6011            388         JZ      L_QuitCheckIoKey    ; if(T_KeyTable[IO_KeyState& 0x0f] == 0)
+                     389         
+0291 EE              390         MOV     A, R6       ;KeyCode = (j - 1) * 4 + T_KeyTable[IO_KeyState & 0x0f] + 16;   //¼
+                             ÆËã¼üÂë£¬17~32
+0292 25E0            391         ADD     A, ACC
+0294 25E0            392         ADD     A, ACC
+0296 FE              393         MOV     R6, A
+0297 EF              394         MOV     A, R7
+0298 2E              395         ADD     A, R6
+0299 240C            396         ADD     A, #12
+029B F541            397         MOV     KeyCode, A
+029D 8003            398         SJMP    L_QuitCheckIoKey
+                     399         
+029F                 400     L_NoIoKeyPress:
+029F 754000          401         MOV     IO_KeyHoldCnt, #0
+                     402     
+02A2                 403     L_QuitCheckIoKey:
+02A2 7580FF          404         MOV     P0, #0xFF
+02A5 D007            405         POP     07H     ;R7³öÕ»
+02A7 D006            406         POP     06H     ;R6³öÕ»
+02A9 22              407         REt
+                     408     
+                     409     
+                     410     
+                     411     ; *********************** ÏÔÊ¾Ïà¹Ø³ÌÐò ****************************************
+02AA                 412     T_Display:                      ;±ê×¼×Ö¿â
+                     413     ;    0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+02AA 3F065B4F        414     DB  03FH,006H,05BH,04FH,066H,06DH,07DH,007H,07FH,06FH,077H,07CH,039H,05EH,079H,071H
+02AE 666D7D07                
+02B2 7F6F777C                
+02B6 395E7971                
+                     415     ;  black  -    H    J    K    L    N    o    P    U    t    G    Q    r    M    y
+02BA 0040761E        416     DB  000H,040H,076H,01EH,070H,038H,037H,05CH,073H,03EH,078H,03dH,067H,050H,037H,06EH
+02BE 7038375C                
+02C2 733E783D                
+02C6 6750376E                
+                     417     ;    0.   1.   2.   3.   4.   5.   6.   7.   8.   9.   -1
+02CA BF86DBCF        418     DB  0BFH,086H,0DBH,0CFH,0E6H,0EDH,0FDH,087H,0FFH,0EFH,046H
+02CE E6EDFD87                
+02D2 FFEF46                  
+                     419     
+02D5                 420     T_COM:
+02D5 01020408        421     DB  001H,002H,004H,008H,010H,020H,040H,080H     ;   Î»Âë
+02D9 10204080                
+                     422     
+                     423     
+                     424     ;//========================================================================
+                     425     ;// º¯Êý: F_DisplayScan
+                     426     ;// ÃèÊö: ÏÔÊ¾É¨Ãè×Ó³ÌÐò¡£
+                     427     ;// ²ÎÊý: none.
+                     428     ;// ·µ»Ø: none.
+                     429     ;// °æ±¾: VER1.0
+                     430     ;// ÈÕÆÚ: 2013-4-1
+                     431     ;// ±¸×¢: ³ýÁËACCCºÍPSWÍâ, ËùÓÃµ½µÄÍ¨ÓÃ¼Ä´æÆ÷¶¼ÈëÕ»
+                     432     ;//========================================================================
+02DD                 433     F_DisplayScan:
+02DD C083            434         PUSH    DPH     ;DPHÈëÕ»
+02DF C082            435         PUSH    DPL     ;DPLÈëÕ»
+02E1 C000            436         PUSH    00H     ;R0 ÈëÕ»
+                     437         
+02E3 9002D5          438         MOV     DPTR, #T_COM
+02E6 E538            439         MOV     A, display_index
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE     8
+
+02E8 93              440         MOVC    A, @A+DPTR
+02E9 F4              441         CPL     A
+02EA F5F8            442         MOV     P7,A
+                     443         
+02EC 9002AA          444         MOV     DPTR, #T_Display
+02EF E538            445         MOV     A, display_index
+02F1 2430            446         ADD     A, #LED8
+02F3 F8              447         MOV     R0, A
+02F4 E6              448         MOV     A, @R0
+02F5 93              449         MOVC    A, @A+DPTR
+02F6 F4              450         CPL     A
+02F7 F5E8            451         MOV     P6,A
+                     452     
+02F9 0538            453         INC     display_index
+02FB E538            454         MOV     A, display_index
+02FD 54F8            455         ANL     A, #0F8H            ; if(display_index >= 8)
+02FF 6003            456         JZ      L_QuitDisplayScan
+0301 753800          457         MOV     display_index, #0;  ;8Î»½áÊø»Ø0
+0304                 458     L_QuitDisplayScan:
+0304 D000            459         POP     00H     ;R0 ³öÕ»
+0306 D082            460         POP     DPL     ;DPL³öÕ»
+0308 D083            461         POP     DPH     ;DPH³öÕ»
+030A 22              462         RET
+                     463     
+                     464     
+                     465     ;*******************************************************************
+                     466     ;**************** ÖÐ¶Ïº¯Êý ***************************************************
+                     467     
+030B                 468     F_Timer0_Interrupt: ;Timer0 1msÖÐ¶Ïº¯Êý
+030B C0D0            469         PUSH    PSW     ;PSWÈëÕ»
+030D C0E0            470         PUSH    ACC     ;ACCÈëÕ»
+                     471     
+030F 1202DD          472         LCALL   F_DisplayScan   ; 1msÉ¨ÃèÏÔÊ¾Ò»Î»
+0312 D200            473         SETB    B_1ms           ; 1ms±êÖ¾
+                     474     
+0314 D0E0            475         POP     ACC     ;ACC³öÕ»
+0316 D0D0            476         POP     PSW     ;PSW³öÕ»
+0318 32              477         RETI
+                     478         
+                     479     
+                     480     ;************ I2CÏà¹Øº¯Êý ****************
+  00A2               481     SLAW    EQU     0xA2
+  00A3               482     SLAR    EQU     0xA3
+                     483     
+  0094               484     SDA     BIT     P1.4    ;¶¨ÒåSDA
+  0095               485     SCL     BIT     P1.5    ;¶¨ÒåSCL
+                     486     
+                     487     ;========================================================================
+                     488     ; º¯Êý: F_I2C_Delay
+                     489     ; ÃèÊö: I2C·ÃÎÊÑÓÊ±, ²»Í¬µÄÖ÷ÆµÒªÐÞ¸Ä´Ëº¯Êý.
+                     490     ; ²ÎÊý: none.
+                     491     ; ·µ»Ø: none.
+                     492     ; °æ±¾: VER1.0
+                     493     ; ÈÕÆÚ: 2013-4-1
+                     494     ;========================================================================
+0319                 495     F_I2C_Delay:
+0319 C002            496         PUSH    AR2
+031B AA0B            497         MOV     R2, 11  ;Fosc(MHZ) / 2, °´2us¼ÆËã
+031D DAFE            498         DJNZ    R2, $
+031F D002            499         POP     AR2
+0321 22              500         RET
+                     501     
+                     502     ;========================================================================
+                     503     ; º¯Êý: F_I2C_Start
+                     504     ; ÃèÊö: Æô¶¯I2C. start the I2C, SDA High-to-low when SCL is high
+                     505     ; ²ÎÊý: none.
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE     9
+
+                     506     ; ·µ»Ø: none.
+                     507     ; °æ±¾: VER1.0
+                     508     ; ÈÕÆÚ: 2013-4-1
+                     509     ;========================================================================
+0322                 510     F_I2C_Start:
+0322 D294            511         SETB    SDA
+0324 120319          512         LCALL   F_I2C_Delay
+0327 D295            513         SETB    SCL
+0329 120319          514         LCALL   F_I2C_Delay
+032C C294            515         CLR     SDA
+032E 120319          516         LCALL   F_I2C_Delay
+0331 C295            517         CLR     SCL
+0333 120319          518         LCALL   F_I2C_Delay
+0336 22              519         RET
+                     520     
+                     521     
+                     522     ;========================================================================
+                     523     ; º¯Êý: F_I2C_Stop
+                     524     ; ÃèÊö: Í£Ö¹I2C. STOP the I2C, SDA Low-to-high when SCL is high
+                     525     ; ²ÎÊý: none.
+                     526     ; ·µ»Ø: none.
+                     527     ; °æ±¾: VER1.0
+                     528     ; ÈÕÆÚ: 2013-4-1
+                     529     ;========================================================================
+0337                 530     F_I2C_Stop:
+0337 C294            531         CLR     SDA
+0339 120319          532         LCALL   F_I2C_Delay
+033C D295            533         SETB    SCL
+033E 120319          534         LCALL   F_I2C_Delay
+0341 D294            535         SETB    SDA
+0343 120319          536         LCALL   F_I2C_Delay
+0346 22              537         RET
+                     538     
+                     539     ;========================================================================
+                     540     ; º¯Êý: F_Send_ACK
+                     541     ; ÃèÊö: ·¢ËÍÓ¦´ð. Send ACK (LOW)
+                     542     ; ²ÎÊý: none.
+                     543     ; ·µ»Ø: none.
+                     544     ; °æ±¾: VER1.0
+                     545     ; ÈÕÆÚ: 2013-4-1
+                     546     ;========================================================================
+0347                 547     F_Send_ACK:
+0347 C294            548         CLR     SDA
+0349 120319          549         LCALL   F_I2C_Delay
+034C D295            550         SETB    SCL
+034E 120319          551         LCALL   F_I2C_Delay
+0351 C295            552         CLR     SCL
+0353 120319          553         LCALL   F_I2C_Delay
+0356 22              554         RET
+                     555     
+                     556     ;========================================================================
+                     557     ; º¯Êý: F_Send_NoACK
+                     558     ; ÃèÊö: ·¢ËÍ·ÇÓ¦´ð. Send No ACK (High)
+                     559     ; ²ÎÊý: none.
+                     560     ; ·µ»Ø: none.
+                     561     ; °æ±¾: VER1.0
+                     562     ; ÈÕÆÚ: 2013-4-1
+                     563     ;========================================================================
+0357                 564     F_Send_NoACK:
+0357 D294            565         SETB    SDA
+0359 120319          566         LCALL   F_I2C_Delay
+035C D295            567         SETB    SCL
+035E 120319          568         LCALL   F_I2C_Delay
+0361 C295            569         CLR     SCL
+0363 120319          570         LCALL   F_I2C_Delay
+0366 22              571         RET
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE    10
+
+                     572             
+                     573     ;========================================================================
+                     574     ; º¯Êý: F_I2C_Check_ACK
+                     575     ; ÃèÊö: ¼ì²âÓ¦´ð. Check ACK
+                     576     ; ²ÎÊý: none.
+                     577     ; ·µ»Ø: If F0=0, then right, if F0=1, then error.
+                     578     ; °æ±¾: VER1.0
+                     579     ; ÈÕÆÚ: 2013-4-1
+                     580     ;========================================================================
+0367                 581     F_I2C_Check_ACK:
+0367 D294            582         SETB    SDA
+0369 120319          583         LCALL   F_I2C_Delay
+036C D295            584         SETB    SCL
+036E 120319          585         LCALL   F_I2C_Delay
+0371 A294            586         MOV     C, SDA
+0373 92D5            587         MOV     F0, C
+0375 C295            588         CLR     SCL
+0377 120319          589         LCALL   F_I2C_Delay
+037A 22              590         RET
+                     591     
+                     592     
+                     593     ;========================================================================
+                     594     ; º¯Êý: F_I2C_WriteAbyte
+                     595     ; ÃèÊö: Ð´Ò»¸ö×Ö½Ú. write a byte to I2C
+                     596     ; ²ÎÊý: ACC: ÒªÐ´ÈëµÄ×Ö½Ú.
+                     597     ; ·µ»Ø: none.
+                     598     ; °æ±¾: VER1.0
+                     599     ; ÈÕÆÚ: 2013-4-1
+                     600     ;========================================================================
+037B                 601     F_I2C_WriteAbyte:
+037B C006            602         PUSH    AR6
+037D C007            603         PUSH    AR7
+037F AFE0            604         MOV     R7, ACC
+0381 7E08            605         MOV     R6, #8
+0383                 606     L_I2C_WriteAbyteLoop:
+0383 EF              607         MOV     A, R7
+0384 33              608         RLC     A
+0385 9294            609         MOV     SDA, C
+0387 FF              610         MOV     R7, A
+0388 120319          611         LCALL   F_I2C_Delay
+038B D295            612         SETB    SCL
+038D 120319          613         LCALL   F_I2C_Delay
+0390 C295            614         CLR     SCL
+0392 120319          615         LCALL   F_I2C_Delay
+0395 DEEC            616         DJNZ    R6, L_I2C_WriteAbyteLoop
+0397 D007            617         POP     AR7
+0399 D006            618         POP     AR6
+039B 22              619         RET
+                     620     
+                     621     ;========================================================================
+                     622     ; º¯Êý: F_I2C_ReadAbyte
+                     623     ; ÃèÊö: ¶ÁÒ»¸ö×Ö½Ú. read A byte from I2C
+                     624     ; ²ÎÊý: none.
+                     625     ; ·µ»Ø: ACC: ÒÑ¶Á³öµÄ×Ö½Ú.
+                     626     ; °æ±¾: VER1.0
+                     627     ; ÈÕÆÚ: 2013-4-1
+                     628     ;========================================================================
+039C                 629     F_I2C_ReadAbyte:
+039C C006            630         PUSH    AR6
+039E C007            631         PUSH    AR7
+                     632         
+03A0 D294            633         SETB    SDA
+03A2 7E08            634         MOV     R6, #8
+03A4                 635     L_I2C_ReadAbyteLoop:
+03A4 D295            636         SETB    SCL
+03A6 120319          637         LCALL   F_I2C_Delay
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE    11
+
+03A9 EF              638         MOV     A, R7
+03AA A294            639         MOV     C, SDA
+03AC 33              640         RLC     A
+03AD FF              641         MOV     R7, A
+03AE C295            642         CLR     SCL
+03B0 120319          643         LCALL   F_I2C_Delay
+03B3 DEEF            644         DJNZ    R6, L_I2C_ReadAbyteLoop
+03B5 EF              645         MOV     A, R7
+03B6 D007            646         POP     AR7
+03B8 D006            647         POP     AR6
+03BA 22              648         RET
+                     649     
+                     650     ;========================================================================
+                     651     ; º¯Êý: F_WriteNbyte
+                     652     ; ÃèÊö: Ð´N¸ö×Ö½Ú×Ó³ÌÐò¡£
+                     653     ; ²ÎÊý: R2: Ð´I2CÊý¾ÝÊ×µØÖ·,  R0: Ð´ÈëÊý¾Ý´æ·ÅÊ×µØÖ·,  R3: Ð´Èë×Ö½ÚÊý
+                     654     ; ·µ»Ø: none.
+                     655     ; °æ±¾: VER1.0
+                     656     ; ÈÕÆÚ: 2013-4-1
+                     657     ; ±¸×¢: ³ýÁËACCCºÍPSWÍâ, ËùÓÃµ½µÄÍ¨ÓÃ¼Ä´æÆ÷¶¼ÈëÕ»
+                     658     ;========================================================================
+03BB                 659     F_WriteNbyte:
+03BB 120322          660         LCALL   F_I2C_Start
+03BE 74A2            661         MOV     A, #SLAW
+03C0 12037B          662         LCALL   F_I2C_WriteAbyte
+03C3 120367          663         LCALL   F_I2C_Check_ACK
+03C6 20D517          664         JB      F0, L_WriteN_StopI2C
+                     665     
+03C9 EA              666         MOV     A, R2
+03CA 12037B          667         LCALL   F_I2C_WriteAbyte
+03CD 120367          668         LCALL   F_I2C_Check_ACK
+03D0 20D50D          669         JB      F0, L_WriteN_StopI2C
+                     670     
+03D3                 671     L_WriteNbyteLoop:
+03D3 E6              672         MOV     A, @R0
+03D4 12037B          673         LCALL   F_I2C_WriteAbyte
+03D7 08              674         INC     R0
+03D8 120367          675         LCALL   F_I2C_Check_ACK
+03DB 20D502          676         JB      F0, L_WriteN_StopI2C
+03DE DBF3            677         DJNZ    R3, L_WriteNbyteLoop 
+03E0                 678     L_WriteN_StopI2C:
+03E0 120337          679         LCALL   F_I2C_Stop
+03E3 22              680         RET
+                     681     
+                     682     
+                     683     ;========================================================================
+                     684     ; º¯Êý: F_ReadNbyte
+                     685     ; ÃèÊö: ¶ÁN¸ö×Ö½Ú×Ó³ÌÐò¡£
+                     686     ; ²ÎÊý: R2: ¶ÁI2CÊý¾ÝÊ×µØÖ·,  R0: ¶Á³öÊý¾Ý´æ·ÅÊ×µØÖ·,  R3: ¶Á³ö×Ö½ÚÊý
+                     687     ; ·µ»Ø: none.
+                     688     ; °æ±¾: VER1.0
+                     689     ; ÈÕÆÚ: 2013-4-1
+                     690     ; ±¸×¢: ³ýÁËACCCºÍPSWÍâ, ËùÓÃµ½µÄÍ¨ÓÃ¼Ä´æÆ÷¶¼ÈëÕ»
+                     691     ;========================================================================
+03E4                 692     F_ReadNbyte:
+03E4 120322          693         LCALL   F_I2C_Start
+03E7 74A2            694         MOV     A, #SLAW
+03E9 12037B          695         LCALL   F_I2C_WriteAbyte
+03EC 120367          696         LCALL   F_I2C_Check_ACK
+03EF 20D52F          697         JB      F0, L_ReadN_StopI2C
+                     698     
+03F2 EA              699         MOV     A, R2
+03F3 12037B          700         LCALL   F_I2C_WriteAbyte
+03F6 120367          701         LCALL   F_I2C_Check_ACK
+03F9 20D525          702         JB      F0, L_ReadN_StopI2C
+                     703     
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE    12
+
+03FC 120322          704         LCALL   F_I2C_Start
+03FF 74A3            705         MOV     A, #SLAR
+0401 12037B          706         LCALL   F_I2C_WriteAbyte
+0404 120367          707         LCALL   F_I2C_Check_ACK
+0407 20D517          708         JB      F0, L_ReadN_StopI2C
+                     709     
+040A EB              710         MOV     A, R3
+040B 54FE            711         ANL     A, #0xfe    ;ÅÐ¶ÏÊÇ·ñ´óÓÚ1
+040D 600B            712         JZ      L_ReadLastByte
+040F 1B              713         DEC     R3          ;´óÓÚ1×Ö½Ú, Ôò-1
+0410                 714     L_ReadNbyteLoop:
+0410 12039C          715         LCALL   F_I2C_ReadAbyte     ;*p = I2C_ReadAbyte();  p++;
+0413 F6              716         MOV     @R0, A
+0414 08              717         INC     R0
+0415 120347          718         LCALL   F_Send_ACK      ;send ACK
+0418 DBF6            719         DJNZ    R3, L_ReadNbyteLoop 
+041A                 720     L_ReadLastByte:
+041A 12039C          721         LCALL   F_I2C_ReadAbyte     ;*p = I2C_ReadAbyte()
+041D F6              722         MOV     @R0, A
+041E 120357          723         LCALL   F_Send_NoACK    ;send no ACK
+0421                 724     L_ReadN_StopI2C:
+0421 120337          725         LCALL   F_I2C_Stop
+0424 22              726         RET
+                     727     
+                     728     ;========================================================================
+                     729     ; º¯Êý: F_DisplayRTC
+                     730     ; ÃèÊö: ÏÔÊ¾Ê±ÖÓ×Ó³ÌÐò¡£
+                     731     ; ²ÎÊý: none.
+                     732     ; ·µ»Ø: none.
+                     733     ; °æ±¾: VER1.0
+                     734     ; ÈÕÆÚ: 2013-4-1
+                     735     ; ±¸×¢: ³ýÁËACCCºÍPSWÍâ, ËùÓÃµ½µÄÍ¨ÓÃ¼Ä´æÆ÷¶¼ÈëÕ»
+                     736     ;========================================================================
+0425                 737     F_DisplayRTC:
+0425 C0F0            738         PUSH    B       ;BÈëÕ»
+                     739         
+0427 E539            740         MOV     A, hour
+0429 75F00A          741         MOV     B, #10
+042C 84              742         DIV     AB
+042D F537            743         MOV     LED8+7, A
+042F 85F036          744         MOV     LED8+6, B
+                     745     
+0432 753511          746         MOV     LED8+5, #DIS_
+                     747         
+0435 E53A            748         MOV     A, minute
+0437 75F00A          749         MOV     B, #10
+043A 84              750         DIV     AB
+043B F534            751         MOV     LED8+4, A;
+043D 85F033          752         MOV     LED8+3, B;
+                     753     
+0440 753211          754         MOV     LED8+2, #DIS_
+                     755     
+0443 E53B            756         MOV     A, second
+0445 75F00A          757         MOV     B, #10
+0448 84              758         DIV     AB
+0449 F531            759         MOV     LED8+1, A;
+044B 85F030          760         MOV     LED8+0, B;
+044E                 761     L_QuitDisplayRTC:
+044E D0F0            762         POP     B       ;B³öÕ»
+0450 22              763         RET
+                     764     
+                     765     
+                     766     ;========================================================================
+                     767     ; º¯Êý: F_ReadRTC
+                     768     ; ÃèÊö: ¶ÁRTCº¯Êý¡£
+                     769     ; ²ÎÊý: none.
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE    13
+
+                     770     ; ·µ»Ø: none.
+                     771     ; °æ±¾: VER1.0
+                     772     ; ÈÕÆÚ: 2013-4-1
+                     773     ; ±¸×¢: 
+                     774     ;========================================================================
+0451                 775     F_ReadRTC:
+                     776     
+0451 7A02            777         MOV     R2, #2      ; ¶ÁI2CÊý¾ÝÊ×µØÖ·
+0453 7842            778         MOV     R0, #RTC    ; ¶Á³öÊý¾Ý´æ·ÅÊ×µØÖ·
+0455 7B03            779         MOV     R3, #3      ; ¶Á³ö×Ö½ÚÊý
+0457 1203E4          780         LCALL   F_ReadNbyte ; R2: ¶ÁI2CÊý¾ÝÊ×µØÖ·,  R0: ¶Á³öÊý¾Ý´æ·ÅÊ×µØÖ·,  R3: ¶Á³ö×Ö½ÚÊý
+                     781     
+045A E542            782         MOV     A, RTC      ; second
+045C C4              783         SWAP    A
+045D 5407            784         ANL     A, #7
+045F 75F00A          785         MOV     B, #10
+0462 A4              786         MUL     AB
+0463 F5F0            787         MOV     B, A
+0465 E542            788         MOV     A, RTC
+0467 540F            789         ANL     A, #0x0f
+0469 25F0            790         ADD     A, B
+046B F53B            791         MOV     second, A   ;second = ((RTC >> 4) & 0x07) * 10 + (RTC & 0x0f)
+                     792     
+046D E543            793         MOV     A, RTC+1
+046F C4              794         SWAP    A
+0470 5407            795         ANL     A, #7
+0472 75F00A          796         MOV     B, #10
+0475 A4              797         MUL     AB
+0476 F5F0            798         MOV     B, A
+0478 E543            799         MOV     A, RTC+1
+047A 540F            800         ANL     A, #0x0f
+047C 25F0            801         ADD     A, B
+047E F53A            802         MOV     minute, A   ;minute = (([RTC+1] >> 4) & 0x07) * 10 + ([RTC+1] & 0x0f)
+                     803         
+0480 E544            804         MOV     A, RTC+2
+0482 C4              805         SWAP    A
+0483 5403            806         ANL     A, #3
+0485 75F00A          807         MOV     B, #10
+0488 A4              808         MUL     AB
+0489 F5F0            809         MOV     B, A
+048B E544            810         MOV     A, RTC+2
+048D 540F            811         ANL     A, #0x0f
+048F 25F0            812         ADD     A, B
+0491 F539            813         MOV     hour, A     ;hour   = (([RTC+2] >> 4) & 0x03) * 10 + ([RTC+2] & 0x0f)
+0493 22              814         RET
+                     815     
+                     816     ;========================================================================
+                     817     ; º¯Êý: F_WriteRTC
+                     818     ; ÃèÊö: Ð´RTCº¯Êý¡£
+                     819     ; ²ÎÊý: none.
+                     820     ; ·µ»Ø: none.
+                     821     ; °æ±¾: VER1.0
+                     822     ; ÈÕÆÚ: 2013-4-1
+                     823     ; ±¸×¢: 
+                     824     ;========================================================================
+0494                 825     F_WriteRTC:
+                     826     
+0494 E53B            827         MOV     A, second
+0496 75F00A          828         MOV     B, #10
+0499 84              829         DIV     AB
+049A C4              830         SWAP    A
+049B 25F0            831         ADD     A, B
+049D F542            832         MOV     RTC, A      ;tmp[0] = ((second / 10) << 4) + (second % 10);
+                     833     
+049F E53A            834         MOV     A, minute
+04A1 75F00A          835         MOV     B, #10
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE    14
+
+04A4 84              836         DIV     AB
+04A5 C4              837         SWAP    A
+04A6 25F0            838         ADD     A, B
+04A8 F543            839         MOV     RTC+1, A    ;((minute / 10) << 4) + (minute % 10);
+                     840     
+04AA E539            841         MOV     A, hour
+04AC 75F00A          842         MOV     B, #10
+04AF 84              843         DIV     AB
+04B0 C4              844         SWAP    A
+04B1 25F0            845         ADD     A, B
+04B3 F544            846         MOV     RTC+2, A    ;((hour / 10) << 4) + (hour % 10);
+                     847     
+04B5 7A02            848         MOV     R2, #2      ;Ð´I2CÊý¾ÝÊ×µØÖ·
+04B7 7842            849         MOV     R0, #RTC    ;Ð´ÈëÊý¾Ý´æ·ÅÊ×µØÖ·
+04B9 7B03            850         MOV     R3, #3      ;Ð´Èë×Ö½ÚÊý
+04BB 1203BB          851         LCALL   F_WriteNbyte    ;
+04BE 22              852         RET
+                     853     
+                     854     
+                     855     
+                     856         END
+                             
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE    15
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E               T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . . .  D ADDR   00E0H   A   
+AR2. . . . . . . . .  D ADDR   0002H   A   
+AR6. . . . . . . . .  D ADDR   0006H   A   
+AR7. . . . . . . . .  D ADDR   0007H   A   
+AUXR . . . . . . . .  D ADDR   008EH   A   
+B. . . . . . . . . .  D ADDR   00F0H   A   
+B_1MS. . . . . . . .  B ADDR   0020H.0 A   
+CNT50MS. . . . . . .  D ADDR   0045H   A   
+DISPLAY_INDEX. . . .  D ADDR   0038H   A   
+DIS_ . . . . . . . .  N NUMB   0011H   A   
+DIS_BLACK. . . . . .  N NUMB   0010H   A   
+DIS_DOT. . . . . . .  N NUMB   0020H   A   
+DPH. . . . . . . . .  D ADDR   0083H   A   
+DPL. . . . . . . . .  D ADDR   0082H   A   
+EA . . . . . . . . .  B ADDR   00A8H.7 A   
+ET0. . . . . . . . .  B ADDR   00A8H.1 A   
+F0 . . . . . . . . .  B ADDR   00D0H.5 A   
+FLAG0. . . . . . . .  D ADDR   0020H   A   
+FOSC_KHZ . . . . . .  N NUMB   5DC0H   A   
+F_DISPLAYRTC . . . .  C ADDR   0425H   A   
+F_DISPLAYSCAN. . . .  C ADDR   02DDH   A   
+F_I2C_CHECK_ACK. . .  C ADDR   0367H   A   
+F_I2C_DELAY. . . . .  C ADDR   0319H   A   
+F_I2C_READABYTE. . .  C ADDR   039CH   A   
+F_I2C_START. . . . .  C ADDR   0322H   A   
+F_I2C_STOP . . . . .  C ADDR   0337H   A   
+F_I2C_WRITEABYTE . .  C ADDR   037BH   A   
+F_IO_KEYDELAY. . . .  C ADDR   0233H   A   
+F_IO_KEYSCAN . . . .  C ADDR   023CH   A   
+F_MAIN . . . . . . .  C ADDR   0100H   A   
+F_READNBYTE. . . . .  C ADDR   03E4H   A   
+F_READRTC. . . . . .  C ADDR   0451H   A   
+F_SEND_ACK . . . . .  C ADDR   0347H   A   
+F_SEND_NOACK . . . .  C ADDR   0357H   A   
+F_TIMER0_INTERRUPT .  C ADDR   030BH   A   
+F_WRITENBYTE . . . .  C ADDR   03BBH   A   
+F_WRITERTC . . . . .  C ADDR   0494H   A   
+HOUR . . . . . . . .  D ADDR   0039H   A   
+IO_KEYHOLDCNT. . . .  D ADDR   0040H   A   
+IO_KEYSTATE. . . . .  D ADDR   003EH   A   
+IO_KEYSTATE1 . . . .  D ADDR   003FH   A   
+KEYCODE. . . . . . .  D ADDR   0041H   A   
+LED8 . . . . . . . .  D ADDR   0030H   A   
+L_CALCULATEIOKEY . .  C ADDR   027DH   A   
+L_CHECK1000MS. . . .  C ADDR   019BH   A   
+L_CLEARLOOP. . . . .  C ADDR   012EH   A   
+L_I2C_READABYTELOOP.  C ADDR   03A4H   A   
+L_I2C_WRITEABYTELOOP  C ADDR   0383H   A   
+L_K17_DISPLAY. . . .  C ADDR   01D0H   A   
+L_K18_DISPLAY. . . .  C ADDR   01E5H   A   
+L_K19_DISPLAY. . . .  C ADDR   01FFH   A   
+L_K20_DISPLAY. . . .  C ADDR   0217H   A   
+L_KEYPROCESS . . . .  C ADDR   01BBH   A   
+L_MAIN_LOOP. . . . .  C ADDR   018EH   A   
+L_NOIOKEYPRESS . . .  C ADDR   029FH   A   
+L_QUITCHECKIOKEY . .  C ADDR   02A2H   A   
+L_QUITDISPLAYRTC . .  C ADDR   044EH   A   
+L_QUITDISPLAYSCAN. .  C ADDR   0304H   A   
+L_QUIT_CHECK_1000MS.  C ADDR   01B2H   A   
+L_QUIT_K17 . . . . .  C ADDR   01D6H   A   
+A51 MACRO ASSEMBLER  RTC                                                                  03/05/2021 10:38:14 PAGE    16
+
+L_QUIT_K18 . . . . .  C ADDR   01EBH   A   
+L_QUIT_K19 . . . . .  C ADDR   0205H   A   
+L_QUIT_K20 . . . . .  C ADDR   021DH   A   
+L_QUIT_KEYPROCESS. .  C ADDR   0220H   A   
+L_QUIT_READ_IO_KEY .  C ADDR   01BBH   A   
+L_READLASTBYTE . . .  C ADDR   041AH   A   
+L_READNBYTELOOP. . .  C ADDR   0410H   A   
+L_READN_STOPI2C. . .  C ADDR   0421H   A   
+L_READ_IO_KEY. . . .  C ADDR   01B2H   A   
+L_RTC_NOERR. . . . .  C ADDR   0179H   A   
+L_WRITENBYTELOOP . .  C ADDR   03D3H   A   
+L_WRITEN_STOPI2C . .  C ADDR   03E0H   A   
+MINUTE . . . . . . .  D ADDR   003AH   A   
+MSECOND_H. . . . . .  D ADDR   003CH   A   
+MSECOND_L. . . . . .  D ADDR   003DH   A   
+P0 . . . . . . . . .  D ADDR   0080H   A   
+P0M0 . . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . . .  D ADDR   0093H   A   
+P1 . . . . . . . . .  D ADDR   0090H   A   
+P1M0 . . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . . .  D ADDR   0095H   A   
+P3M0 . . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . . .  D ADDR   00B1H   A   
+P4 . . . . . . . . .  D ADDR   00C0H   A   
+P4M0 . . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . . .  D ADDR   00B3H   A   
+P5 . . . . . . . . .  D ADDR   00C8H   A   
+P5M0 . . . . . . . .  D ADDR   00CAH   A   
+P5M1 . . . . . . . .  D ADDR   00C9H   A   
+P6 . . . . . . . . .  D ADDR   00E8H   A   
+P6M0 . . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . . .  D ADDR   00CBH   A   
+P7 . . . . . . . . .  D ADDR   00F8H   A   
+P7M0 . . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . . .  D ADDR   00E1H   A   
+PSW. . . . . . . . .  D ADDR   00D0H   A   
+P_SW2. . . . . . . .  D ADDR   00BAH   A   
+RTC. . . . . . . . .  D ADDR   0042H   A   
+SCL. . . . . . . . .  B ADDR   0090H.5 A   
+SDA. . . . . . . . .  B ADDR   0090H.4 A   
+SECOND . . . . . . .  D ADDR   003BH   A   
+SLAR . . . . . . . .  N NUMB   00A3H   A   
+SLAW . . . . . . . .  N NUMB   00A2H   A   
+SP . . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER. . . .  N NUMB   00D0H   A   
+TH0. . . . . . . . .  D ADDR   008CH   A   
+TIMER0_RELOAD. . . .  N NUMB   A240H   A   
+TL0. . . . . . . . .  D ADDR   008AH   A   
+TMOD . . . . . . . .  D ADDR   0089H   A   
+TR0. . . . . . . . .  B ADDR   0088H.4 A   
+T_COM. . . . . . . .  C ADDR   02D5H   A   
+T_DISPLAY. . . . . .  C ADDR   02AAH   A   
+T_KEYTABLE . . . . .  C ADDR   0223H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

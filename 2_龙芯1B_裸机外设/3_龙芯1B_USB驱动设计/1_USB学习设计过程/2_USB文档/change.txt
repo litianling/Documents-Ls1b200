@@ -1,0 +1,12 @@
+usb_kbd
+
+usb_kbd_remove
+	remove  fat/fat_write.c
+	wait remove usb/host/dwc2.c
+	wait remove usb/host/ehci-hcd.c
+	
+usb_kbd_remove_merge
+	linux_c9.h		linux.h
+	linux_kernel.h	linux.h
+	linux_list.h		linux.h
+<usb.h/usb_storage.c/usb.c/usb_hub.c/ohci-hcd.c>

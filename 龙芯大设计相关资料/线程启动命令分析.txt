@@ -1,0 +1,9 @@
+
+启动命令在RTT4/components/finsh/msh.c文件中
+
+直接调用该命令用：
+extern int msh_exec(char *cmd, rt_size_t length);
+msh_exec("set_color",9);
+
+help命令在RTT4/components/finish/msh.c文件中msh_help()函数
+其他常用命令在RTT4/components/finish/msh_file.c文件中

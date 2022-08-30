@@ -1,0 +1,611 @@
+A51 MACRO ASSEMBLER  SPWM                                                                 03/15/2021 13:45:48 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN SPWM.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE SPWM.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* Èç¹ûÒªÔÚ³ÌÐòÖÐÊ¹ÓÃ´Ë´úÂë,ÇëÔÚ³ÌÐòÖÐ×¢Ã÷Ê¹ÓÃÁËSTCµÄ×ÊÁÏ¼°³ÌÐò        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     
+                      14     ;*************  ¹¦ÄÜËµÃ÷    **************
+                      15     
+                      16     ;±¾Àý³Ì»ùÓÚSTC8H8K64UÎªÖ÷¿ØÐ¾Æ¬µÄÊµÑéÏä8½øÐÐ±àÐ´²âÊÔ£¬STC8HÏµÁÐÐ¾Æ¬¿ÉÍ¨ÓÃ²Î¿¼.
+                      17     
+                      18     ;¸ß¼¶PWM¶¨Ê±Æ÷ PWM1P/PWM1N,PWM2P/PWM2N,PWM3P/PWM3N,PWM4P/PWM4N Ã¿¸öÍ¨µÀ¶¼¿É¶ÀÁ¢ÊµÏÖPWMÊä³ö£
+                             ¬»òÕßÁ½Á½»¥²¹¶Ô³ÆÊä³ö.
+                      19     
+                      20     ;ÑÝÊ¾Ê¹ÓÃPWM1P,PWM1N²úÉú»¥²¹µÄSPWM.
+                      21     
+                      22     ;Ö÷Ê±ÖÓÑ¡Ôñ24MHZ, PWMÊ±ÖÓÑ¡Ôñ1T, PWMÖÜÆÚ2400, ËÀÇø12¸öÊ±ÖÓ(0.5us).ÕýÏÒ²¨±íÓÃ200µã. 
+                      23     
+                      24     ;Êä³öÕýÏÒ²¨ÆµÂÊ = 24000000 / 2400 / 200 = 50 HZ.
+                      25     
+                      26     ;±¾³ÌÐò½ö½öÊÇÒ»¸öSPWMµÄÑÝÊ¾³ÌÐò, ÓÃ»§¿ÉÒÔÍ¨¹ýÉÏÃæµÄ¼ÆËã·½·¨ÐÞ¸ÄPWMÖÜÆÚºÍÕýÏÒ²¨µÄµãÊýºÍ·ù¶È.
+                      27     
+                      28     ;±¾³ÌÐòÊä³öÆµÂÊ¹Ì¶¨, Èç¹ûÐèÒª±äÆµ, ÇëÓÃ»§×Ô¼ºÉè¼Æ±äÆµ·½°¸.
+                      29     
+                      30     ;±¾³ÌÐò´ÓP6.0(PWM1P)Êä³öÕýÏàÂö³å, ´ÓP6.1(PWM1N)Êä³ö·´ÏàÂö³å(»¥²¹).
+                      31     
+                      32     ;******************************************/
+                      33     
+                      34     ;/****************************** ÓÃ»§¶¨Òåºê ***********************************/
+                      35     
+  5DC0                36     Fosc_KHZ    EQU 24000   ;24000KHZ
+                      37     
+  00D0                38     STACK_POIRTER   EQU     0D0H    ;¶ÑÕ»¿ªÊ¼µØÖ·
+                      39     
+  A240                40     Timer0_Reload   EQU     (65536 - Fosc_KHZ)  ; Timer 0 ÖÐ¶ÏÆµÂÊ, 1000´Î/Ãë
+                      41     
+                      42     
+                      43     ;*******************************************************************
+                      44     ;*******************************************************************
+  008E                45     AUXR    DATA    08EH
+  00BA                46     P_SW2   DATA    0BAH
+  00C0                47     P4      DATA    0C0H
+  00C8                48     P5      DATA    0C8H
+  00E8                49     P6      DATA    0E8H
+  00F8                50     P7      DATA    0F8H
+                      51     
+  0093                52     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094                53     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091                54     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092                55     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095                56     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+  0096                57     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+A51 MACRO ASSEMBLER  SPWM                                                                 03/15/2021 13:45:48 PAGE     2
+
+  00B1                58     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2                59     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3                60     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+  00B4                61     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9                62     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA                63     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB                64     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC                65     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1                66     P7M1    DATA    0xE1    ;
+  00E2                67     P7M0    DATA    0xE2    ;
+                      68     
+                      69     ;*******************************************************************
+                      70     
+  FEB1                71     PWMA_ENO      XDATA   0FEB1H
+  FEB2                72     PWMA_PS       XDATA   0FEB2H
+                      73     
+  FEC0                74     PWMA_CR1      XDATA   0FEC0H
+  FEC1                75     PWMA_CR2      XDATA   0FEC1H
+  FEC2                76     PWMA_SMCR     XDATA   0FEC2H
+  FEC3                77     PWMA_ETR      XDATA   0FEC3H
+  FEC4                78     PWMA_IER      XDATA   0FEC4H
+  FEC5                79     PWMA_SR1      XDATA   0FEC5H
+  FEC6                80     PWMA_SR2      XDATA   0FEC6H
+  FEC7                81     PWMA_EGR      XDATA   0FEC7H
+  FEC8                82     PWMA_CCMR1    XDATA   0FEC8H
+  FEC9                83     PWMA_CCMR2    XDATA   0FEC9H
+  FECA                84     PWMA_CCMR3    XDATA   0FECAH
+  FECB                85     PWMA_CCMR4    XDATA   0FECBH
+  FECC                86     PWMA_CCER1    XDATA   0FECCH
+  FECD                87     PWMA_CCER2    XDATA   0FECDH
+  FECE                88     PWMA_CNTRH    XDATA   0FECEH
+  FECF                89     PWMA_CNTRL    XDATA   0FECFH
+  FED0                90     PWMA_PSCRH    XDATA   0FED0H
+  FED1                91     PWMA_PSCRL    XDATA   0FED1H
+  FED2                92     PWMA_ARRH     XDATA   0FED2H
+  FED3                93     PWMA_ARRL     XDATA   0FED3H
+  FED4                94     PWMA_RCR      XDATA   0FED4H
+  FED5                95     PWMA_CCR1H    XDATA   0FED5H
+  FED6                96     PWMA_CCR1L    XDATA   0FED6H
+  FED7                97     PWMA_CCR2H    XDATA   0FED7H
+  FED8                98     PWMA_CCR2L    XDATA   0FED8H
+  FED9                99     PWMA_CCR3H    XDATA   0FED9H
+  FEDA               100     PWMA_CCR3L    XDATA   0FEDAH
+  FEDB               101     PWMA_CCR4H    XDATA   0FEDBH
+  FEDC               102     PWMA_CCR4L    XDATA   0FEDCH
+  FEDD               103     PWMA_BKR      XDATA   0FEDDH
+  FEDE               104     PWMA_DTR      XDATA   0FEDEH
+  FEDF               105     PWMA_OISR     XDATA   0FEDFH
+                     106     
+                     107     ;*************  IO¿Ú¶¨Òå    **************/
+                     108     
+                     109     ;*************  ±¾µØ±äÁ¿ÉùÃ÷    **************/
+                     110     
+  0030               111     PWM_Index       DATA    30H     ;
+                     112     
+                     113     
+                     114     ;*******************************************************************
+                     115     ;*******************************************************************
+0000                 116             ORG     0000H               ;reset
+0000 020100          117             LJMP    F_Main
+                     118     
+00D3                 119             ORG     00D3H               ;26  PWMA interrupt
+00D3 020184          120             LJMP    F_PWMA_Interrupt
+                     121     
+                     122     
+                     123     
+A51 MACRO ASSEMBLER  SPWM                                                                 03/15/2021 13:45:48 PAGE     3
+
+                     124     ;*******************************************************************
+                     125     ;*******************************************************************
+                     126     
+                     127     
+                     128     
+                     129     ;******************** Ö÷³ÌÐò **************************/
+0100                 130             ORG     0100H       ;reset
+0100                 131     F_Main:
+0100 E4              132         CLR     A
+0101 F593            133         MOV     P0M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0103 F594            134         MOV     P0M0, A
+0105 F591            135         MOV     P1M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0107 F592            136         MOV     P1M0, A
+0109 F595            137         MOV     P2M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010B F596            138         MOV     P2M0, A
+010D F5B1            139         MOV     P3M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010F F5B2            140         MOV     P3M0, A
+0111 F5B3            141         MOV     P4M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0113 F5B4            142         MOV     P4M0, A
+0115 F5C9            143         MOV     P5M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0117 F5CA            144         MOV     P5M0, A
+0119 F5CB            145         MOV     P6M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+011B F5CC            146         MOV     P6M0, A
+011D F5E1            147         MOV     P7M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+011F F5E2            148         MOV     P7M0, A
+                     149     
+                     150         
+0121 7581D0          151         MOV     SP, #STACK_POIRTER
+0124 75D000          152         MOV     PSW, #0
+                     153         USING   0       ;Ñ¡ÔñµÚ0×éR0~R7
+                     154     
+                     155     ;================= ÓÃ»§³õÊ¼»¯³ÌÐò ====================================
+                     156     
+0127 12012F          157         LCALL   F_PWM_Init          ; PWM³õÊ¼»¯
+012A D2AF            158         SETB    EA          ; ´ò¿ª×ÜÖÐ¶Ï
+                     159     
+                     160     ;=====================================================
+012C                 161     L_Main_Loop:
+                     162     
+012C 02012C          163         LJMP    L_Main_Loop
+                     164     
+                     165     ;**********************************************/
+                     166     
+                     167     ;========================================================================
+                     168     ; º¯Êý: F_PWM_Init
+                     169     ; ÃèÊö: PWM³õÊ¼»¯³ÌÐò.
+                     170     ; ²ÎÊý: none
+                     171     ; ·µ»Ø: none.
+                     172     ; °æ±¾: V1.0, 2021-3-3
+                     173     ;========================================================================
+012F                 174     F_PWM_Init:
+012F 43BA80          175         ORL     P_SW2, #080H        ;Ê¹ÄÜ·ÃÎÊXFR
+                     176     
+0132 E4              177         CLR     A                   ;Ð´ CCMRx Ç°±ØÐëÏÈÇåÁã CCxE ¹Ø±ÕÍ¨µÀ
+0133 90FECC          178         MOV     DPTR,#PWMA_CCER1
+0136 F0              179         MOVX    @DPTR,A
+0137 7460            180         MOV     A,#060H
+0139 90FEC8          181         MOV     DPTR,#PWMA_CCMR1
+013C F0              182         MOVX    @DPTR,A
+013D 7405            183         MOV     A,#05H              ;ÅäÖÃÍ¨µÀÊä³öÊ¹ÄÜºÍ¼«ÐÔ
+013F 90FECC          184         MOV     DPTR,#PWMA_CCER1
+0142 F0              185         MOVX    @DPTR,A
+                     186     
+0143 7409            187         MOV     A,#9                ;ÉèÖÃÖÜÆÚÊ±¼ä
+0145 90FED2          188         MOV     DPTR,#PWMA_ARRH
+0148 F0              189         MOVX    @DPTR,A
+A51 MACRO ASSEMBLER  SPWM                                                                 03/15/2021 13:45:48 PAGE     4
+
+0149 7460            190         MOV     A,#060H
+014B 90FED3          191         MOV     DPTR,#PWMA_ARRL
+014E F0              192         MOVX    @DPTR,A
+                     193     
+014F 7404            194         MOV     A,#HIGH 1220        ;ÉèÖÃÕ¼¿Õ±ÈÊ±¼ä
+0151 90FED5          195         MOV     DPTR,#PWMA_CCR1H
+0154 F0              196         MOVX    @DPTR,A
+0155 74C4            197         MOV     A,#LOW 1220
+0157 90FED6          198         MOV     DPTR,#PWMA_CCR1L
+015A F0              199         MOVX    @DPTR,A
+                     200     
+015B 740C            201         MOV     A,#0CH              ;ÉèÖÃËÀÇøÊ±¼ä
+015D 90FEDE          202         MOV     DPTR,#PWMA_DTR
+0160 F0              203         MOVX    @DPTR,A
+                     204     
+0161 7403            205         MOV     A,#03H              ;Ê¹ÄÜ PWM1P/PWM1N Êä³ö
+0163 90FEB1          206         MOV     DPTR,#PWMA_ENO
+0166 F0              207         MOVX    @DPTR,A
+0167 7402            208         MOV     A,#02H              ;¸ß¼¶ PWM Í¨µÀÊä³ö½ÅÑ¡ÔñÎ»
+0169 90FEB2          209         MOV     DPTR,#PWMA_PS
+016C F0              210         MOVX    @DPTR,A
+016D 7480            211         MOV     A,#080H             ;Ê¹ÄÜÖ÷Êä³ö
+016F 90FEDD          212         MOV     DPTR,#PWMA_BKR
+0172 F0              213         MOVX    @DPTR,A
+                     214     
+0173 7401            215         MOV     A,#01H              ;Ê¹ÄÜÖÐ¶Ï
+0175 90FEC4          216         MOV     DPTR,#PWMA_IER
+0178 F0              217         MOVX    @DPTR,A
+0179 90FEC0          218         MOV     DPTR,#PWMA_CR1
+017C E0              219         MOVX    A,@DPTR
+017D 4401            220         ORL     A,#01H              ;¿ªÊ¼¼ÆÊ±
+017F F0              221         MOVX    @DPTR,A
+                     222     
+0180 53BA7F          223         ANL     P_SW2, #NOT 080H    ;½ûÖ¹·ÃÎÊXFR
+0183 22              224         RET
+                     225     
+                     226     
+                     227     ;========================================================================
+                     228     ; º¯Êý: F_PWMA_Interrupt
+                     229     ; ÃèÊö: PWMAÖÐ¶Ï´¦Àí³ÌÐò.
+                     230     ; ²ÎÊý: None
+                     231     ; ·µ»Ø: none.
+                     232     ; °æ±¾: V1.0, 2012-11-22
+                     233     ;========================================================================
+0184                 234     F_PWMA_Interrupt:
+0184 C0D0            235         PUSH    PSW
+0186 C0E0            236         PUSH    ACC
+0188 C0BA            237         PUSH    P_SW2
+018A 43BA80          238         ORL     P_SW2, #080H  ;Ê¹ÄÜ·ÃÎÊXFR
+                     239     
+018D 90FEC5          240         MOV     DPTR,#PWMA_SR1 ;¼ì²âÖÐ¶Ï±êÖ¾
+0190 E0              241         MOVX    A,@DPTR
+0191 30E120          242         JNB     ACC.1,F_PWMA_QuitInt
+0194 E4              243         CLR     A
+0195 F0              244         MOVX    @DPTR,A
+                     245     
+0196 E530            246         MOV     A, PWM_Index
+0198 1201BB          247         LCALL   F_GetFirstAddress   ; DPTR = #sin_table + ACC * 2
+019B E4              248         CLR     A
+019C 93              249         MOVC    A, @A+DPTR
+019D 90FED5          250         MOV     DPTR,#PWMA_CCR1H
+01A0 F0              251         MOVX    @DPTR,A
+                     252     
+01A1 7401            253         MOV     A, #1
+01A3 93              254         MOVC    A, @A+DPTR
+01A4 90FED6          255         MOV     DPTR,#PWMA_CCR1L
+A51 MACRO ASSEMBLER  SPWM                                                                 03/15/2021 13:45:48 PAGE     5
+
+01A7 F0              256         MOVX    @DPTR,A
+                     257     
+01A8 0530            258         INC     PWM_Index       ;PWM_Index++
+01AA C3              259         CLR     C
+01AB E530            260         MOV     A, PWM_Index    ;PWM_Index - 200
+01AD 94C8            261         SUBB    A, #200
+01AF 4003            262         JC      F_PWMA_QuitInt  ;if(PWM_Index < 200), jmp
+01B1 753000          263         MOV     PWM_Index, #0   ;if(PWM_Index >= 200)
+                     264     
+01B4                 265     F_PWMA_QuitInt:
+01B4 D0BA            266         POP     P_SW2
+01B6 D0E0            267         POP     ACC
+01B8 D0D0            268         POP     PSW
+01BA 32              269         RETI
+                     270     
+                     271     
+                     272     ; »ñÈ¡Êý¾Ý±íÖÐË«×Ö½ÚÊý¾ÝµÄÊ×µØÖ·
+                     273     ; ÊäÈë: ACC
+                     274     ; Êä³ö: DPTR.   DPTR = #sin_table + ACC * 2
+                     275     
+01BB                 276     F_GetFirstAddress:  ;DPTR = #sin_table + ACC * 2
+01BB 9001D7          277         MOV     DPTR, #sin_table
+01BE C001            278         PUSH    01H     ; R1ÈëÕ»
+01C0 F9              279         MOV     R1, A
+01C1 2582            280         ADD     A, DPL
+01C3 F582            281         MOV     DPL, A
+01C5 E4              282         CLR     A
+01C6 3583            283         ADDC    A, DPH
+01C8 F583            284         MOV     DPH, A
+                     285         
+01CA E9              286         MOV     A, R1
+01CB 2582            287         ADD     A, DPL
+01CD F582            288         MOV     DPL, A
+01CF E4              289         CLR     A
+01D0 3583            290         ADDC    A, DPH
+01D2 F583            291         MOV     DPH, A
+01D4 D001            292         POP     01H     ;R1 ³öÕ»
+01D6 22              293         RET
+                     294     
+                     295     
+01D7                 296     sin_table:
+01D7 04C4            297         DW  1220
+01D9 04E8            298         DW  1256
+01DB 050C            299         DW  1292
+01DD 0530            300         DW  1328
+01DF 0554            301         DW  1364
+01E1 0578            302         DW  1400
+01E3 059B            303         DW  1435
+01E5 05BF            304         DW  1471
+01E7 05E2            305         DW  1506
+01E9 0605            306         DW  1541
+01EB 0627            307         DW  1575
+01ED 064A            308         DW  1610
+01EF 066B            309         DW  1643
+01F1 068D            310         DW  1677
+01F3 06AE            311         DW  1710
+01F5 06CE            312         DW  1742
+01F7 06EE            313         DW  1774
+01F9 070D            314         DW  1805
+01FB 072C            315         DW  1836
+01FD 074A            316         DW  1866
+01FF 0768            317         DW  1896
+0201 0785            318         DW  1925
+0203 07A1            319         DW  1953
+0205 07BD            320         DW  1981
+0207 07D7            321         DW  2007
+A51 MACRO ASSEMBLER  SPWM                                                                 03/15/2021 13:45:48 PAGE     6
+
+0209 07F1            322         DW  2033
+020B 080A            323         DW  2058
+020D 0823            324         DW  2083
+020F 083A            325         DW  2106
+0211 0851            326         DW  2129
+0213 0866            327         DW  2150
+0215 087B            328         DW  2171
+0217 088F            329         DW  2191
+0219 08A2            330         DW  2210
+021B 08B4            331         DW  2228
+021D 08C5            332         DW  2245
+021F 08D5            333         DW  2261
+0221 08E3            334         DW  2275
+0223 08F1            335         DW  2289
+0225 08FE            336         DW  2302
+0227 090A            337         DW  2314
+0229 0914            338         DW  2324
+022B 091E            339         DW  2334
+022D 0926            340         DW  2342
+022F 092E            341         DW  2350
+0231 0934            342         DW  2356
+0233 0939            343         DW  2361
+0235 093D            344         DW  2365
+0237 0940            345         DW  2368
+0239 0941            346         DW  2369
+023B 0942            347         DW  2370
+023D 0941            348         DW  2369
+023F 0940            349         DW  2368
+0241 093D            350         DW  2365
+0243 0939            351         DW  2361
+0245 0934            352         DW  2356
+0247 092E            353         DW  2350
+0249 0926            354         DW  2342
+024B 091E            355         DW  2334
+024D 0914            356         DW  2324
+024F 090A            357         DW  2314
+0251 08FE            358         DW  2302
+0253 08F1            359         DW  2289
+0255 08E3            360         DW  2275
+0257 08D5            361         DW  2261
+0259 08C5            362         DW  2245
+025B 08B4            363         DW  2228
+025D 08A2            364         DW  2210
+025F 088F            365         DW  2191
+0261 087B            366         DW  2171
+0263 0866            367         DW  2150
+0265 0851            368         DW  2129
+0267 083A            369         DW  2106
+0269 0823            370         DW  2083
+026B 080A            371         DW  2058
+026D 07F1            372         DW  2033
+026F 07D7            373         DW  2007
+0271 07BD            374         DW  1981
+0273 07A1            375         DW  1953
+0275 0785            376         DW  1925
+0277 0768            377         DW  1896
+0279 074A            378         DW  1866
+027B 072C            379         DW  1836
+027D 070D            380         DW  1805
+027F 06EE            381         DW  1774
+0281 06CE            382         DW  1742
+0283 06AE            383         DW  1710
+0285 068D            384         DW  1677
+0287 066B            385         DW  1643
+0289 064A            386         DW  1610
+028B 0627            387         DW  1575
+A51 MACRO ASSEMBLER  SPWM                                                                 03/15/2021 13:45:48 PAGE     7
+
+028D 0605            388         DW  1541
+028F 05E2            389         DW  1506
+0291 05BF            390         DW  1471
+0293 059B            391         DW  1435
+0295 0578            392         DW  1400
+0297 0554            393         DW  1364
+0299 0530            394         DW  1328
+029B 050C            395         DW  1292
+029D 04E8            396         DW  1256
+029F 04C4            397         DW  1220
+02A1 04A0            398         DW  1184
+02A3 047C            399         DW  1148
+02A5 0458            400         DW  1112
+02A7 0434            401         DW  1076
+02A9 0410            402         DW  1040
+02AB 03ED            403         DW  1005
+02AD 03C9            404         DW  969
+02AF 03A6            405         DW  934
+02B1 0383            406         DW  899
+02B3 0361            407         DW  865
+02B5 033E            408         DW  830
+02B7 031D            409         DW  797
+02B9 02FB            410         DW  763
+02BB 02DA            411         DW  730
+02BD 02BA            412         DW  698
+02BF 029A            413         DW  666
+02C1 027B            414         DW  635
+02C3 025C            415         DW  604
+02C5 023E            416         DW  574
+02C7 0220            417         DW  544
+02C9 0203            418         DW  515
+02CB 01E7            419         DW  487
+02CD 01CB            420         DW  459
+02CF 01B1            421         DW  433
+02D1 0197            422         DW  407
+02D3 017E            423         DW  382
+02D5 0165            424         DW  357
+02D7 014E            425         DW  334
+02D9 0137            426         DW  311
+02DB 0122            427         DW  290
+02DD 010D            428         DW  269
+02DF 00F9            429         DW  249
+02E1 00E6            430         DW  230
+02E3 00D4            431         DW  212
+02E5 00C3            432         DW  195
+02E7 00B3            433         DW  179
+02E9 00A5            434         DW  165
+02EB 0097            435         DW  151
+02ED 008A            436         DW  138
+02EF 007E            437         DW  126
+02F1 0074            438         DW  116
+02F3 006A            439         DW  106
+02F5 0062            440         DW  98
+02F7 005A            441         DW  90
+02F9 0054            442         DW  84
+02FB 004F            443         DW  79
+02FD 004B            444         DW  75
+02FF 0048            445         DW  72
+0301 0047            446         DW  71
+0303 0046            447         DW  70
+0305 0047            448         DW  71
+0307 0048            449         DW  72
+0309 004B            450         DW  75
+030B 004F            451         DW  79
+030D 0054            452         DW  84
+030F 005A            453         DW  90
+A51 MACRO ASSEMBLER  SPWM                                                                 03/15/2021 13:45:48 PAGE     8
+
+0311 0062            454         DW  98
+0313 006A            455         DW  106
+0315 0074            456         DW  116
+0317 007E            457         DW  126
+0319 008A            458         DW  138
+031B 0097            459         DW  151
+031D 00A5            460         DW  165
+031F 00B3            461         DW  179
+0321 00C3            462         DW  195
+0323 00D4            463         DW  212
+0325 00E6            464         DW  230
+0327 00F9            465         DW  249
+0329 010D            466         DW  269
+032B 0122            467         DW  290
+032D 0137            468         DW  311
+032F 014E            469         DW  334
+0331 0165            470         DW  357
+0333 017E            471         DW  382
+0335 0197            472         DW  407
+0337 01B1            473         DW  433
+0339 01CB            474         DW  459
+033B 01E7            475         DW  487
+033D 0203            476         DW  515
+033F 0220            477         DW  544
+0341 023E            478         DW  574
+0343 025C            479         DW  604
+0345 027B            480         DW  635
+0347 029A            481         DW  666
+0349 02BA            482         DW  698
+034B 02DA            483         DW  730
+034D 02FB            484         DW  763
+034F 031D            485         DW  797
+0351 033E            486         DW  830
+0353 0361            487         DW  865
+0355 0383            488         DW  899
+0357 03A6            489         DW  934
+0359 03C9            490         DW  969
+035B 03ED            491         DW  1005
+035D 0410            492         DW  1040
+035F 0434            493         DW  1076
+0361 0458            494         DW  1112
+0363 047C            495         DW  1148
+0365 04A0            496         DW  1184
+                     497     
+                     498         END
+A51 MACRO ASSEMBLER  SPWM                                                                 03/15/2021 13:45:48 PAGE     9
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . .  D ADDR   00E0H   A   
+AUXR . . . . . . .  D ADDR   008EH   A   
+DPH. . . . . . . .  D ADDR   0083H   A   
+DPL. . . . . . . .  D ADDR   0082H   A   
+EA . . . . . . . .  B ADDR   00A8H.7 A   
+FOSC_KHZ . . . . .  N NUMB   5DC0H   A   
+F_GETFIRSTADDRESS.  C ADDR   01BBH   A   
+F_MAIN . . . . . .  C ADDR   0100H   A   
+F_PWMA_INTERRUPT .  C ADDR   0184H   A   
+F_PWMA_QUITINT . .  C ADDR   01B4H   A   
+F_PWM_INIT . . . .  C ADDR   012FH   A   
+L_MAIN_LOOP. . . .  C ADDR   012CH   A   
+P0M0 . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . .  D ADDR   0093H   A   
+P1M0 . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . .  D ADDR   0095H   A   
+P3M0 . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . .  D ADDR   00B1H   A   
+P4 . . . . . . . .  D ADDR   00C0H   A   
+P4M0 . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . .  D ADDR   00B3H   A   
+P5 . . . . . . . .  D ADDR   00C8H   A   
+P5M0 . . . . . . .  D ADDR   00CAH   A   
+P5M1 . . . . . . .  D ADDR   00C9H   A   
+P6 . . . . . . . .  D ADDR   00E8H   A   
+P6M0 . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . .  D ADDR   00CBH   A   
+P7 . . . . . . . .  D ADDR   00F8H   A   
+P7M0 . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . .  D ADDR   00E1H   A   
+PSW. . . . . . . .  D ADDR   00D0H   A   
+PWMA_ARRH. . . . .  X ADDR   FED2H   A   
+PWMA_ARRL. . . . .  X ADDR   FED3H   A   
+PWMA_BKR . . . . .  X ADDR   FEDDH   A   
+PWMA_CCER1 . . . .  X ADDR   FECCH   A   
+PWMA_CCER2 . . . .  X ADDR   FECDH   A   
+PWMA_CCMR1 . . . .  X ADDR   FEC8H   A   
+PWMA_CCMR2 . . . .  X ADDR   FEC9H   A   
+PWMA_CCMR3 . . . .  X ADDR   FECAH   A   
+PWMA_CCMR4 . . . .  X ADDR   FECBH   A   
+PWMA_CCR1H . . . .  X ADDR   FED5H   A   
+PWMA_CCR1L . . . .  X ADDR   FED6H   A   
+PWMA_CCR2H . . . .  X ADDR   FED7H   A   
+PWMA_CCR2L . . . .  X ADDR   FED8H   A   
+PWMA_CCR3H . . . .  X ADDR   FED9H   A   
+PWMA_CCR3L . . . .  X ADDR   FEDAH   A   
+PWMA_CCR4H . . . .  X ADDR   FEDBH   A   
+PWMA_CCR4L . . . .  X ADDR   FEDCH   A   
+PWMA_CNTRH . . . .  X ADDR   FECEH   A   
+PWMA_CNTRL . . . .  X ADDR   FECFH   A   
+PWMA_CR1 . . . . .  X ADDR   FEC0H   A   
+PWMA_CR2 . . . . .  X ADDR   FEC1H   A   
+PWMA_DTR . . . . .  X ADDR   FEDEH   A   
+PWMA_EGR . . . . .  X ADDR   FEC7H   A   
+PWMA_ENO . . . . .  X ADDR   FEB1H   A   
+PWMA_ETR . . . . .  X ADDR   FEC3H   A   
+PWMA_IER . . . . .  X ADDR   FEC4H   A   
+PWMA_OISR. . . . .  X ADDR   FEDFH   A   
+A51 MACRO ASSEMBLER  SPWM                                                                 03/15/2021 13:45:48 PAGE    10
+
+PWMA_PS. . . . . .  X ADDR   FEB2H   A   
+PWMA_PSCRH . . . .  X ADDR   FED0H   A   
+PWMA_PSCRL . . . .  X ADDR   FED1H   A   
+PWMA_RCR . . . . .  X ADDR   FED4H   A   
+PWMA_SMCR. . . . .  X ADDR   FEC2H   A   
+PWMA_SR1 . . . . .  X ADDR   FEC5H   A   
+PWMA_SR2 . . . . .  X ADDR   FEC6H   A   
+PWM_INDEX. . . . .  D ADDR   0030H   A   
+P_SW2. . . . . . .  D ADDR   00BAH   A   
+SIN_TABLE. . . . .  C ADDR   01D7H   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER. . .  N NUMB   00D0H   A   
+TIMER0_RELOAD. . .  N NUMB   A240H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

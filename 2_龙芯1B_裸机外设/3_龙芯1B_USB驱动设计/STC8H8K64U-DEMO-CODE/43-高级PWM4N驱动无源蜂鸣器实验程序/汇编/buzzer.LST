@@ -1,0 +1,531 @@
+A51 MACRO ASSEMBLER  BUZZER                                                               03/15/2021 10:46:42 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN buzzer.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE buzzer.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* Èç¹ûÒªÔÚ³ÌÐòÖÐÊ¹ÓÃ´Ë´úÂë,ÇëÔÚ³ÌÐòÖÐ×¢Ã÷Ê¹ÓÃÁËSTCµÄ×ÊÁÏ¼°³ÌÐò        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     ;/************* ¹¦ÄÜËµÃ÷    **************
+                      14     
+                      15     ;±¾Àý³Ì»ùÓÚSTC8H8K64UÎªÖ÷¿ØÐ¾Æ¬µÄÊµÑéÏä8½øÐÐ±àÐ´²âÊÔ£¬STC8G¡¢STC8HÏµÁÐÐ¾Æ¬¿ÉÍ¨ÓÃ²Î¿¼.
+                      16     
+                      17     ;Í¨¹ýP2.7¿ÚÊä³öPWMÇý¶¯·äÃùÆ÷.
+                      18     
+                      19     ;ÐÐÁÐÉ¨Ãè°´¼üÃ¿¸ö°´¼ü°´ÏÂºó·äÃùÆ÷ÏìÒ»ÏÂ.
+                      20     
+                      21     ;ÏÂÔØÊ±, Ñ¡ÔñÊ±ÖÓ 24MHZ (ÓÃ»§¿É×ÔÐÐÐÞ¸ÄÆµÂÊ).
+                      22     
+                      23     ;******************************************/
+                      24     
+                      25     ;/****************************** ÓÃ»§¶¨Òåºê ***********************************/
+                      26     
+  5DC0                27     Fosc_KHZ    EQU 24000   ;24000KHZ
+                      28     
+  00D0                29     STACK_POIRTER   EQU     0D0H    ;¶ÑÕ»¿ªÊ¼µØÖ·
+                      30     
+  A240                31     Timer0_Reload   EQU     (65536 - Fosc_KHZ)  ; Timer 0 ÖÐ¶ÏÆµÂÊ, 1000´Î/Ãë
+                      32     
+                      33     
+                      34     ;*******************************************************************
+                      35     ;*******************************************************************
+                      36     
+  008E                37     AUXR    DATA    08EH
+  00BA                38     P_SW2   DATA    0BAH
+  00C0                39     P4      DATA    0C0H
+  00C8                40     P5      DATA    0C8H
+  00E8                41     P6      DATA    0E8H
+  00F8                42     P7      DATA    0F8H
+                      43     
+  0093                44     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094                45     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091                46     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092                47     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095                48     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+  0096                49     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+  00B1                50     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2                51     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3                52     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+  00B4                53     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9                54     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA                55     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB                56     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC                57     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1                58     P7M1    DATA    0xE1    ;
+A51 MACRO ASSEMBLER  BUZZER                                                               03/15/2021 10:46:42 PAGE     2
+
+  00E2                59     P7M0    DATA    0xE2    ;
+                      60     
+                      61     ;*******************************************************************
+                      62     
+  FEB1                63     PWMA_ENO      XDATA   0FEB1H
+  FEB2                64     PWMA_PS       XDATA   0FEB2H
+                      65     
+  FEC0                66     PWMA_CR1      XDATA   0FEC0H
+  FEC1                67     PWMA_CR2      XDATA   0FEC1H
+  FEC2                68     PWMA_SMCR     XDATA   0FEC2H
+  FEC3                69     PWMA_ETR      XDATA   0FEC3H
+  FEC4                70     PWMA_IER      XDATA   0FEC4H
+  FEC5                71     PWMA_SR1      XDATA   0FEC5H
+  FEC6                72     PWMA_SR2      XDATA   0FEC6H
+  FEC7                73     PWMA_EGR      XDATA   0FEC7H
+  FEC8                74     PWMA_CCMR1    XDATA   0FEC8H
+  FEC9                75     PWMA_CCMR2    XDATA   0FEC9H
+  FECA                76     PWMA_CCMR3    XDATA   0FECAH
+  FECB                77     PWMA_CCMR4    XDATA   0FECBH
+  FECC                78     PWMA_CCER1    XDATA   0FECCH
+  FECD                79     PWMA_CCER2    XDATA   0FECDH
+  FECE                80     PWMA_CNTRH    XDATA   0FECEH
+  FECF                81     PWMA_CNTRL    XDATA   0FECFH
+  FED0                82     PWMA_PSCRH    XDATA   0FED0H
+  FED1                83     PWMA_PSCRL    XDATA   0FED1H
+  FED2                84     PWMA_ARRH     XDATA   0FED2H
+  FED3                85     PWMA_ARRL     XDATA   0FED3H
+  FED4                86     PWMA_RCR      XDATA   0FED4H
+  FED5                87     PWMA_CCR1H    XDATA   0FED5H
+  FED6                88     PWMA_CCR1L    XDATA   0FED6H
+  FED7                89     PWMA_CCR2H    XDATA   0FED7H
+  FED8                90     PWMA_CCR2L    XDATA   0FED8H
+  FED9                91     PWMA_CCR3H    XDATA   0FED9H
+  FEDA                92     PWMA_CCR3L    XDATA   0FEDAH
+  FEDB                93     PWMA_CCR4H    XDATA   0FEDBH
+  FEDC                94     PWMA_CCR4L    XDATA   0FEDCH
+  FEDD                95     PWMA_BKR      XDATA   0FEDDH
+  FEDE                96     PWMA_DTR      XDATA   0FEDEH
+  FEDF                97     PWMA_OISR     XDATA   0FEDFH
+                      98     
+                      99     ;*************  IO¿Ú¶¨Òå    **************/
+                     100     
+                     101     
+                     102     ;*************  ±¾µØ±äÁ¿ÉùÃ÷    **************/
+  0000               103     B_1ms           BIT     20H.0   ;   1ms±êÖ¾
+                     104     
+  0038               105     KeyCode         DATA    38H ; ¸øÓÃ»§Ê¹ÓÃµÄ¼üÂë, 1~16ÎªADC¼ü£¬ 17~32ÎªIO¼ü
+  0039               106     cnt50ms         DATA    39H;
+                     107     
+  003A               108     IO_KeyState     DATA    3AH ; IOÐÐÁÐ¼ü×´Ì¬±äÁ¿
+  003B               109     IO_KeyState1    DATA    3BH
+  003C               110     IO_KeyHoldCnt   DATA    3CH ; IO¼ü°´ÏÂ¼ÆÊ±
+                     111     
+                     112     ;*******************************************************************
+                     113     ;*******************************************************************
+0000                 114             ORG     0000H               ;reset
+0000 020100          115             LJMP    F_Main
+                     116     
+000B                 117             ORG     000BH               ;1  Timer0 interrupt
+000B 02026B          118             LJMP    F_Timer0_Interrupt
+                     119     
+                     120     
+                     121     
+                     122     ;******************** Ö÷³ÌÐò **************************/
+0100                 123             ORG     0100H       ;reset
+0100                 124     F_Main:
+A51 MACRO ASSEMBLER  BUZZER                                                               03/15/2021 10:46:42 PAGE     3
+
+0100 E4              125         CLR     A
+0101 F593            126         MOV     P0M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0103 F594            127         MOV     P0M0, A
+0105 F591            128         MOV     P1M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0107 F592            129         MOV     P1M0, A
+0109 F595            130         MOV     P2M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010B F596            131         MOV     P2M0, A
+010D F5B1            132         MOV     P3M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010F F5B2            133         MOV     P3M0, A
+0111 F5B3            134         MOV     P4M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0113 F5B4            135         MOV     P4M0, A
+0115 F5C9            136         MOV     P5M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0117 F5CA            137         MOV     P5M0, A
+0119 F5CB            138         MOV     P6M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+011B F5CC            139         MOV     P6M0, A
+011D F5E1            140         MOV     P7M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+011F F5E2            141         MOV     P7M0, A
+                     142     
+                     143         
+0121 7581D0          144         MOV     SP, #STACK_POIRTER
+0124 75D000          145         MOV     PSW, #0
+                     146         USING   0       ;Ñ¡ÔñµÚ0×éR0~R7
+                     147     
+                     148     ;================= ÓÃ»§³õÊ¼»¯³ÌÐò ====================================
+                     149     
+0127 C28C            150         CLR     TR0
+0129 438E80          151         ORL     AUXR, #(1 SHL 7)    ; Timer0_1T();
+012C 5389FB          152         ANL     TMOD, #NOT 04H      ; Timer0_AsTimer();
+012F 5389FC          153         ANL     TMOD, #NOT 03H      ; Timer0_16bitAutoReload();
+0132 758CA2          154         MOV     TH0, #Timer0_Reload / 256   ;Timer0_Load(Timer0_Reload);
+0135 758A40          155         MOV     TL0, #Timer0_Reload MOD 256
+0138 D2A9            156         SETB    ET0         ; Timer0_InterruptEnable();
+013A D28C            157         SETB    TR0         ; Timer0_Run();
+                     158         
+013C 120199          159         LCALL   F_PWM_Init          ; PWM³õÊ¼»¯
+013F D2AF            160         SETB    EA          ; ´ò¿ª×ÜÖÐ¶Ï
+                     161     
+0141 753932          162         MOV     cnt50ms, #50
+0144 E4              163         CLR     A
+0145 F53A            164         MOV     IO_KeyState, A
+0147 F53B            165         MOV     IO_KeyState1, A
+0149 F53C            166         MOV     IO_KeyHoldCnt, A
+014B F538            167         MOV     KeyCode, A      ; ¸øÓÃ»§Ê¹ÓÃµÄ¼üÂë, 17~32ÓÐÐ§
+                     168     
+                     169     ;=================== Ö÷Ñ­»· ==================================
+014D                 170     L_Main_Loop:
+014D 3000FD          171         JNB     B_1ms,  L_Main_Loop     ;1msÎ´µ½
+0150 C200            172         CLR     B_1ms
+                     173     
+0152 E538            174         MOV     A, KeyCode
+0154 601A            175         JZ     L_Read_IO_Key
+                     176     
+0156 43BA80          177         ORL     P_SW2, #080H        ;Ê¹ÄÜ·ÃÎÊXFR
+0159 7480            178         MOV     A,#080H             ;Ê¹ÄÜ PWM4N Êä³ö
+015B 90FEB1          179         MOV     DPTR,#PWMA_ENO
+015E F0              180         MOVX    @DPTR,A
+015F 74FA            181         MOV     A, #250
+0161 12017C          182         LCALL   F_delay_ms          ;·äÃùÆ÷Ïì250ms
+0164 7400            183         MOV     A,#000H             ;½ûÖ¹ PWM4N Êä³ö
+0166 90FEB1          184         MOV     DPTR,#PWMA_ENO
+0169 F0              185         MOVX    @DPTR,A
+                     186     
+016A 53BA7F          187         ANL     P_SW2, #NOT 080H    ;½ûÖ¹·ÃÎÊXFR
+016D 753800          188         MOV     KeyCode, #0
+                     189     
+                     190     ;======================= 50msÉ¨ÃèÒ»´ÎÐÐÁÐ¼üÅÌ ==============================
+A51 MACRO ASSEMBLER  BUZZER                                                               03/15/2021 10:46:42 PAGE     4
+
+0170                 191     L_Read_IO_Key:
+0170 D539DA          192         DJNZ    cnt50ms, L_Main_Loop     ; (cnt50ms - 1) != 0, jmp
+0173 753932          193         MOV     cnt50ms, #50    ;
+0176 1201FD          194         LCALL   F_IO_KeyScan    ;50msÉ¨ÃèÒ»´ÎÐÐÁÐ¼üÅÌ
+                     195     
+0179 02014D          196         LJMP    L_Main_Loop
+                     197     
+                     198     ;========================================================================
+                     199     ; º¯Êý: F_delay_ms
+                     200     ; ÃèÊö: ÑÓÊ±×Ó³ÌÐò¡£
+                     201     ; ²ÎÊý: ACC: ÑÓÊ±msÊý.
+                     202     ; ·µ»Ø: none.
+                     203     ; °æ±¾: VER1.0
+                     204     ; ÈÕÆÚ: 2013-4-1
+                     205     ; ±¸×¢: ³ýÁËACCCºÍPSWÍâ, ËùÓÃµ½µÄÍ¨ÓÃ¼Ä´æÆ÷¶¼ÈëÕ»
+                     206     ;========================================================================
+017C                 207     F_delay_ms:
+017C C002            208         PUSH    02H     ;ÈëÕ»R2
+017E C003            209         PUSH    03H     ;ÈëÕ»R3
+0180 C004            210         PUSH    04H     ;ÈëÕ»R4
+                     211     
+0182 FA              212         MOV     R2,A
+                     213     
+0183                 214     L_delay_ms_1:
+0183 7B09            215         MOV     R3, #HIGH (Fosc_KHZ / 10)
+0185 7C60            216         MOV     R4, #LOW (Fosc_KHZ / 10)
+                     217         
+0187                 218     L_delay_ms_2:
+0187 EC              219         MOV     A, R4           ;1T     Total 10T/loop
+0188 1C              220         DEC     R4              ;1T
+0189 7001            221         JNZ     L_delay_ms_3    ;3T
+018B 1B              222         DEC     R3
+018C                 223     L_delay_ms_3:
+018C 14              224         DEC     A               ;1T
+018D 4B              225         ORL     A, R3           ;1T
+018E 70F7            226         JNZ     L_delay_ms_2    ;3T
+                     227         
+0190 DAF1            228         DJNZ    R2, L_delay_ms_1
+                     229     
+0192 D004            230         POP     04H     ;³öÕ»R2
+0194 D003            231         POP     03H     ;³öÕ»R3
+0196 D002            232         POP     02H     ;³öÕ»R4
+0198 22              233         RET
+                     234     
+                     235     ;========================================================================
+                     236     ; º¯Êý: F_PWM_Init
+                     237     ; ÃèÊö: PWM³õÊ¼»¯³ÌÐò.
+                     238     ; ²ÎÊý: none
+                     239     ; ·µ»Ø: none.
+                     240     ; °æ±¾: V1.0, 2021-3-3
+                     241     ;========================================================================
+0199                 242     F_PWM_Init:
+0199 43BA80          243         ORL     P_SW2, #080H        ;Ê¹ÄÜ·ÃÎÊXFR
+                     244     
+019C E4              245         CLR     A                   ;Ð´ CCMRx Ç°±ØÐëÏÈÇåÁã CCxE ¹Ø±ÕÍ¨µÀ
+019D 90FECD          246         MOV     DPTR,#PWMA_CCER2
+01A0 F0              247         MOVX    @DPTR,A
+01A1 7430            248         MOV     A,#030H
+01A3 90FECB          249         MOV     DPTR,#PWMA_CCMR4
+01A6 F0              250         MOVX    @DPTR,A
+01A7 7450            251         MOV     A,#050H             ;ÅäÖÃÍ¨µÀÊä³öÊ¹ÄÜºÍ¼«ÐÔ
+01A9 90FECD          252         MOV     DPTR,#PWMA_CCER2
+01AC F0              253         MOVX    @DPTR,A
+                     254     
+01AD 7407            255         MOV     A,#7                ;ÉèÖÃÖÜÆÚÊ±¼ä
+01AF 90FED2          256         MOV     DPTR,#PWMA_ARRH
+A51 MACRO ASSEMBLER  BUZZER                                                               03/15/2021 10:46:42 PAGE     5
+
+01B2 F0              257         MOVX    @DPTR,A
+01B3 74FF            258         MOV     A,#0FFH
+01B5 90FED3          259         MOV     DPTR,#PWMA_ARRL
+01B8 F0              260         MOVX    @DPTR,A
+                     261     
+01B9 7480            262         MOV     A,#080H             ;Ê¹ÄÜ PWM4N Êä³ö
+01BB 90FEB1          263         MOV     DPTR,#PWMA_ENO
+01BE F0              264         MOVX    @DPTR,A
+01BF 7440            265         MOV     A,#040H             ;¸ß¼¶ PWM Í¨µÀÊä³ö½ÅÑ¡ÔñÎ»
+01C1 90FEB2          266         MOV     DPTR,#PWMA_PS
+01C4 F0              267         MOVX    @DPTR,A
+01C5 7480            268         MOV     A,#080H             ;Ê¹ÄÜÖ÷Êä³ö
+01C7 90FEDD          269         MOV     DPTR,#PWMA_BKR
+01CA F0              270         MOVX    @DPTR,A
+                     271     
+01CB 90FEC0          272         MOV     DPTR,#PWMA_CR1
+01CE E0              273         MOVX    A,@DPTR
+01CF 4401            274         ORL     A,#01H              ;¿ªÊ¼¼ÆÊ±
+01D1 F0              275         MOVX    @DPTR,A
+                     276     
+01D2 74FA            277         MOV     A, #250
+01D4 12017C          278         LCALL   F_delay_ms          ;ÉÏµç·äÃùÆ÷Ïì500ms
+01D7 12017C          279         LCALL   F_delay_ms
+01DA 7400            280         MOV     A,#000H             ;½ûÖ¹ PWM4N Êä³ö
+01DC 90FEB1          281         MOV     DPTR,#PWMA_ENO
+01DF F0              282         MOVX    @DPTR,A
+                     283     
+01E0 53BA7F          284         ANL     P_SW2, #NOT 080H    ;½ûÖ¹·ÃÎÊXFR
+01E3 22              285         RET
+                     286     
+                     287     ;/*****************************************************
+                     288     ;   ÐÐÁÐ¼üÉ¨Ãè³ÌÐò
+                     289     ;   Ê¹ÓÃXY²éÕÒ4x4¼üµÄ·½·¨£¬Ö»ÄÜµ¥¼ü£¬ËÙ¶È¿ì
+                     290     ;
+                     291     ;   Y     P04      P05      P06      P07
+                     292     ;          |        |        |        |
+                     293     ;X         |        |        |        |
+                     294     ;P00 ---- K00 ---- K01 ---- K02 ---- K03 ----
+                     295     ;          |        |        |        |
+                     296     ;P01 ---- K04 ---- K05 ---- K06 ---- K07 ----
+                     297     ;          |        |        |        |
+                     298     ;P02 ---- K08 ---- K09 ---- K10 ---- K11 ----
+                     299     ;          |        |        |        |
+                     300     ;P03 ---- K12 ---- K13 ---- K14 ---- K15 ----
+                     301     ;          |        |        |        |
+                     302     ;******************************************************/
+                     303     
+                     304     
+01E4 00010200        305     T_KeyTable:  DB 0,1,2,0,3,0,0,0,4,0,0,0,0,0,0,0
+01E8 03000000                
+01EC 04000000                
+01F0 00000000                
+                     306     
+01F4                 307     F_IO_KeyDelay:
+01F4 C003            308         PUSH    03H     ;R3ÈëÕ»
+01F6 7B3C            309         MOV     R3, #60
+01F8 DBFE            310         DJNZ    R3, $   ; (n * 4) T
+01FA D003            311         POP     03H     ;R3³öÕ»
+01FC 22              312         RET
+                     313     
+01FD                 314     F_IO_KeyScan:   ;50ms call
+01FD C006            315         PUSH    06H     ;R6ÈëÕ»
+01FF C007            316         PUSH    07H     ;R7ÈëÕ»
+                     317     
+0201 AE3B            318         MOV     R6, IO_KeyState1    ; ±£´æÉÏÒ»´Î×´Ì¬
+                     319     
+A51 MACRO ASSEMBLER  BUZZER                                                               03/15/2021 10:46:42 PAGE     6
+
+0203 7580F0          320         MOV     P0, #0F0H       ;XµÍ£¬¶ÁY
+0206 1201F4          321         LCALL   F_IO_KeyDelay       ;delay about 250T
+0209 E580            322         MOV     A, P0
+020B 54F0            323         ANL     A, #0F0H
+020D F53B            324         MOV     IO_KeyState1, A     ; IO_KeyState1 = P0 & 0xf0
+                     325     
+020F 75800F          326         MOV     P0, #0FH        ;YµÍ£¬¶ÁX
+0212 1201F4          327         LCALL   F_IO_KeyDelay       ;delay about 250T
+0215 E580            328         MOV     A, P0
+0217 540F            329         ANL     A, #0FH
+0219 453B            330         ORL     A, IO_KeyState1         ; IO_KeyState1 |= (P0 & 0x0f)
+021B F53B            331         MOV     IO_KeyState1, A
+021D 633BFF          332         XRL     IO_KeyState1, #0FFH     ; IO_KeyState1 ^= 0xff; È¡·´
+                     333     
+0220 EE              334         MOV     A, R6                   ;if(j == IO_KeyState1), Á¬ÐøÁ½´Î¶ÁÏàµÈ
+0221 B53B3F          335         CJNE    A, IO_KeyState1, L_QuitCheckIoKey   ;²»ÏàµÈ, jmp
+                     336         
+0224 AE3A            337         MOV     R6, IO_KeyState     ;ÔÝ´æIO_KeyState
+0226 853B3A          338         MOV     IO_KeyState, IO_KeyState1
+0229 E53A            339         MOV     A, IO_KeyState
+022B 6033            340         JZ      L_NoIoKeyPress      ; if(IO_KeyState != 0), ÓÐ¼ü°´ÏÂ
+                     341     
+022D EE              342         MOV     A, R6   
+022E 600E            343         JZ      L_CalculateIoKey    ;if(R6 == 0)    F0 = 1; µÚÒ»´Î°´ÏÂ
+0230 EE              344         MOV     A, R6   
+0231 B53A2F          345         CJNE    A, IO_KeyState, L_QuitCheckIoKey    ; if(j != IO_KeyState), jmp
+                     346         
+0234 053C            347         INC     IO_KeyHoldCnt   ; if(++IO_KeyHoldCnt >= 20),    1ÃëºóÖØ¼ü
+0236 E53C            348         MOV     A, IO_KeyHoldCnt
+0238 B41428          349         CJNE    A, #20, L_QuitCheckIoKey
+023B 753C12          350         MOV     IO_KeyHoldCnt, #18;
+023E                 351     L_CalculateIoKey:
+023E E53A            352         MOV     A, IO_KeyState
+0240 C4              353         SWAP    A       ;R6 = T_KeyTable[IO_KeyState >> 4];
+0241 540F            354         ANL     A, #0x0F
+0243 9001E4          355         MOV     DPTR, #T_KeyTable
+0246 93              356         MOVC    A, @A+DPTR
+0247 FE              357         MOV     R6, A
+                     358         
+0248 6019            359         JZ      L_QuitCheckIoKey    ; if(R6 == 0)
+024A E53A            360         MOV     A, IO_KeyState
+024C 540F            361         ANL     A, #0x0F
+024E 93              362         MOVC    A, @A+DPTR
+024F FF              363         MOV     R7, A
+0250 6011            364         JZ      L_QuitCheckIoKey    ; if(T_KeyTable[IO_KeyState& 0x0f] == 0)
+                     365         
+0252 EE              366         MOV     A, R6       ;KeyCode = (j - 1) * 4 + T_KeyTable[IO_KeyState & 0x0f] + 16;   //¼
+                             ÆËã¼üÂë£¬17~32
+0253 25E0            367         ADD     A, ACC
+0255 25E0            368         ADD     A, ACC
+0257 FE              369         MOV     R6, A
+0258 EF              370         MOV     A, R7
+0259 2E              371         ADD     A, R6
+025A 240C            372         ADD     A, #12
+025C F538            373         MOV     KeyCode, A
+025E 8003            374         SJMP    L_QuitCheckIoKey
+                     375         
+0260                 376     L_NoIoKeyPress:
+0260 753C00          377         MOV     IO_KeyHoldCnt, #0
+                     378     
+0263                 379     L_QuitCheckIoKey:
+0263 7580FF          380         MOV     P0, #0xFF
+0266 D007            381         POP     07H     ;R7³öÕ»
+0268 D006            382         POP     06H     ;R6³öÕ»
+026A 22              383         RET
+                     384     
+A51 MACRO ASSEMBLER  BUZZER                                                               03/15/2021 10:46:42 PAGE     7
+
+                     385     ;*******************************************************************
+                     386     ;**************** ÖÐ¶Ïº¯Êý ***************************************************
+                     387     
+026B                 388     F_Timer0_Interrupt: ;Timer0 1msÖÐ¶Ïº¯Êý
+026B C0D0            389         PUSH    PSW     ;PSWÈëÕ»
+026D C0E0            390         PUSH    ACC     ;ACCÈëÕ»
+                     391     
+026F D200            392         SETB    B_1ms           ; 1ms±êÖ¾
+                     393         
+                     394     
+0271 D0E0            395         POP     ACC     ;ACC³öÕ»
+0273 D0D0            396         POP     PSW     ;PSW³öÕ»
+0275 32              397         RETI
+                     398     
+                     399         END
+                             
+A51 MACRO ASSEMBLER  BUZZER                                                               03/15/2021 10:46:42 PAGE     8
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . .  D ADDR   00E0H   A   
+AUXR . . . . . . .  D ADDR   008EH   A   
+B_1MS. . . . . . .  B ADDR   0020H.0 A   
+CNT50MS. . . . . .  D ADDR   0039H   A   
+EA . . . . . . . .  B ADDR   00A8H.7 A   
+ET0. . . . . . . .  B ADDR   00A8H.1 A   
+FOSC_KHZ . . . . .  N NUMB   5DC0H   A   
+F_DELAY_MS . . . .  C ADDR   017CH   A   
+F_IO_KEYDELAY. . .  C ADDR   01F4H   A   
+F_IO_KEYSCAN . . .  C ADDR   01FDH   A   
+F_MAIN . . . . . .  C ADDR   0100H   A   
+F_PWM_INIT . . . .  C ADDR   0199H   A   
+F_TIMER0_INTERRUPT  C ADDR   026BH   A   
+IO_KEYHOLDCNT. . .  D ADDR   003CH   A   
+IO_KEYSTATE. . . .  D ADDR   003AH   A   
+IO_KEYSTATE1 . . .  D ADDR   003BH   A   
+KEYCODE. . . . . .  D ADDR   0038H   A   
+L_CALCULATEIOKEY .  C ADDR   023EH   A   
+L_DELAY_MS_1 . . .  C ADDR   0183H   A   
+L_DELAY_MS_2 . . .  C ADDR   0187H   A   
+L_DELAY_MS_3 . . .  C ADDR   018CH   A   
+L_MAIN_LOOP. . . .  C ADDR   014DH   A   
+L_NOIOKEYPRESS . .  C ADDR   0260H   A   
+L_QUITCHECKIOKEY .  C ADDR   0263H   A   
+L_READ_IO_KEY. . .  C ADDR   0170H   A   
+P0 . . . . . . . .  D ADDR   0080H   A   
+P0M0 . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . .  D ADDR   0093H   A   
+P1M0 . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . .  D ADDR   0095H   A   
+P3M0 . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . .  D ADDR   00B1H   A   
+P4 . . . . . . . .  D ADDR   00C0H   A   
+P4M0 . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . .  D ADDR   00B3H   A   
+P5 . . . . . . . .  D ADDR   00C8H   A   
+P5M0 . . . . . . .  D ADDR   00CAH   A   
+P5M1 . . . . . . .  D ADDR   00C9H   A   
+P6 . . . . . . . .  D ADDR   00E8H   A   
+P6M0 . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . .  D ADDR   00CBH   A   
+P7 . . . . . . . .  D ADDR   00F8H   A   
+P7M0 . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . .  D ADDR   00E1H   A   
+PSW. . . . . . . .  D ADDR   00D0H   A   
+PWMA_ARRH. . . . .  X ADDR   FED2H   A   
+PWMA_ARRL. . . . .  X ADDR   FED3H   A   
+PWMA_BKR . . . . .  X ADDR   FEDDH   A   
+PWMA_CCER1 . . . .  X ADDR   FECCH   A   
+PWMA_CCER2 . . . .  X ADDR   FECDH   A   
+PWMA_CCMR1 . . . .  X ADDR   FEC8H   A   
+PWMA_CCMR2 . . . .  X ADDR   FEC9H   A   
+PWMA_CCMR3 . . . .  X ADDR   FECAH   A   
+PWMA_CCMR4 . . . .  X ADDR   FECBH   A   
+PWMA_CCR1H . . . .  X ADDR   FED5H   A   
+PWMA_CCR1L . . . .  X ADDR   FED6H   A   
+PWMA_CCR2H . . . .  X ADDR   FED7H   A   
+PWMA_CCR2L . . . .  X ADDR   FED8H   A   
+A51 MACRO ASSEMBLER  BUZZER                                                               03/15/2021 10:46:42 PAGE     9
+
+PWMA_CCR3H . . . .  X ADDR   FED9H   A   
+PWMA_CCR3L . . . .  X ADDR   FEDAH   A   
+PWMA_CCR4H . . . .  X ADDR   FEDBH   A   
+PWMA_CCR4L . . . .  X ADDR   FEDCH   A   
+PWMA_CNTRH . . . .  X ADDR   FECEH   A   
+PWMA_CNTRL . . . .  X ADDR   FECFH   A   
+PWMA_CR1 . . . . .  X ADDR   FEC0H   A   
+PWMA_CR2 . . . . .  X ADDR   FEC1H   A   
+PWMA_DTR . . . . .  X ADDR   FEDEH   A   
+PWMA_EGR . . . . .  X ADDR   FEC7H   A   
+PWMA_ENO . . . . .  X ADDR   FEB1H   A   
+PWMA_ETR . . . . .  X ADDR   FEC3H   A   
+PWMA_IER . . . . .  X ADDR   FEC4H   A   
+PWMA_OISR. . . . .  X ADDR   FEDFH   A   
+PWMA_PS. . . . . .  X ADDR   FEB2H   A   
+PWMA_PSCRH . . . .  X ADDR   FED0H   A   
+PWMA_PSCRL . . . .  X ADDR   FED1H   A   
+PWMA_RCR . . . . .  X ADDR   FED4H   A   
+PWMA_SMCR. . . . .  X ADDR   FEC2H   A   
+PWMA_SR1 . . . . .  X ADDR   FEC5H   A   
+PWMA_SR2 . . . . .  X ADDR   FEC6H   A   
+P_SW2. . . . . . .  D ADDR   00BAH   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER. . .  N NUMB   00D0H   A   
+TH0. . . . . . . .  D ADDR   008CH   A   
+TIMER0_RELOAD. . .  N NUMB   A240H   A   
+TL0. . . . . . . .  D ADDR   008AH   A   
+TMOD . . . . . . .  D ADDR   0089H   A   
+TR0. . . . . . . .  B ADDR   0088H.4 A   
+T_KEYTABLE . . . .  C ADDR   01E4H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

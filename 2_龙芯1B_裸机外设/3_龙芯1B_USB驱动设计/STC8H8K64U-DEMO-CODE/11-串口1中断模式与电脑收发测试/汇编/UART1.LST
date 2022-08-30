@@ -1,0 +1,398 @@
+A51 MACRO ASSEMBLER  UART1                                                                03/01/2021 13:37:49 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN UART1.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE UART1.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* 如果要在程序中使用此代码,请在程序中注明使用了STC的资料及程序        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     ;/************* 功能说明    **************
+                      14     
+                      15     ;本例程基于STC8H8K64U为主控芯片的实验箱8进行编写测试，STC8G、STC8H系列芯片可通用参考.
+                      16     
+                      17     ;串口1全双工中断方式收发通讯程序.
+                      18     
+                      19     ;串口设置为：115200,8,n,1.
+                      20     
+                      21     ;通过PC向MCU发送数据, MCU收到后通过串口把收到的数据原样返回.
+                      22     
+                      23     ;下载时, 选择时钟 22.1184MHz，如要改变, 请修改下面的"定义主时钟"的值并重新编译.
+                      24     
+                      25     ;******************************************/
+                      26     
+                      27     ;/****************************** 用户定义宏 ***********************************/
+                      28     
+                      29     ;UART1_Baudrate EQU     (-4608) ;   600bps @ 11.0592MHz
+                      30     ;UART1_Baudrate EQU     (-2304) ;  1200bps @ 11.0592MHz UART1_Baudrate = 65536UL - ((MAIN_F
+                             osc / 4) / Baudrate)
+                      31     ;UART1_Baudrate EQU     (-1152) ;  2400bps @ 11.0592MHz
+                      32     ;UART1_Baudrate EQU     (-576)  ;  4800bps @ 11.0592MHz
+                      33     ;UART1_Baudrate EQU     (-288)  ;  9600bps @ 11.0592MHz
+                      34     ;UART1_Baudrate EQU     (-144)  ; 19200bps @ 11.0592MHz
+                      35     ;UART1_Baudrate EQU     (-72)   ; 38400bps @ 11.0592MHz
+                      36     ;UART1_Baudrate EQU     (-48)   ; 57600bps @ 11.0592MHz
+                      37     ;UART1_Baudrate EQU      (-24)   ;115200bps @ 11.0592MHz
+                      38     
+                      39     ;UART1_Baudrate EQU     (-7680) ;   600bps @ 18.432MHz
+                      40     ;UART1_Baudrate EQU     (-3840) ;  1200bps @ 18.432MHz
+                      41     ;UART1_Baudrate EQU     (-1920) ;  2400bps @ 18.432MHz
+                      42     ;UART1_Baudrate EQU     (-960)  ;  4800bps @ 18.432MHz
+                      43     ;UART1_Baudrate EQU     (-480)  ;  9600bps @ 18.432MHz
+                      44     ;UART1_Baudrate EQU     (-240)  ; 19200bps @ 18.432MHz
+                      45     ;UART1_Baudrate EQU     (-120)  ; 38400bps @ 18.432MHz
+                      46     ;UART1_Baudrate EQU     (-80)   ; 57600bps @ 18.432MHz
+                      47     ;UART1_Baudrate EQU     (-40)   ;115200bps @ 18.432MHz
+                      48     
+                      49     ;UART1_Baudrate EQU     (-9216) ;   600bps @ 22.1184MHz
+                      50     ;UART1_Baudrate EQU     (-4608) ;  1200bps @ 22.1184MHz
+                      51     ;UART1_Baudrate EQU     (-2304) ;  2400bps @ 22.1184MHz
+                      52     ;UART1_Baudrate EQU     (-1152) ;  4800bps @ 22.1184MHz
+                      53     ;UART1_Baudrate EQU     (-576)  ;  9600bps @ 22.1184MHz
+                      54     ;UART1_Baudrate EQU     (-288)  ; 19200bps @ 22.1184MHz
+                      55     ;UART1_Baudrate EQU     (-144)  ; 38400bps @ 22.1184MHz
+                      56     ;UART1_Baudrate EQU     (-96)   ; 57600bps @ 22.1184MHz
+  FFD0                57     UART1_Baudrate  EQU    (-48)   ;115200bps @ 22.1184MHz
+A51 MACRO ASSEMBLER  UART1                                                                03/01/2021 13:37:49 PAGE     2
+
+                      58     
+                      59     ;UART1_Baudrate EQU     (-6912) ; 1200bps @ 33.1776MHz
+                      60     ;UART1_Baudrate EQU     (-3456) ; 2400bps @ 33.1776MHz
+                      61     ;UART1_Baudrate EQU     (-1728) ; 4800bps @ 33.1776MHz
+                      62     ;UART1_Baudrate EQU     (-864)  ; 9600bps @ 33.1776MHz
+                      63     ;UART1_Baudrate EQU     (-432)  ;19200bps @ 33.1776MHz
+                      64     ;UART1_Baudrate EQU     (-216)  ;38400bps @ 33.1776MHz
+                      65     ;UART1_Baudrate EQU     (-144)  ;57600bps @ 33.1776MHz
+                      66     ;UART1_Baudrate EQU     (-72)   ;115200bps @ 33.1776MHz
+                      67     
+                      68     
+                      69     ;*******************************************************************
+                      70     ;*******************************************************************
+  0093                71     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094                72     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091                73     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092                74     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095                75     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+  0096                76     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+  00B1                77     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2                78     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3                79     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+  00B4                80     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9                81     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA                82     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB                83     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC                84     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1                85     P7M1    DATA    0xE1    ;
+  00E2                86     P7M0    DATA    0xE2    ;
+                      87     
+                      88     
+  008F                89     INT_CLKO    DATA    0x8F
+  00A2                90     P_SW1       DATA    0A2H
+  00AF                91     IE2         DATA    0AFH
+  008E                92     AUXR        DATA    08EH
+  00D6                93     T2H         DATA    0D6H
+  00D7                94     T2L         DATA    0D7H
+                      95     
+                      96     
+  0020                97     RX1_Lenth   EQU     32      ; 串口接收缓冲长度
+                      98     
+  0000                99     B_TX1_Busy  BIT     20H.0   ; 发送忙标志
+  0030               100     TX1_Cnt     DATA    30H     ; 发送计数
+  0031               101     RX1_Cnt     DATA    31H     ; 接收计数
+  0040               102     RX1_Buffer  DATA    40H     ;40 ~ 5FH 接收缓冲
+                     103     
+  00D0               104     STACK_POIRTER   EQU     0D0H    ;堆栈开始地址
+                     105     
+                     106     ;*******************************************************************
+                     107     ;*******************************************************************
+0000                 108             ORG     0000H       ;reset
+0000 020100          109             LJMP    F_Main
+                     110     
+0023                 111             ORG     0023H       ;4  UART1 interrupt
+0023 0201D5          112             LJMP    F_UART1_Interrupt
+                     113     
+                     114     
+                     115     ;******************** 主程序 **************************/
+0100                 116             ORG     0100H       ;reset
+0100                 117     F_Main:
+0100 E4              118         CLR     A
+0101 F593            119         MOV     P0M1, A     ;设置为准双向口
+0103 F594            120         MOV     P0M0, A
+0105 F591            121         MOV     P1M1, A     ;设置为准双向口
+0107 F592            122         MOV     P1M0, A
+0109 F595            123         MOV     P2M1, A     ;设置为准双向口
+A51 MACRO ASSEMBLER  UART1                                                                03/01/2021 13:37:49 PAGE     3
+
+010B F596            124         MOV     P2M0, A
+010D F5B1            125         MOV     P3M1, A     ;设置为准双向口
+010F F5B2            126         MOV     P3M0, A
+0111 F5B3            127         MOV     P4M1, A     ;设置为准双向口
+0113 F5B4            128         MOV     P4M0, A
+0115 F5C9            129         MOV     P5M1, A     ;设置为准双向口
+0117 F5CA            130         MOV     P5M0, A
+0119 F5CB            131         MOV     P6M1, A     ;设置为准双向口
+011B F5CC            132         MOV     P6M0, A
+011D F5E1            133         MOV     P7M1, A     ;设置为准双向口
+011F F5E2            134         MOV     P7M0, A
+                     135     
+                     136         
+0121 7581D0          137         MOV     SP, #STACK_POIRTER
+0124 75D000          138         MOV     PSW, #0
+                     139         USING   0       ;选择第0组R0~R7
+                     140     
+                     141     ;================= 用户初始化程序 ====================================
+0127 7401            142         MOV     A, #1
+0129 120193          143         LCALL   F_UART1_config  ; 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer1做波特率.
+012C D2AF            144         SETB    EA      ; 允许全局中断
+                     145         
+012E 900154          146         MOV     DPTR, #TestString1  ;Load string address to DPTR
+0131 12016E          147         LCALL   F_SendString1       ;Send string
+                     148     
+                     149     ;=================== 主循环 ==================================
+0134                 150     L_MainLoop:
+0134 E530            151         MOV     A, TX1_Cnt
+0136 B53102          152         CJNE    A, RX1_Cnt, L_ReturnData
+0139 8016            153         SJMP    L_QuitCheckRx1
+013B                 154     L_ReturnData:                   ; 收到过数据
+013B 200013          155         JB      B_TX1_Busy, L_QuitCheckRx1      ; 发送忙， 退出
+013E D200            156         SETB    B_TX1_Busy          ; 标志发送忙
+0140 7440            157         MOV     A, #RX1_Buffer
+0142 2530            158         ADD     A, TX1_Cnt
+0144 F8              159         MOV     R0, A
+0145 8699            160         MOV     SBUF, @R0       ; 发一个字节
+0147 0530            161         INC     TX1_Cnt
+0149 E530            162         MOV     A, TX1_Cnt
+014B B42003          163         CJNE    A, #RX1_Lenth, L_QuitCheckRx1
+014E 753000          164         MOV     TX1_Cnt, #0     ; 避免溢出处理
+0151                 165     L_QuitCheckRx1:
+0151 020134          166         LJMP    L_MainLoop
+                     167     ;===================================================================
+                     168     
+                     169     
+0154                 170     TestString1:                    ;Test string
+0154 53544338        171         DB  "STC8H8K64U Uart1 Test !",0DH,0AH,0
+0158 48384B36                
+015C 34552055                
+0160 61727431                
+0164 20546573                
+0168 7420210D                
+016C 0A00                    
+                     172     
+                     173     ;========================================================================
+                     174     ; 函数: F_SendString1
+                     175     ; 描述: 串口1发送字符串函数。
+                     176     ; 参数: DPTR: 字符串首地址.
+                     177     ; 返回: none.
+                     178     ; 版本: VER1.0
+                     179     ; 日期: 2014-11-28
+                     180     ; 备注: 
+                     181     ;========================================================================
+016E                 182     F_SendString1:
+016E E4              183         CLR     A
+A51 MACRO ASSEMBLER  UART1                                                                03/01/2021 13:37:49 PAGE     4
+
+016F 93              184         MOVC    A, @A+DPTR      ;Get current char
+0170 600A            185         JZ      L_SendEnd1      ;Check the end of the string
+0172 D200            186         SETB    B_TX1_Busy      ;标志发送忙
+0174 F599            187         MOV     SBUF, A         ;发送一个字节
+0176 2000FD          188         JB      B_TX1_Busy, $   ;等待发送完成
+0179 A3              189         INC     DPTR            ;increment string ptr
+017A 80F2            190         SJMP    F_SendString1       ;Check next
+017C                 191     L_SendEnd1:
+017C 22              192         RET
+                     193     
+                     194     ;========================================================================
+                     195     ; 函数: F_SetTimer2Baudraye
+                     196     ; 描述: 设置Timer2做波特率发生器。
+                     197     ; 参数: DPTR: Timer2的重装值.
+                     198     ; 返回: none.
+                     199     ; 版本: VER1.0
+                     200     ; 日期: 2014-11-28
+                     201     ; 备注: 
+                     202     ;========================================================================
+017D                 203     F_SetTimer2Baudraye:    ; 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer1做波特率.
+017D 538EEF          204         ANL     AUXR, #NOT (1 SHL 4)    ; Timer stop    波特率使用Timer2产生
+0180 538EF7          205         ANL     AUXR, #NOT (1 SHL 3)    ; Timer2 set As Timer
+0183 438E04          206         ORL     AUXR, #(1 SHL 2)        ; Timer2 set as 1T mode
+0186 8583D6          207         MOV     T2H, DPH
+0189 8582D7          208         MOV     T2L, DPL
+018C 53AFFB          209         ANL     IE2, #NOT (1 SHL 2)     ; 禁止中断
+018F 438E10          210         ORL     AUXR, #(1 SHL 4)        ; Timer run enable
+0192 22              211         RET
+                     212     
+                     213     ;========================================================================
+                     214     ; 函数: F_UART1_config
+                     215     ; 描述: UART1初始化函数。
+                     216     ; 参数: ACC: 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer1做波特率.
+                     217     ; 返回: none.
+                     218     ; 版本: VER1.0
+                     219     ; 日期: 2014-11-28
+                     220     ; 备注: 
+                     221     ;========================================================================
+0193                 222     F_UART1_config:
+0193 B4020B          223         CJNE    A, #2, L_Uart1NotUseTimer2
+0196 438E01          224         ORL     AUXR, #0x01     ; S1 BRT Use Timer2;
+0199 90FFD0          225         MOV     DPTR, #UART1_Baudrate
+019C 12017D          226         LCALL   F_SetTimer2Baudraye
+019F 801B            227         SJMP    L_SetupUart1
+                     228     
+01A1                 229     L_Uart1NotUseTimer2:
+01A1 C28E            230         CLR     TR1                 ; Timer Stop    波特率使用Timer1产生
+01A3 538EFE          231         ANL     AUXR, #NOT 0x01     ; S1 BRT Use Timer1;
+01A6 438E40          232         ORL     AUXR, #(1 SHL 6)    ; Timer1 set as 1T mode
+01A9 5389BF          233         ANL     TMOD, #NOT (1 SHL 6); Timer1 set As Timer
+01AC 5389CF          234         ANL     TMOD, #NOT 0x30     ; Timer1_16bitAutoReload;
+01AF 758DFF          235         MOV     TH1, #HIGH UART1_Baudrate
+01B2 758BD0          236         MOV     TL1, #LOW  UART1_Baudrate
+01B5 C2AB            237         CLR     ET1                 ; 禁止中断
+01B7 538FFD          238         ANL     INT_CLKO, #NOT 0x02 ; 不输出时钟
+01BA D28E            239         SETB    TR1
+                     240     
+01BC                 241     L_SetupUart1:
+01BC 53983F          242         ANL     SCON, #0x3f
+01BF 439840          243         ORL     SCON, #0x40     ; UART1模式, 0x00: 同步移位输出, 0x40: 8位数据,可变波特率, 0x80
+                             : 9位数据,固定波特率, 0xc0: 9位数据,可变波特率
+                     244     ;   SETB    PS      ; 高优先级中断
+01C2 D29C            245         SETB    REN     ; 允许接收
+01C4 D2AC            246         SETB    ES      ; 允许中断
+                     247     
+01C6 53A23F          248         ANL     P_SW1, #0x3f
+A51 MACRO ASSEMBLER  UART1                                                                03/01/2021 13:37:49 PAGE     5
+
+01C9 43A200          249         ORL     P_SW1, #0x00        ; UART1 switch to, 0x00: P3.0 P3.1, 0x40: P3.6 P3.7, 0x80: 
+                             P1.6 P1.7, 0xC0: P4.3 P4.4
+                     250     ;   ORL     PCON2, #(1 SHL 4)   ; 内部短路RXD与TXD, 做中继, ENABLE,DISABLE
+                     251     
+01CC C200            252         CLR     B_TX1_Busy
+01CE 753100          253         MOV     RX1_Cnt, #0;
+01D1 753000          254         MOV     TX1_Cnt, #0;
+01D4 22              255         RET
+                     256     
+                     257     
+                     258     ;========================================================================
+                     259     ; 函数: F_UART1_Interrupt
+                     260     ; 描述: UART1中断函数。
+                     261     ; 参数: nine.
+                     262     ; 返回: none.
+                     263     ; 版本: VER1.0
+                     264     ; 日期: 2014-11-28
+                     265     ; 备注: 
+                     266     ;========================================================================
+01D5                 267     F_UART1_Interrupt:
+01D5 C0D0            268         PUSH    PSW
+01D7 C0E0            269         PUSH    ACC
+01D9 C000            270         PUSH    AR0
+                     271         
+01DB 309813          272         JNB     RI, L_QuitUartRx
+01DE C298            273         CLR     RI
+01E0 7440            274         MOV     A, #RX1_Buffer
+01E2 2531            275         ADD     A, RX1_Cnt
+01E4 F8              276         MOV     R0, A
+01E5 A699            277         MOV     @R0, SBUF   ;保存一个字节
+01E7 0531            278         INC     RX1_Cnt
+01E9 E531            279         MOV     A, RX1_Cnt
+01EB B42003          280         CJNE    A, #RX1_Lenth, L_QuitUartRx
+01EE 753100          281         MOV     RX1_Cnt, #0     ; 避免溢出处理
+01F1                 282     L_QuitUartRx:
+                     283     
+01F1 309904          284         JNB     TI, L_QuitUartTx
+01F4 C299            285         CLR     TI
+01F6 C200            286         CLR     B_TX1_Busy      ; 清除发送忙标志
+01F8                 287     L_QuitUartTx:
+                     288     
+01F8 D000            289         POP     AR0
+01FA D0E0            290         POP     ACC
+01FC D0D0            291         POP     PSW
+01FE 32              292         RETI
+                     293     
+                     294         END
+                             
+A51 MACRO ASSEMBLER  UART1                                                                03/01/2021 13:37:49 PAGE     6
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E              T Y P E  V A L U E   ATTRIBUTES
+
+ACC . . . . . . . .  D ADDR   00E0H   A   
+AR0 . . . . . . . .  D ADDR   0000H   A   
+AUXR. . . . . . . .  D ADDR   008EH   A   
+B_TX1_BUSY. . . . .  B ADDR   0020H.0 A   
+DPH . . . . . . . .  D ADDR   0083H   A   
+DPL . . . . . . . .  D ADDR   0082H   A   
+EA. . . . . . . . .  B ADDR   00A8H.7 A   
+ES. . . . . . . . .  B ADDR   00A8H.4 A   
+ET1 . . . . . . . .  B ADDR   00A8H.3 A   
+F_MAIN. . . . . . .  C ADDR   0100H   A   
+F_SENDSTRING1 . . .  C ADDR   016EH   A   
+F_SETTIMER2BAUDRAYE  C ADDR   017DH   A   
+F_UART1_CONFIG. . .  C ADDR   0193H   A   
+F_UART1_INTERRUPT .  C ADDR   01D5H   A   
+IE2 . . . . . . . .  D ADDR   00AFH   A   
+INT_CLKO. . . . . .  D ADDR   008FH   A   
+L_MAINLOOP. . . . .  C ADDR   0134H   A   
+L_QUITCHECKRX1. . .  C ADDR   0151H   A   
+L_QUITUARTRX. . . .  C ADDR   01F1H   A   
+L_QUITUARTTX. . . .  C ADDR   01F8H   A   
+L_RETURNDATA. . . .  C ADDR   013BH   A   
+L_SENDEND1. . . . .  C ADDR   017CH   A   
+L_SETUPUART1. . . .  C ADDR   01BCH   A   
+L_UART1NOTUSETIMER2  C ADDR   01A1H   A   
+P0M0. . . . . . . .  D ADDR   0094H   A   
+P0M1. . . . . . . .  D ADDR   0093H   A   
+P1M0. . . . . . . .  D ADDR   0092H   A   
+P1M1. . . . . . . .  D ADDR   0091H   A   
+P2M0. . . . . . . .  D ADDR   0096H   A   
+P2M1. . . . . . . .  D ADDR   0095H   A   
+P3M0. . . . . . . .  D ADDR   00B2H   A   
+P3M1. . . . . . . .  D ADDR   00B1H   A   
+P4M0. . . . . . . .  D ADDR   00B4H   A   
+P4M1. . . . . . . .  D ADDR   00B3H   A   
+P5M0. . . . . . . .  D ADDR   00CAH   A   
+P5M1. . . . . . . .  D ADDR   00C9H   A   
+P6M0. . . . . . . .  D ADDR   00CCH   A   
+P6M1. . . . . . . .  D ADDR   00CBH   A   
+P7M0. . . . . . . .  D ADDR   00E2H   A   
+P7M1. . . . . . . .  D ADDR   00E1H   A   
+PSW . . . . . . . .  D ADDR   00D0H   A   
+P_SW1 . . . . . . .  D ADDR   00A2H   A   
+REN . . . . . . . .  B ADDR   0098H.4 A   
+RI. . . . . . . . .  B ADDR   0098H.0 A   
+RX1_BUFFER. . . . .  D ADDR   0040H   A   
+RX1_CNT . . . . . .  D ADDR   0031H   A   
+RX1_LENTH . . . . .  N NUMB   0020H   A   
+SBUF. . . . . . . .  D ADDR   0099H   A   
+SCON. . . . . . . .  D ADDR   0098H   A   
+SP. . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER . . .  N NUMB   00D0H   A   
+T2H . . . . . . . .  D ADDR   00D6H   A   
+T2L . . . . . . . .  D ADDR   00D7H   A   
+TESTSTRING1 . . . .  C ADDR   0154H   A   
+TH1 . . . . . . . .  D ADDR   008DH   A   
+TI. . . . . . . . .  B ADDR   0098H.1 A   
+TL1 . . . . . . . .  D ADDR   008BH   A   
+TMOD. . . . . . . .  D ADDR   0089H   A   
+TR1 . . . . . . . .  B ADDR   0088H.6 A   
+TX1_CNT . . . . . .  D ADDR   0030H   A   
+A51 MACRO ASSEMBLER  UART1                                                                03/01/2021 13:37:49 PAGE     7
+
+UART1_BAUDRATE. . .  N NUMB   FFD0H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

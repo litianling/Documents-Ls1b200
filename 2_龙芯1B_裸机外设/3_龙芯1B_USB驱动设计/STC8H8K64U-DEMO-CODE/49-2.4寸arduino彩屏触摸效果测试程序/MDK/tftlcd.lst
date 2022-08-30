@@ -1,0 +1,1498 @@
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE TFTLCD
+OBJECT MODULE PLACED IN .\Out_File\tftlcd.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\Device\tftlcd.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Device;..\Li
+                    -braries) DEBUG OBJECTEXTEND PRINT(.\tftlcd.lst) TABS(2) OBJECT(.\Out_File\tftlcd.obj)
+
+line level    source
+
+   1          
+   2          /*************  技术支持与购买说明    **************
+   3          产品主页：http://tw51.haohaodada.com
+   4          淘宝搜索：天问51，可购买。目前基础版99元，带彩屏标准备版149元
+   5          技术支持QQ群一：1138055784
+   6          ******************************************/
+   7          
+   8          #include "tftlcd.h"
+   9          #include "sys.h"
+  10          #include <string.h>
+  11          #include <stdio.h>
+  12          #include "delay.h"
+  13          #include "lcdfont.h"  
+  14          #include <stdlib.h>
+  15          #include "intrins.h"
+  16          
+  17          //LCD的画笔颜色和背景色     
+  18          uint16 _tft_lcd_point_color = 0x0000; //画笔颜色
+  19          uint16 _tft_lcd_back_color = 0xFFFF;    //背景色 
+  20          //管理LCD重要参数
+  21          //默认为竖屏
+  22          _lcd_dev lcddev;
+  23          
+  24          //========================================================================
+  25          // 描述: LCD写入一个字节数据.
+  26          // 参数: HVAL:写入的字节数据.
+  27          // 返回: none.
+  28          //========================================================================
+  29          #if TFT_LCD_USE_8BIT_MODEL
+  30          void tft_lcd_write(uint8 HVAL)
+  31          {
+  32   1        TFT_LCD_CS = 0;
+  33   1        TFT_LCD_WR = 0; 
+  34   1        TFT_LCD_DATAPORTH = HVAL;
+  35   1        _nop_(); _nop_(); _nop_(); _nop_();
+  36   1        TFT_LCD_WR = 1;
+  37   1        TFT_LCD_CS = 1;
+  38   1      }
+  39          #else
+              void tft_lcd_write(uint8 HVAL,uint8 LVAL)
+              {
+                TFT_LCD_CS = 0;
+                TFT_LCD_WR = 0; 
+                TFT_LCD_DATAPORTH = HVAL;
+                TFT_LCD_DATAPORTL = LVAL;
+                TFT_LCD_WR = 1;
+                TFT_LCD_CS = 1;
+              }
+              #endif
+  50          
+  51          //========================================================================
+  52          // 描述: LCD读取16位数据.
+  53          // 参数: none.
+  54          // 返回: 读取到的16位数据.
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 2   
+
+  55          //========================================================================
+  56          uint16 tft_lcd_read()
+  57          {
+  58   1        uint16 d;
+  59   1        TFT_LCD_CS = 0;
+  60   1        TFT_LCD_RD = 0;
+  61   1        delay1us(); //delay 1 us
+  62   1        d = TFT_LCD_DATAPORTH;
+  63   1        d = (d<<8);
+  64   1        TFT_LCD_RD = 1;
+  65   1          TFT_LCD_CS = 1;
+  66   1        return d;
+  67   1      }
+  68          
+  69          //========================================================================
+  70          // 描述: LCD写入命令.
+  71          // 参数: Reg:写入的命令.
+  72          // 返回: none.
+  73          //========================================================================
+  74          void tft_lcd_wr_reg(uint16 Reg)  
+  75          { 
+  76   1        TFT_LCD_RS=0;
+  77   1        #if TFT_LCD_USE_8BIT_MODEL
+  78   1        tft_lcd_write(Reg&0xFF);
+  79   1        #else
+                lcd_write((Reg>>8)&0xFF,Reg&0xFF);
+                #endif
+  82   1      } 
+  83          
+  84          //========================================================================
+  85          // 描述: LCD写入数据.
+  86          // 参数: Data:写入的数据.
+  87          // 返回: none.
+  88          //========================================================================
+  89          void tft_lcd_wr_data(uint16 Data)
+  90          {
+  91   1        TFT_LCD_RS=1;
+  92   1        #if TFT_LCD_USE_8BIT_MODEL
+  93   1        tft_lcd_write(Data&0xFF);
+  94   1        #else
+                lcd_write((Data>>8)&0xFF,Data&0xFF);
+                #endif
+  97   1      }
+  98          
+  99          
+ 100          //========================================================================
+ 101          // 描述: LCD读取数据.
+ 102          // 参数: none.
+ 103          // 返回: 读取到的数据.
+ 104          //========================================================================
+ 105          uint16 tft_lcd_rd_data()
+ 106          {
+ 107   1        TFT_LCD_RS=1;
+ 108   1        #if TFT_LCD_USE_8BIT_MODEL
+ 109   1        return (tft_lcd_read()>>8);
+ 110   1        #else
+                return tft_lcd_read();
+                #endif
+ 113   1      }
+ 114          
+ 115          //========================================================================
+ 116          // 描述: LCD写入16位数据.
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 3   
+
+ 117          // 参数: Data:写入的数据.
+ 118          // 返回: none.
+ 119          //========================================================================
+ 120          void tft_lcd_wr_data_16bit(uint16 Data)
+ 121          {
+ 122   1        TFT_LCD_RS=1;
+ 123   1        #if TFT_LCD_USE_8BIT_MODEL
+ 124   1        tft_lcd_write((Data>>8)&0xFF);
+ 125   1        tft_lcd_write(Data&0xFF);
+ 126   1        #else
+                tft_lcd_write((Data>>8)&0xFF,Data&0xFF);
+                #endif
+ 129   1      }
+ 130          
+ 131          //========================================================================
+ 132          // 描述: 将RGB转换为565格式.
+ 133          // 参数: r,g,b:需要转换的RGB值.
+ 134          // 返回: 转换完成的565格式的16位数值.
+ 135          //========================================================================
+ 136          uint16 tft_color_to_565(uint8 r, uint8 g, uint8 b)
+ 137          {
+ 138   1        return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | ((b & 0xF8) >> 3);
+ 139   1      }
+ 140          
+ 141          //========================================================================
+ 142          // 描述: LCD读取565格式的16位数值.
+ 143          // 参数: none.
+ 144          // 返回: 565格式的数据.
+ 145          //========================================================================
+ 146          uint16 tft_lcd_rd_data_16bit()
+ 147          {
+ 148   1        uint16 r,g,b;
+ 149   1        TFT_LCD_RS = 1;
+ 150   1        TFT_LCD_CS = 0;
+ 151   1        
+ 152   1        //dummy data
+ 153   1        TFT_LCD_RD = 0;
+ 154   1        delay1us(); //delay 1us
+ 155   1        r = TFT_LCD_DATAPORTH;
+ 156   1        r = (r<<8);
+ 157   1        TFT_LCD_RD = 1;
+ 158   1        
+ 159   1        //8bit:red data
+ 160   1        //16bit:red and green data
+ 161   1        TFT_LCD_RD = 0;
+ 162   1        delay1us(); //delay 1us
+ 163   1        r = TFT_LCD_DATAPORTH;
+ 164   1        r = (r<<8);
+ 165   1        TFT_LCD_RD = 1;
+ 166   1        
+ 167   1        //8bit:green data
+ 168   1        //16bit:blue data
+ 169   1        TFT_LCD_RD = 0;
+ 170   1        delay1us(); //delay 1us
+ 171   1        g = TFT_LCD_DATAPORTH;
+ 172   1        g = (g<<8);
+ 173   1        TFT_LCD_RD = 1;
+ 174   1        
+ 175   1        #if TFT_LCD_USE_8BIT_MODEL  
+ 176   1        TFT_LCD_RD = 0;
+ 177   1        delay1us(); //delay 1us
+ 178   1        b = TFT_LCD_DATAPORTH;
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 4   
+
+ 179   1        b = (b<<8);
+ 180   1        TFT_LCD_RD = 1;
+ 181   1        r >>= 8;
+ 182   1        g >>= 8;
+ 183   1        b >>= 8;
+ 184   1        #else
+                b = g>>8;
+                r = r>>8;
+                g = r&0xFF;
+                #endif
+ 189   1        TFT_LCD_CS = 1;
+ 190   1        return tft_color_to_565(r, g, b);
+ 191   1      }
+ 192          
+ 193          //========================================================================
+ 194          // 描述: LCD写寄存器.
+ 195          // 参数: LCD_Reg:写的寄存器地址; LCD_RegValue:写入的值.
+ 196          // 返回: none.
+ 197          //========================================================================
+ 198          void tft_lcd_writereg(uint16 LCD_Reg, uint16 LCD_RegValue)
+ 199          {
+ 200   1          tft_lcd_wr_reg(LCD_Reg);
+ 201   1        tft_lcd_wr_data(LCD_RegValue);
+ 202   1      }
+ 203          
+ 204          //========================================================================
+ 205          // 描述: LCD读寄存器.
+ 206          // 参数: LCD_Reg:读的寄存器地址; Rval:读取到的值; n:需要连续读取的数量.
+ 207          // 返回: none.
+ 208          //========================================================================
+ 209          void tft_lcd_readreg(uint8 LCD_Reg, uint8* Rval, int n)
+ 210          {
+ 211   1        tft_lcd_wr_reg(LCD_Reg);
+ 212   1        TFT_LCD_DATAPORTH = 0xFF; //拉高P6
+ 213   1      
+ 214   1        //TFT_LCD_DATAPORTL = 0xFF; //拉高P2
+ 215   1      
+ 216   1        TFT_LCD_DATAPORTH_IN; //P6口设置成输入口
+ 217   1      
+ 218   1        while (n--)
+ 219   1        {
+ 220   2          *(Rval++) = tft_lcd_rd_data();
+ 221   2        }
+ 222   1      
+ 223   1        TFT_LCD_DATAPORTH_OUT;    //P6口设置为推挽输出
+ 224   1        TFT_LCD_DATAPORTH = 0xFF; //拉高P6
+ 225   1        //TFT_LCD_DATAPORTL = 0xFF; //拉高P2
+ 226   1      
+ 227   1      }
+ 228          
+ 229          //========================================================================
+ 230          // 描述: LCD写GRAM.
+ 231          // 参数: none.
+ 232          // 返回: none.
+ 233          //========================================================================
+ 234          void tft_lcd_writeram_prepare()
+ 235          {
+ 236   1        tft_lcd_wr_reg(lcddev.wramcmd);
+ 237   1      }
+ 238          
+ 239          //========================================================================
+ 240          // 描述: LCD读GRAM.
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 5   
+
+ 241          // 参数: none.
+ 242          // 返回: none.
+ 243          //========================================================================
+ 244          void tft_lcd_readram_prepare()
+ 245          {
+ 246   1        tft_lcd_wr_reg(lcddev.rramcmd);
+ 247   1      }
+ 248          
+ 249          //========================================================================
+ 250          // 描述: LCD清屏.
+ 251          // 参数: color:清屏的颜色.
+ 252          // 返回: none.
+ 253          //========================================================================
+ 254          void tft_lcd_clear(uint16 color)
+ 255          {
+ 256   1        uint16 i, j;
+ 257   1        tft_lcd_set_windows(0, 0, lcddev.width - 1, lcddev.height - 1);
+ 258   1        for (i = 0; i < lcddev.width; i++)
+ 259   1        {
+ 260   2          for (j = 0; j < lcddev.height; j++)
+ 261   2          {
+ 262   3            tft_lcd_wr_data_16bit(color);
+ 263   3          }
+ 264   2        }
+ 265   1      }
+ 266          
+ 267          //========================================================================
+ 268          // 描述: LCD画点.
+ 269          // 参数: x,y: 坐标.
+ 270          // 返回: none.
+ 271          //========================================================================
+ 272          void tft_lcd_draw_point(uint16 x, uint16 y)
+ 273          {
+ 274   1        tft_lcd_set_windows(x, y, x, y);//设置光标位置 
+ 275   1        tft_lcd_wr_data_16bit(_tft_lcd_point_color);
+ 276   1      }
+ 277          
+ 278          //========================================================================
+ 279          // 描述: LCD读点.
+ 280          // 参数: x,y: 坐标.
+ 281          // 返回: 读到的颜色值.
+ 282          //========================================================================
+ 283          uint16 tft_lcd_read_point(uint16 x, uint16 y)
+ 284          {
+ 285   1        uint16 color;
+ 286   1        if (x >= lcddev.width || y >= lcddev.height)
+ 287   1        {
+ 288   2          return 0; //超过了范围,直接返回  
+ 289   2        }
+ 290   1        tft_lcd_set_cursor(x, y);//设置光标位置 
+ 291   1        tft_lcd_readram_prepare();
+ 292   1        TFT_LCD_DATAPORTH = 0xFF; //拉高P6
+ 293   1        //TFT_LCD_DATAPORTL = 0xFF; //拉高P2
+ 294   1      
+ 295   1        TFT_LCD_DATAPORTH_IN; //P6口设置成输入口
+ 296   1        color = tft_lcd_rd_data_16bit();
+ 297   1        
+ 298   1        TFT_LCD_DATAPORTH_OUT;//P6口设置成推挽输出
+ 299   1      
+ 300   1        TFT_LCD_DATAPORTH = 0xFF; //拉高P0
+ 301   1        //TFT_LCD_DATAPORTL = 0xFF; //拉高P2
+ 302   1      
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 6   
+
+ 303   1        return color;
+ 304   1      }
+ 305          
+ 306          //========================================================================
+ 307          // 描述: LCD的GPIO配置.
+ 308          // 参数: none.
+ 309          // 返回: none.
+ 310          //========================================================================
+ 311          void tft_lcd_set_gpio()
+ 312          {
+ 313   1        TFT_LCD_RD_OUT;   //设置为推挽输出
+ 314   1        TFT_LCD_WR_OUT;
+ 315   1        TFT_LCD_RS_OUT;
+ 316   1        TFT_LCD_CS_OUT;
+ 317   1        TFT_LCD_RESET_OUT;
+ 318   1        TFT_LCD_DATAPORTH_OUT;//P6口设置成推挽输出
+ 319   1      }
+ 320          
+ 321          //========================================================================
+ 322          // 描述: LCD复位.
+ 323          // 参数: none.
+ 324          // 返回: none.
+ 325          //========================================================================
+ 326          void tft_lcd_reset()
+ 327          {
+ 328   1        delay(50);
+ 329   1        TFT_LCD_RESET = 0;
+ 330   1        delay(50);
+ 331   1        TFT_LCD_RESET = 1;
+ 332   1        delay(50);
+ 333   1      }
+ 334          
+ 335          //========================================================================
+ 336          // 描述: LCD初始化.
+ 337          // 参数: none.
+ 338          // 返回: none.
+ 339          //========================================================================
+ 340          void tft_lcd_init()
+ 341          {
+ 342   1        tft_lcd_set_gpio();
+ 343   1        tft_lcd_reset(); //初始化之前复位
+ 344   1      
+ 345   1        //*************2.4inch ILI9341初始化**********// 
+ 346   1        tft_lcd_wr_reg(0x01);   //softreset
+ 347   1        delay(50); 
+ 348   1        tft_lcd_wr_reg(0x28);   //displayoff
+ 349   1      
+ 350   1        tft_lcd_wr_reg(0xF6);     //Interface Control needs EXTC=1 MV_EOR=0, TM=0, RIM=0
+ 351   1        tft_lcd_wr_data(0x01); 
+ 352   1        tft_lcd_wr_data(0x01); 
+ 353   1        tft_lcd_wr_data(0x00); 
+ 354   1      
+ 355   1      
+ 356   1        tft_lcd_wr_reg(0xCF);     //Power Control B [00 81 30]
+ 357   1        tft_lcd_wr_data(0x00); 
+ 358   1        tft_lcd_wr_data(0x81); 
+ 359   1        tft_lcd_wr_data(0X30);
+ 360   1      
+ 361   1        tft_lcd_wr_reg(0xED);     //Power On Seq [55 01 23 01]
+ 362   1        tft_lcd_wr_data(0x64); 
+ 363   1        tft_lcd_wr_data(0x03); 
+ 364   1        tft_lcd_wr_data(0X12); 
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 7   
+
+ 365   1        tft_lcd_wr_data(0X81); 
+ 366   1      
+ 367   1        tft_lcd_wr_reg(0xE8);     //Driver Timing A [04 11 7A]
+ 368   1        tft_lcd_wr_data(0x85); 
+ 369   1        tft_lcd_wr_data(0x10); 
+ 370   1        tft_lcd_wr_data(0x78);
+ 371   1      
+ 372   1        tft_lcd_wr_reg(0xCB);     //Power Control A [39 2C 00 34 02]
+ 373   1        tft_lcd_wr_data(0x39); 
+ 374   1        tft_lcd_wr_data(0x2C); 
+ 375   1        tft_lcd_wr_data(0x00); 
+ 376   1        tft_lcd_wr_data(0x34); 
+ 377   1        tft_lcd_wr_data(0x02); 
+ 378   1      
+ 379   1        tft_lcd_wr_reg(0xF7);     //Pump Ratio [10]
+ 380   1        tft_lcd_wr_data(0x20);
+ 381   1      
+ 382   1        tft_lcd_wr_reg(0xEA);     //Driver Timing B [66 00]
+ 383   1        tft_lcd_wr_data(0x00); 
+ 384   1        tft_lcd_wr_data(0x00); 
+ 385   1      
+ 386   1        tft_lcd_wr_reg(0xB0);     //RGB Signal [00]
+ 387   1        tft_lcd_wr_data(0x00); 
+ 388   1      
+ 389   1        tft_lcd_wr_reg(0xB4);      //Inversion Control [02] .kbv NLA=1, NLB=1, NLC=1
+ 390   1        tft_lcd_wr_data(0x00); 
+ 391   1      
+ 392   1        tft_lcd_wr_reg(0xC0);    //Power Control 1 [26]
+ 393   1        tft_lcd_wr_data(0x21);   
+ 394   1      
+ 395   1        tft_lcd_wr_reg(0xC1);    //Power Control 2 [00]
+ 396   1        tft_lcd_wr_data(0x11);    
+ 397   1      
+ 398   1        tft_lcd_wr_reg(0xC5);    //VCM control 
+ 399   1        tft_lcd_wr_data(0x3F);   //3F
+ 400   1        tft_lcd_wr_data(0x3C);   //3C
+ 401   1      
+ 402   1        tft_lcd_wr_reg(0xC7);    //VCM control2 
+ 403   1        tft_lcd_wr_data(0XB5); 
+ 404   1      
+ 405   1        tft_lcd_wr_reg(0x36);    // Memory Access Control 
+ 406   1        tft_lcd_wr_data(0x48); 
+ 407   1      
+ 408   1        tft_lcd_wr_reg(0x3A);    //Pixel read=565, write=565.
+ 409   1        tft_lcd_wr_data(0x55);  
+ 410   1      
+ 411   1        tft_lcd_wr_reg(0xB1);    //Frame Control [00 1B]
+ 412   1        tft_lcd_wr_data(0x00);   
+ 413   1        tft_lcd_wr_data(0x1B); 
+ 414   1      
+ 415   1        tft_lcd_wr_reg(0xB6);    // Display Function Control 
+ 416   1        tft_lcd_wr_data(0x0A); 
+ 417   1        tft_lcd_wr_data(0xA2); 
+ 418   1      
+ 419   1        tft_lcd_wr_reg(0xF2);    //Enable 3G [02]
+ 420   1        tft_lcd_wr_data(0x00); 
+ 421   1      
+ 422   1        tft_lcd_wr_reg(0x26);    //Gamma Set [01]
+ 423   1        tft_lcd_wr_data(0x01); 
+ 424   1      
+ 425   1        tft_lcd_wr_reg(0xE0);    //Set Gamma 
+ 426   1        tft_lcd_wr_data(0x0F); 
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 8   
+
+ 427   1        tft_lcd_wr_data(0x26); 
+ 428   1        tft_lcd_wr_data(0x24); 
+ 429   1        tft_lcd_wr_data(0x0B); 
+ 430   1        tft_lcd_wr_data(0x0E); 
+ 431   1        tft_lcd_wr_data(0x09); 
+ 432   1        tft_lcd_wr_data(0x54); 
+ 433   1        tft_lcd_wr_data(0XA8); 
+ 434   1        tft_lcd_wr_data(0x46); 
+ 435   1        tft_lcd_wr_data(0x0C); 
+ 436   1        tft_lcd_wr_data(0x17); 
+ 437   1        tft_lcd_wr_data(0x09); 
+ 438   1        tft_lcd_wr_data(0x0F); 
+ 439   1        tft_lcd_wr_data(0x07); 
+ 440   1        tft_lcd_wr_data(0x00);  
+ 441   1      
+ 442   1        tft_lcd_wr_reg(0XE1);    //Set Gamma 
+ 443   1        tft_lcd_wr_data(0x00); 
+ 444   1        tft_lcd_wr_data(0x19); 
+ 445   1        tft_lcd_wr_data(0x1B); 
+ 446   1        tft_lcd_wr_data(0x04); 
+ 447   1        tft_lcd_wr_data(0x10); 
+ 448   1        tft_lcd_wr_data(0x07); 
+ 449   1        tft_lcd_wr_data(0x2A); 
+ 450   1        tft_lcd_wr_data(0x47); 
+ 451   1        tft_lcd_wr_data(0x39); 
+ 452   1        tft_lcd_wr_data(0x03); 
+ 453   1        tft_lcd_wr_data(0x06); 
+ 454   1        tft_lcd_wr_data(0x06); 
+ 455   1        tft_lcd_wr_data(0x30); 
+ 456   1        tft_lcd_wr_data(0x38); 
+ 457   1        tft_lcd_wr_data(0x0F); 
+ 458   1      
+ 459   1        tft_lcd_wr_reg(0x2B); 
+ 460   1        tft_lcd_wr_data(0x00);
+ 461   1        tft_lcd_wr_data(0x00);
+ 462   1        tft_lcd_wr_data(0x01);
+ 463   1        tft_lcd_wr_data(0x3f);
+ 464   1      
+ 465   1        tft_lcd_wr_reg(0x2A); 
+ 466   1        tft_lcd_wr_data(0x00);
+ 467   1        tft_lcd_wr_data(0x00);
+ 468   1        tft_lcd_wr_data(0x00);
+ 469   1        tft_lcd_wr_data(0xef);  
+ 470   1      
+ 471   1        tft_lcd_wr_reg(0xB7); 
+ 472   1        tft_lcd_wr_data(0x07);
+ 473   1      
+ 474   1        tft_lcd_wr_reg(0x11); //Exit Sleep
+ 475   1        delay(150);
+ 476   1        tft_lcd_wr_reg(0x29); //display on
+ 477   1        lcddev.id = tft_lcd_read_id();  //获取id
+ 478   1        tft_lcd_direction(0);//设置LCD显示方向 
+ 479   1        //  LCD_BL=1;//点亮背光    
+ 480   1      }
+ 481          
+ 482          //========================================================================
+ 483          // 描述: LCD设置窗口.
+ 484          // 参数: x0,y0:起始坐标; x1,y1:终点坐标.
+ 485          // 返回: none.
+ 486          //========================================================================
+ 487          void tft_lcd_set_windows(uint16 x0, uint16 y0, uint16 x1, uint16 y1)
+ 488          {
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 9   
+
+ 489   1        tft_lcd_wr_reg(lcddev.setxcmd);
+ 490   1        tft_lcd_wr_data(x0 >> 8);
+ 491   1        tft_lcd_wr_data(0x00FF & x0);
+ 492   1        tft_lcd_wr_data(x1 >> 8);
+ 493   1        tft_lcd_wr_data(0x00FF & x1);
+ 494   1      
+ 495   1        tft_lcd_wr_reg(lcddev.setycmd);
+ 496   1        tft_lcd_wr_data(y0 >> 8);
+ 497   1        tft_lcd_wr_data(0x00FF & y0);
+ 498   1        tft_lcd_wr_data(y1 >> 8);
+ 499   1        tft_lcd_wr_data(0x00FF & y1);
+ 500   1      
+ 501   1        tft_lcd_writeram_prepare(); //开始写入GRAM            
+ 502   1      }
+ 503          
+ 504          //========================================================================
+ 505          // 描述: LCD设置光标.
+ 506          // 参数: x:横坐标; y:纵坐标;
+ 507          // 返回: none.
+ 508          //========================================================================
+ 509          void tft_lcd_set_cursor(uint16 x, uint16 y)
+ 510          {
+ 511   1        tft_lcd_set_windows(x, y, x, y);
+ 512   1      }
+ 513          
+ 514          //========================================================================
+ 515          // 描述: 设置显示方向.
+ 516          // 参数: direction:0~3;
+ 517          // 返回: none.
+ 518          //========================================================================
+ 519          void tft_lcd_direction(uint8 direction)
+ 520          {
+ 521   1        lcddev.setxcmd = 0x2A;
+ 522   1        lcddev.setycmd = 0x2B;
+ 523   1        lcddev.wramcmd = 0x2C;
+ 524   1        lcddev.rramcmd = 0x2E;
+ 525   1        switch (direction) {
+ 526   2        case 0:
+ 527   2          lcddev.width = TFT_LCD_LCD_W;
+ 528   2          lcddev.height = TFT_LCD_LCD_H;
+ 529   2          if(lcddev.id == 0x9341|lcddev.id == 0x9340)
+ 530   2            tft_lcd_writereg(0x36,   (1<<3)|(0<<6)); 
+ 531   2          else tft_lcd_writereg(0x36,   (0<<3)|(1<<6)); 
+ 532   2          break;
+ 533   2        case 1:
+ 534   2          lcddev.width = TFT_LCD_LCD_H;
+ 535   2          lcddev.height = TFT_LCD_LCD_W;
+ 536   2          if(lcddev.id == 0x9341 | lcddev.id == 0x9340)
+ 537   2            tft_lcd_writereg(0x36, (1 << 3) | (1 << 7) | (1 << 5) | (1 << 4) | (1 << 6));
+ 538   2          else  tft_lcd_writereg(0x36, (0 << 3) | (1 << 7) | (1 << 5) | (1 << 4) | (1 << 6));
+ 539   2          break;
+ 540   2        case 2:
+ 541   2          lcddev.width = TFT_LCD_LCD_W;
+ 542   2          lcddev.height = TFT_LCD_LCD_H;
+ 543   2          if(lcddev.id == 0x9341 | lcddev.id == 0x9340)
+ 544   2            tft_lcd_writereg(0x36, (1 << 3) | (1 << 7) | (1 << 4));
+ 545   2          else tft_lcd_writereg(0x36, (0 << 3) | (1 << 7) | (0 << 4)| (1 << 6));
+ 546   2          break;
+ 547   2        case 3:
+ 548   2          lcddev.width = TFT_LCD_LCD_H;
+ 549   2          lcddev.height = TFT_LCD_LCD_W;
+ 550   2          if(lcddev.id == 0x9341 | lcddev.id == 0x9340)
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 10  
+
+ 551   2            tft_lcd_writereg(0x36, (1 << 3) | (1 << 5));
+ 552   2          else tft_lcd_writereg(0x36, (0 << 3) | (1 << 5)); 
+ 553   2          break;
+ 554   2        default:break;
+ 555   2        }
+ 556   1      }
+ 557          
+ 558          //========================================================================
+ 559          // 描述: LCD读取ID.
+ 560          // 参数: none;
+ 561          // 返回: 读取到的ID号.
+ 562          //========================================================================
+ 563          uint16 tft_lcd_read_id()
+ 564          {
+ 565   1        uint8 val[4] = { 0 };
+ 566   1        tft_lcd_readreg(0xD3, val, 4);
+ 567   1        return (val[2] << 8) | val[3];
+ 568   1      }
+ 569          
+ 570          //========================================================================
+ 571          // 描述: LCD填充.
+ 572          // 参数: sx，sy:起始坐标; x1,y1:终止坐标; color:颜色
+ 573          // 返回: none.
+ 574          //========================================================================
+ 575          void tft_lcd_fill(uint16 x0, uint16 y0, uint16 x1, uint16 y1, uint16 color)
+ 576          {
+ 577   1        uint16 i, j;
+ 578   1        uint16 width = x1 - x0 + 1;     //得到填充的宽度
+ 579   1        uint16 height = y1 - y0 + 1;    //高度
+ 580   1        tft_lcd_set_windows(x0, y0, x1, y1);//设置显示窗口
+ 581   1        for (i = 0; i < height; i++)
+ 582   1        {
+ 583   2          for (j = 0; j < width; j++)
+ 584   2            tft_lcd_wr_data_16bit(color); //写入数据   
+ 585   2        }
+ 586   1        tft_lcd_set_windows(0, 0, lcddev.width - 1, lcddev.height - 1);//恢复窗口设置为全屏
+ 587   1      }
+ 588          
+ 589          //========================================================================
+ 590          // 描述: LCD绘制线段.
+ 591          // 参数: x1，y1:起始坐标; x2,y2:终止坐标;color:颜色.
+ 592          // 返回: none.
+ 593          //========================================================================
+ 594          void tft_lcd_draw_line(uint16 x0, uint16 y0, uint16 x1, uint16 y1, uint16 color)
+ 595          {
+ 596   1        int t;
+ 597   1        int xerr = 0, yerr = 0, delta_x, delta_y, distance;
+ 598   1        int incx, incy, uRow, uCol;
+ 599   1        uint16 tem_color = _tft_lcd_point_color;
+ 600   1        _tft_lcd_point_color = color;
+ 601   1        delta_x = x1 - x0; //计算坐标增量 
+ 602   1        delta_y = y1 - y0;
+ 603   1        uRow = x0;
+ 604   1        uCol = y0;
+ 605   1        if (delta_x > 0)incx = 1; //设置单步方向 
+ 606   1        else if (delta_x == 0)incx = 0;//垂直线 
+ 607   1        else { incx = -1; delta_x = -delta_x; }
+ 608   1        if (delta_y > 0)incy = 1;
+ 609   1        else if (delta_y == 0)incy = 0;//水平线 
+ 610   1        else { incy = -1; delta_y = -delta_y; }
+ 611   1        if (delta_x > delta_y)distance = delta_x; //选取基本增量坐标轴 
+ 612   1        else distance = delta_y;
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 11  
+
+ 613   1        for (t = 0; t <= distance + 1; t++)//画线输出 
+ 614   1        {
+ 615   2          tft_lcd_draw_point(uRow, uCol);//画点 
+ 616   2          xerr += delta_x;
+ 617   2          yerr += delta_y;
+ 618   2          if (xerr > distance)
+ 619   2          {
+ 620   3            xerr -= distance;
+ 621   3            uRow += incx;
+ 622   3          }
+ 623   2          if (yerr > distance)
+ 624   2          {
+ 625   3            yerr -= distance;
+ 626   3            uCol += incy;
+ 627   3          }
+ 628   2        }
+ 629   1        _tft_lcd_point_color = tem_color;
+ 630   1      }
+ 631          
+ 632          //========================================================================
+ 633          // 描述: LCD绘制一条粗线.
+ 634          // 参数: x0，y0:起始坐标; x1,y1:终止坐标; size:线的粗细(0~2); color:颜色.
+ 635          // 返回: none.
+ 636          //========================================================================
+ 637          void tft_lcd_draw_line1(uint16 x0,uint16 y0,uint16 x1,uint16 y1,uint8 size,uint16 color)
+ 638          {
+ 639   1        int t; 
+ 640   1        int xerr=0,yerr=0,delta_x,delta_y,distance; 
+ 641   1        int incx,incy,uRow,uCol; 
+ 642   1      
+ 643   1        uint16 tem_color = _tft_lcd_point_color;
+ 644   1        _tft_lcd_point_color = color;
+ 645   1      
+ 646   1        delta_x=x1-x0; //计算坐标增量
+ 647   1        delta_y=y1-y0; 
+ 648   1        uRow=x0; 
+ 649   1        uCol=y0; 
+ 650   1        if(delta_x>0)incx=1; //设置单步方向
+ 651   1        else if(delta_x==0)incx=0;//垂直线
+ 652   1        else {incx=-1;delta_x=-delta_x;} 
+ 653   1        if(delta_y>0)incy=1; 
+ 654   1        else if(delta_y==0)incy=0;//水平线 
+ 655   1        else{incy=-1;delta_y=-delta_y;} 
+ 656   1        if( delta_x>delta_y)distance=delta_x; //选取基本增量坐标轴
+ 657   1        else distance=delta_y; 
+ 658   1        for(t=0;t<=distance+1;t++ )//画线输出
+ 659   1        {  
+ 660   2          if(size==0)tft_lcd_draw_point(uRow,uCol);//画点
+ 661   2          if(size==1)
+ 662   2          {
+ 663   3            tft_lcd_draw_point(uRow,uCol);   
+ 664   3            tft_lcd_draw_point(uRow+1,uCol);    
+ 665   3            tft_lcd_draw_point(uRow,uCol+1);    
+ 666   3            tft_lcd_draw_point(uRow+1,uCol+1);   
+ 667   3          }
+ 668   2          if(size==2)
+ 669   2          {
+ 670   3            tft_lcd_draw_point(uRow,uCol);
+ 671   3            tft_lcd_draw_point(uRow+1,uCol);
+ 672   3            tft_lcd_draw_point(uRow,uCol+1);
+ 673   3            tft_lcd_draw_point(uRow+1,uCol+1);
+ 674   3            tft_lcd_draw_point(uRow-1,uCol+1);
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 12  
+
+ 675   3            tft_lcd_draw_point(uRow+1,uCol-1);
+ 676   3            tft_lcd_draw_point(uRow-1,uCol-1);
+ 677   3            tft_lcd_draw_point(uRow-1,uCol);
+ 678   3            tft_lcd_draw_point(uRow,uCol-1);
+ 679   3          }
+ 680   2          xerr+=delta_x ; 
+ 681   2          yerr+=delta_y ; 
+ 682   2          if(xerr>distance) 
+ 683   2          { 
+ 684   3            xerr-=distance; 
+ 685   3            uRow+=incx; 
+ 686   3          } 
+ 687   2          if(yerr>distance) 
+ 688   2          { 
+ 689   3            yerr-=distance; 
+ 690   3            uCol+=incy; 
+ 691   3          } 
+ 692   2        }
+ 693   1        _tft_lcd_point_color = tem_color;          
+ 694   1      }
+ 695          
+ 696          //========================================================================
+ 697          // 描述: LCD绘制矩形框.
+ 698          // 参数: x0，y0:起始坐标; x1,y1:终止坐标; color:颜色;
+ 699          // 返回: none.
+ 700          //========================================================================
+ 701          void tft_lcd_draw_rectangle(uint16 x0, uint16 y0, uint16 x1, uint16 y1, uint16 color)
+ 702          {
+ 703   1        tft_lcd_draw_line(x0, y0, x1, y0,color);
+ 704   1        tft_lcd_draw_line(x0, y0, x0, y1,color);
+ 705   1        tft_lcd_draw_line(x0, y1, x1, y1,color);
+ 706   1        tft_lcd_draw_line(x1, y0, x1, y1,color);
+ 707   1      }
+ 708          
+ 709          //========================================================================
+ 710          // 描述: 在指定位置填充矩形.
+ 711          // 参数: x0，y0:起始坐标; x1,y1:终止坐标; color:颜色;
+ 712          // 返回: none.
+ 713          //========================================================================
+ 714          void tft_lcd_fill_rectangle(uint16 x0, uint16 y0, uint16 x1, uint16 y1, uint16 color)
+ 715          {
+ 716   1        tft_lcd_fill(x0, y0, x1, y1, color);
+ 717   1      }
+ 718          
+ 719          //========================================================================
+ 720          // 描述: 画点.
+ 721          // 参数: x，y:坐标; color:颜色值;
+ 722          // 返回: none.
+ 723          //========================================================================
+ 724          void tft_gui_drawpoint(uint16 x, uint16 y, uint16 color)
+ 725          {
+ 726   1        tft_lcd_set_cursor(x, y);//设置光标位置 
+ 727   1        tft_lcd_wr_data_16bit(color);
+ 728   1      }
+ 729          
+ 730          //========================================================================
+ 731          // 描述: 对称圆绘制算法(内部调用).
+ 732          // 参数: xc:圆心的x坐标; yc:圆心的y坐标; x:相对于圆心的x坐标; y:相对于圆心的y坐
+             -标; 
+ 733          //     color:圆圈的颜色值
+ 734          // 返回: none.
+ 735          //========================================================================
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 13  
+
+ 736          void tft_draw_circle_8(int xc, int yc, int x, int y, uint16 color)
+ 737          {
+ 738   1        tft_gui_drawpoint(xc + x, yc + y, color);
+ 739   1      
+ 740   1        tft_gui_drawpoint(xc - x, yc + y, color);
+ 741   1      
+ 742   1        tft_gui_drawpoint(xc + x, yc - y, color);
+ 743   1      
+ 744   1        tft_gui_drawpoint(xc - x, yc - y, color);
+ 745   1      
+ 746   1        tft_gui_drawpoint(xc + y, yc + x, color);
+ 747   1      
+ 748   1        tft_gui_drawpoint(xc - y, yc + x, color);
+ 749   1      
+ 750   1        tft_gui_drawpoint(xc + y, yc - x, color);
+ 751   1      
+ 752   1        tft_gui_drawpoint(xc - y, yc - x, color);
+ 753   1      }
+ 754          
+ 755          //========================================================================
+ 756          // 描述: 在指定位置绘制指定大小的圆.
+ 757          // 参数: xc:圆心的x坐标; yc:圆心的y坐标; color:圆的颜色; r:圆半径; fill:1-填充，0-�
+             -�填充;
+ 758          // 返回: none.
+ 759          //========================================================================
+ 760          void tft_lcd_draw_circle(int xc, int yc, int r, uint16 color, uint8 fill)
+ 761          {
+ 762   1        int x = 0, y = r, yi, d;
+ 763   1      
+ 764   1        d = 3 - 2 * r;
+ 765   1      
+ 766   1        if (fill)
+ 767   1        {
+ 768   2          // 如果填充（画实心圆）
+ 769   2          while (x <= y) {
+ 770   3            for (yi = x; yi <= y; yi++)
+ 771   3              tft_draw_circle_8(xc, yc, x, yi, color);
+ 772   3      
+ 773   3            if (d < 0) {
+ 774   4              d = d + 4 * x + 6;
+ 775   4            }
+ 776   3            else {
+ 777   4              d = d + 4 * (x - y) + 10;
+ 778   4              y--;
+ 779   4            }
+ 780   3            x++;
+ 781   3          }
+ 782   2        }
+ 783   1        else
+ 784   1        {
+ 785   2          // 如果不填充（画空心圆）
+ 786   2          while (x <= y) {
+ 787   3            tft_draw_circle_8(xc, yc, x, y, color);
+ 788   3            if (d < 0) {
+ 789   4              d = d + 4 * x + 6;
+ 790   4            }
+ 791   3            else {
+ 792   4              d = d + 4 * (x - y) + 10;
+ 793   4              y--;
+ 794   4            }
+ 795   3            x++;
+ 796   3          }
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 14  
+
+ 797   2        }
+ 798   1      }
+ 799          
+ 800          //========================================================================
+ 801          // 描述: 在指定位置绘制一个三角形.
+ 802          // 参数: x0,y0,x1,y1,x2,y2:三角形三个端点的坐标; color:颜色
+ 803          // 返回: none.
+ 804          //========================================================================
+ 805          void tft_lcd_draw_triangel(uint16 x0, uint16 y0, uint16 x1, uint16 y1, uint16 x2, uint16 y2, uint16 color)
+ 806          {
+ 807   1        tft_lcd_draw_line(x0, y0, x1, y1,color);
+ 808   1        tft_lcd_draw_line(x1, y1, x2, y2,color);
+ 809   1        tft_lcd_draw_line(x2, y2, x0, y0,color);
+ 810   1      }
+ 811          
+ 812          //========================================================================
+ 813          // 描述: 交换函数（内部调用）.
+ 814          // 参数: a,b:要交换的值的指针.
+ 815          // 返回: none.
+ 816          //========================================================================
+ 817          static void tft_swap(uint16* a, uint16* b)
+ 818          {
+ 819   1        uint16 tmp;
+ 820   1        tmp = *a;
+ 821   1        *a = *b;
+ 822   1        *b = tmp;
+ 823   1      }
+ 824          
+ 825          //========================================================================
+ 826          // 描述: 在指定位置填充三角形.
+ 827          // 参数: x0,y0,x1,y1,x2,y2:三角形三个端点的坐标; color:颜色.
+ 828          // 返回: none.
+ 829          //========================================================================
+ 830          void tft_lcd_fill_triangel(uint16 x0, uint16 y0, uint16 x1, uint16 y1, uint16 x2, uint16 y2, uint16 color)
+ 831          {
+ 832   1        uint16 a, b, y, last;
+ 833   1        int dx01, dy01, dx02, dy02, dx12, dy12;
+ 834   1        long sa = 0;
+ 835   1        long sb = 0;
+ 836   1        if (y0 > y1)
+ 837   1        {
+ 838   2          tft_swap(&y0, &y1);
+ 839   2          tft_swap(&x0, &x1);
+ 840   2        }
+ 841   1        if (y1 > y2)
+ 842   1        {
+ 843   2          tft_swap(&y2, &y1);
+ 844   2          tft_swap(&x2, &x1);
+ 845   2        }
+ 846   1        if (y0 > y1)
+ 847   1        {
+ 848   2          tft_swap(&y0, &y1);
+ 849   2          tft_swap(&x0, &x1);
+ 850   2        }
+ 851   1        if (y0 == y2)
+ 852   1        {
+ 853   2          a = b = x0;
+ 854   2          if (x1 < a)
+ 855   2          {
+ 856   3            a = x1;
+ 857   3          }
+ 858   2          else if (x1 > b)
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 15  
+
+ 859   2          {
+ 860   3            b = x1;
+ 861   3          }
+ 862   2          if (x2 < a)
+ 863   2          {
+ 864   3            a = x2;
+ 865   3          }
+ 866   2          else if (x2 > b)
+ 867   2          {
+ 868   3            b = x2;
+ 869   3          }
+ 870   2          tft_lcd_fill(a, y0, b, y0, color);
+ 871   2          return;
+ 872   2        }
+ 873   1        dx01 = x1 - x0;
+ 874   1        dy01 = y1 - y0;
+ 875   1        dx02 = x2 - x0;
+ 876   1        dy02 = y2 - y0;
+ 877   1        dx12 = x2 - x1;
+ 878   1        dy12 = y2 - y1;
+ 879   1      
+ 880   1        if (y1 == y2)
+ 881   1        {
+ 882   2          last = y1;
+ 883   2        }
+ 884   1        else
+ 885   1        {
+ 886   2          last = y1 - 1;
+ 887   2        }
+ 888   1        for (y = y0; y <= last; y++)
+ 889   1        {
+ 890   2          a = x0 + sa / dy01;
+ 891   2          b = x0 + sb / dy02;
+ 892   2          sa += dx01;
+ 893   2          sb += dx02;
+ 894   2          if (a > b)
+ 895   2          {
+ 896   3            tft_swap(&a, &b);
+ 897   3          }
+ 898   2          tft_lcd_fill(a, y, b, y, color);
+ 899   2        }
+ 900   1        sa = dx12 * (y - y1);
+ 901   1        sb = dx02 * (y - y0);
+ 902   1        for (; y <= y2; y++)
+ 903   1        {
+ 904   2          a = x1 + sa / dy12;
+ 905   2          b = x0 + sb / dy02;
+ 906   2          sa += dx12;
+ 907   2          sb += dx02;
+ 908   2          if (a > b)
+ 909   2          {
+ 910   3            tft_swap(&a, &b);
+ 911   3          }
+ 912   2          tft_lcd_fill(a, y, b, y, color);
+ 913   2        }
+ 914   1      }
+ 915          
+ 916          //========================================================================
+ 917          // 描述: 在指定位置显示一个字符.
+ 918          // 参数: x:起始x坐标; y:起始y坐标; chr:显示的字符; font_color:显示字符的颜色值; 
+ 919          //       background_color:显示字符的背景色; size:显示字符的大小; mode:0-无叠加，1-叠�
+             -�:    
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 16  
+
+ 920          // 返回: none.
+ 921          //========================================================================
+ 922          void tft_lcd_show_char(int16 x,int16 y, uint8 chr, uint16 font_color, uint16 background_color, uint8 size,
+             -uint8 mode)
+ 923          {  
+ 924   1        uint8 temp;
+ 925   1        uint8 j,i;
+ 926   1        chr=chr-' ';              //得到偏移后的值
+ 927   1        if(x < 0)
+ 928   1        {
+ 929   2          for(j=0;j<size;j++)
+ 930   2          {
+ 931   3            if(size==12)temp=asc2_1206[chr][j]; //调用1206字体
+ 932   3            else temp=asc2_1608[chr][j];    //调用1608字体 
+ 933   3            for(i=0;i<size/2;i++)
+ 934   3              {   
+ 935   4              if(((x + i) >= 0))
+ 936   4              {   
+ 937   5                if(!mode) //非叠加方式
+ 938   5                {
+ 939   6                  if(temp&0x01){
+ 940   7                    tft_lcd_set_cursor(x+i,y+j);
+ 941   7                    tft_lcd_wr_data_16bit(font_color);
+ 942   7                  }
+ 943   6                  else{
+ 944   7                    tft_lcd_set_cursor(x+i,y+j);
+ 945   7                    tft_lcd_wr_data_16bit(background_color); 
+ 946   7                  }
+ 947   6                }
+ 948   5                else
+ 949   5                {            
+ 950   6                  if(temp&0x01){
+ 951   7                    tft_lcd_set_cursor(x+i,y+j);//画一个点 
+ 952   7                    tft_lcd_wr_data_16bit(font_color);  
+ 953   7                  }
+ 954   6                }
+ 955   5              }
+ 956   4              temp>>=1; 
+ 957   4              }
+ 958   3          } 
+ 959   2        }
+ 960   1        else{
+ 961   2          for(j=0;j<size;j++)
+ 962   2          {
+ 963   3            if(size==12)temp=asc2_1206[chr][j]; //调用1206字体
+ 964   3            else temp=asc2_1608[chr][j];    //调用1608字体 
+ 965   3            for(i=0;i<size/2;i++)
+ 966   3              {      
+ 967   4              if(!mode) //非叠加方式
+ 968   4              {
+ 969   5                if(temp&0x01){
+ 970   6                  tft_lcd_set_cursor(x+i,y+j);
+ 971   6                  tft_lcd_wr_data_16bit(font_color);
+ 972   6                }
+ 973   5                else{
+ 974   6                  tft_lcd_set_cursor(x+i,y+j);
+ 975   6                  tft_lcd_wr_data_16bit(background_color); 
+ 976   6                }
+ 977   5              }
+ 978   4              else
+ 979   4              {            
+ 980   5                if(temp&0x01){
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 17  
+
+ 981   6                  tft_lcd_set_cursor(x+i,y+j);//画一个点 
+ 982   6                  tft_lcd_wr_data_16bit(font_color);  
+ 983   6                }
+ 984   5              }
+ 985   4              temp>>=1; 
+ 986   4              }
+ 987   3          } 
+ 988   2        }
+ 989   1        tft_lcd_set_windows(0,0,lcddev.width-1,lcddev.height-1);//恢复窗口为全屏         
+ 990   1      }
+ 991          
+ 992          //========================================================================
+ 993          // 描述: 在指定位置显示字符串.
+ 994          // 参数: x:起始x坐标; y:起始y坐标; p:要显示的字符串; font_color:字符串的颜色值; ba
+             -ckground_color:背景色
+ 995          //       size:显示字符的大小（12或16）;  mode:0-无叠加，1-叠加.
+ 996          // 返回: none.
+ 997          //========================================================================
+ 998          void tft_lcd_show_string(int16 x,int16 y,uint8 *p,uint16 font_color, uint16 background_color,uint8 size,ui
+             -nt8 mode)
+ 999          {            
+1000   1          while((*p<='~')&&(*p>=' '))   //判断是不是非法字符 
+1001   1          {       
+1002   2              tft_lcd_show_char(x,y,*p,font_color,background_color,size,mode);
+1003   2              x+=size/2;
+1004   2              p++;
+1005   2          }  
+1006   1      } 
+1007          
+1008          //========================================================================
+1009          // 描述: 获得m的n次幂.
+1010          // 参数: m,n:
+1011          // 返回: none.
+1012          //========================================================================
+1013          // uint32 tft_mypow(uint8 m,uint8 n)
+1014          // {
+1015          //  uint32 result=1;   
+1016          //  while(n--)result*=m;    
+1017          //  return result;
+1018          // }
+1019          
+1020          //========================================================================
+1021          // 描述: 在指定位置显示数字.
+1022          // 参数: x:三角形边的起始x坐标; y:三角形边的起始y坐标; num:要显示的数字(0~429496
+             -7295);
+1023          //       len:长度; font_color:字符串的颜色值; background_color:背景色; size:显示的大小 mo
+             -de:0-无叠加，1-叠加.
+1024          // 返回: none.
+1025          //========================================================================
+1026          // void tft_lcd_show_num(uint16 x,uint16 y,uint32 num,uint8 len,uint16 font_color, uint16 background_color
+             -,uint8 size, uint8 mode)
+1027          // {          
+1028          //  uint8 t,temp;
+1029          //  uint8 enshow=0;              
+1030          //  for(t=0;t<len;t++)
+1031          //  {
+1032          //    temp=(num/tft_mypow(10,len-t-1))%10;
+1033          //    if(enshow==0&&t<(len-1))
+1034          //    {
+1035          //      if(temp==0)
+1036          //      {
+1037          //        tft_lcd_show_char(x+(size/2)*t,y,' ',font_color,background_color,size,mode);
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 18  
+
+1038          //        continue;
+1039          //      }else enshow=1;  
+1040          //    }
+1041          //    tft_lcd_show_char(x+(size/2)*t,y,temp+'0',font_color,background_color,size,mode); 
+1042          //  }
+1043          // }
+1044          
+1045          //========================================================================
+1046          // 描述: 在指定位置显示数字.
+1047          // 参数: x:三角形边的起始x坐标; y:三角形边的起始y坐标; num:要显示的数字(0~429496
+             -7295);
+1048          //       len:长度; font_color:字符串的颜色值; background_color:背景色; size:显示的大小 mo
+             -de:0-无叠加，1-叠加.
+1049          // 返回: none.
+1050          //========================================================================
+1051          void tft_lcd_show_num(int16 x, int16 y, int num, uint16 font_color, uint16 background_color, uint8 size, u
+             -int8 mode)
+1052          {
+1053   1        char men[15];
+1054   1        char *str = men;
+1055   1        sprintf(str,"%d",num);
+1056   1        tft_lcd_show_string(x,y,men,font_color,background_color,size,mode);
+1057   1      } 
+1058          
+1059          //========================================================================
+1060          // 描述: 在指定位置显示12*12字体汉字.
+1061          // 参数: hz:汉字的指针; x:起始x坐标; y:起始y坐标; lenth: 字体的总长度 
+1062          //       font_color:显示字符的颜色值; background_color:显示字符的背景色;mode:0-无叠加�
+             -�1-叠加.
+1063          // 返回: none.
+1064          //========================================================================
+1065          void tft_lcd_show_font12(uint8 lenth, uint8 *hz, int16 x, int16 y,uint16 font_color, uint16 background_col
+             -or, uint8 mode)
+1066          {
+1067   1        uint8 zz,i,j;
+1068   1        int16 zs;
+1069   1        if(x < 0)
+1070   1        {
+1071   2          zs = (0-x) / 12;  
+1072   2          for(zz = zs; zz < lenth; zz++)    //要显示的字体循环
+1073   2          {
+1074   3            for(i = 0;i < 12;i++)
+1075   3            {
+1076   4              for(j = 0;j < 12;j++)
+1077   4              {
+1078   5                if((zz * 12 + j + x -12) > 239)return;
+1079   5                if((y + i -12) > 339)return;
+1080   5                if (!((zz * 12 + x + j) < 0)){
+1081   6                  if(!mode)   //无叠加
+1082   6                  {
+1083   7                    if(hz[zz*24 + i * 2 + j/8] & (0x80 >> (j % 8))){
+1084   8                      tft_lcd_set_cursor(zz * 12+ x + j,y + i);
+1085   8                      tft_lcd_wr_data_16bit(font_color);
+1086   8                    }
+1087   7                    else{
+1088   8                      tft_lcd_set_cursor(zz * 12+ x + j,y + i);
+1089   8                      tft_lcd_wr_data_16bit(background_color);
+1090   8                    } 
+1091   7                  }
+1092   6                  else
+1093   6                  {
+1094   7                    if(hz[zz*24 + i * 2 + j/8] & (0x80>>(j % 8))){
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 19  
+
+1095   8                      tft_lcd_set_cursor(zz * 12+ x + j,y + i);
+1096   8                      tft_lcd_wr_data_16bit(font_color);
+1097   8                    }
+1098   7                  }
+1099   6                }
+1100   5              }
+1101   4            }
+1102   3          }
+1103   2        }
+1104   1        else
+1105   1        {
+1106   2          for(zz = 0; zz < lenth; zz++)   //要显示的字体循环
+1107   2          {
+1108   3            
+1109   3            for(i = 0;i < 12;i++)
+1110   3            {
+1111   4              for(j = 0;j < 12;j++)
+1112   4              {
+1113   5                if((zz * 12 + j + x -12) > 239)return;
+1114   5                if((y + i -12) > 339)return;
+1115   5                if(!mode)   //无叠加
+1116   5                {
+1117   6                  if(hz[zz*24 + i * 2 + j/8] & (0x80 >> (j % 8))){
+1118   7                    tft_lcd_set_cursor(zz * 12+ x + j,y + i);
+1119   7                    tft_lcd_wr_data_16bit(font_color);
+1120   7                  }
+1121   6                  else{
+1122   7                    tft_lcd_set_cursor(zz * 12+ x + j,y + i);
+1123   7                    tft_lcd_wr_data_16bit(background_color);
+1124   7                  }
+1125   6                }
+1126   5                else
+1127   5                {
+1128   6                  if(hz[zz*24 + i * 2 + j/8] & (0x80>>(j % 8))){
+1129   7                    tft_lcd_set_cursor(zz * 12+ x + j,y + i);
+1130   7                    tft_lcd_wr_data_16bit(font_color);            
+1131   7                  }
+1132   6                }
+1133   5              }
+1134   4            }
+1135   3          }
+1136   2        }
+1137   1        tft_lcd_set_windows(0,0,lcddev.width-1,lcddev.height-1);//恢复窗口为全屏
+1138   1      }
+1139          
+1140          //========================================================================
+1141          // 描述: 在指定位置显示16*16字体汉字.
+1142          // 参数: hz:汉字的指针; x:起始x坐标; y:起始y坐标; lenth: 字体的总长度 
+1143          //       font_color:显示字符的颜色值; background_color:显示字符的背景色;mode:0-无叠加�
+             -�1-叠加.
+1144          // 返回: none.
+1145          //========================================================================
+1146          void tft_lcd_show_font16(uint8 lenth, uint8 *hz, int16 x, int16 y,uint16 font_color, uint16 background_col
+             -or, uint8 mode)
+1147          {
+1148   1        uint8 zz,i,j;
+1149   1        int16 zs;
+1150   1        if(x < 0)
+1151   1        {
+1152   2          zs = (0-x) / 16;  
+1153   2          for(zz = zs; zz < lenth; zz++)    //要显示的字体循环
+1154   2          {
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 20  
+
+1155   3            for(i = 0;i < 16;i++)
+1156   3            {
+1157   4              for(j = 0;j < 16;j++)
+1158   4              {
+1159   5                if((zz * 16 + j + x -16) > 239)return;
+1160   5                if((y + i -16) > 339)return;
+1161   5                if (!((zz * 16 + x + j) < 0)){
+1162   6                  if(!mode)   //无叠加
+1163   6                  {
+1164   7                    if(hz[zz*32+i * 2 + j/8] & (0x80 >> (j % 8))){
+1165   8                      tft_lcd_set_cursor(zz * 16+ x + j,y + i);
+1166   8                      tft_lcd_wr_data_16bit(font_color);
+1167   8                    }
+1168   7                    else{
+1169   8                      tft_lcd_set_cursor(zz * 16+ x + j,y + i);
+1170   8                      tft_lcd_wr_data_16bit(background_color);
+1171   8                    }
+1172   7                  }
+1173   6                  else
+1174   6                  {
+1175   7                    if(hz[zz*32 + i * 2 + j/8] & (0x80>>(j % 8))){
+1176   8                      tft_lcd_set_cursor(zz * 16+ x + j,y + i);
+1177   8                      tft_lcd_wr_data_16bit(font_color);              
+1178   8                    }
+1179   7                  }
+1180   6                }
+1181   5              }
+1182   4            }
+1183   3          }
+1184   2        }
+1185   1        else
+1186   1        {
+1187   2          for(zz = 0; zz < lenth; zz++)   //要显示的字体循环
+1188   2          {
+1189   3            for(i = 0;i < 16;i++)
+1190   3            {
+1191   4              for(j = 0;j < 16;j++)
+1192   4              {
+1193   5                if((zz * 16 + j + x -16) > 239)return;
+1194   5                if((y + i -16) > 339)return;
+1195   5      
+1196   5                if(!mode)   //无叠加
+1197   5                {
+1198   6                  if(hz[zz*32+i * 2 + j/8] & (0x80 >> (j % 8))){
+1199   7                    tft_lcd_set_cursor(zz * 16+ x + j,y + i);
+1200   7                    tft_lcd_wr_data_16bit(font_color);
+1201   7                  }
+1202   6                  else{
+1203   7                    tft_lcd_set_cursor(zz * 16+ x + j,y + i);
+1204   7                    tft_lcd_wr_data_16bit(background_color);
+1205   7                  }
+1206   6                }
+1207   5                else
+1208   5                {
+1209   6                  if(hz[zz*32 + i * 2 + j/8] & (0x80>>(j % 8))){
+1210   7                    tft_lcd_set_cursor(zz * 16+ x + j,y + i);
+1211   7                    tft_lcd_wr_data_16bit(font_color);
+1212   7                  }
+1213   6                }
+1214   5              }
+1215   4            }
+1216   3          }
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 21  
+
+1217   2        }
+1218   1        tft_lcd_set_windows(0,0,lcddev.width-1,lcddev.height-1);//恢复窗口为全屏
+1219   1      }
+1220          //========================================================================
+1221          // 描述: 在指定位置显示24*24字体汉字.
+1222          // 参数: hz:汉字的指针; x:起始x坐标; y:起始y坐标; lenth: 字体的总长度 
+1223          //       font_color:显示字符的颜色值; background_color:显示字符的背景色;mode:0-无叠加�
+             -�1-叠加.
+1224          // 返回: none.
+1225          //========================================================================
+1226          void tft_lcd_show_font24(uint8 lenth, uint8 *hz, int16 x, int16 y,uint16 font_color, uint16 background_col
+             -or, uint8 mode)
+1227          {
+1228   1        uint8 zz,i,j;
+1229   1        int16 zs;
+1230   1        if(x < 0)
+1231   1        {
+1232   2          zs = (0-x) / 24;  
+1233   2          for(zz = zs; zz < lenth; zz++)    //要显示的字体循环
+1234   2          {
+1235   3            for(i = 0;i < 24;i++)
+1236   3            {
+1237   4              for(j = 0;j < 24;j++)
+1238   4              {
+1239   5                if((zz * 24 + j + x -24) > 239)return;
+1240   5                if((y + i -24) > 339)return;
+1241   5                if (!((zz * 24 + x + j) < 0))
+1242   5                {
+1243   6                  if(!mode)   //无叠加
+1244   6                  {
+1245   7                    if(hz[zz*72+i * 3 + j/8] & (0x80 >> (j % 8))){
+1246   8                      tft_lcd_set_cursor(zz * 24+ x + j,y + i);
+1247   8                      tft_lcd_wr_data_16bit(font_color);
+1248   8                    }
+1249   7                    else {
+1250   8                      tft_lcd_set_cursor(zz * 24+ x + j,y + i);
+1251   8                      tft_lcd_wr_data_16bit(background_color);
+1252   8                    }
+1253   7                  }
+1254   6                  else
+1255   6                  {
+1256   7                    if(hz[zz*72 + i * 3 + j/8] & (0x80>>(j % 8))){
+1257   8                      tft_lcd_set_cursor(zz * 24+ x + j,y + i);
+1258   8                      tft_lcd_wr_data_16bit(font_color);  
+1259   8                    }
+1260   7                  }
+1261   6                }
+1262   5              }
+1263   4            }
+1264   3          }
+1265   2        }
+1266   1        else
+1267   1        {
+1268   2          for(zz = 0; zz < lenth; zz++)   //要显示的字体循环
+1269   2          {
+1270   3            for(i = 0;i < 24;i++)
+1271   3            {
+1272   4              for(j = 0;j < 24;j++)
+1273   4              {
+1274   5                if((zz * 24 + j + x -24) > 239)return;
+1275   5                if((y + i -24) > 339)return;
+1276   5      
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 22  
+
+1277   5                if(!mode)   //无叠加
+1278   5                {
+1279   6                  if(hz[zz*72+i * 3 + j/8] & (0x80 >> (j % 8))){
+1280   7                    tft_lcd_set_cursor(zz * 24+ x + j,y + i);
+1281   7                    tft_lcd_wr_data_16bit(font_color);
+1282   7                  }
+1283   6                  else{
+1284   7                    tft_lcd_set_cursor(zz * 24+ x + j,y + i);
+1285   7                    tft_lcd_wr_data_16bit(background_color);
+1286   7                  }
+1287   6                }
+1288   5                else
+1289   5                {
+1290   6                  if(hz[zz*72 + i * 3 + j/8] & (0x80>>(j % 8))){
+1291   7                    tft_lcd_set_cursor(zz * 24+ x + j,y + i);
+1292   7                    tft_lcd_wr_data_16bit(font_color);  
+1293   7                  }
+1294   6                }
+1295   5              }
+1296   4            }
+1297   3          }
+1298   2        }
+1299   1        tft_lcd_set_windows(0,0,lcddev.width-1,lcddev.height-1);//恢复窗口为全屏
+1300   1      }
+1301          //========================================================================
+1302          // 描述: 在指定位置显示32*32字体汉字.
+1303          // 参数: hz:汉字的指针; x:起始x坐标; y:起始y坐标; lenth: 字体的总长度 
+1304          //       font_color:显示字符的颜色值; background_color:显示字符的背景色;mode:0-无叠加�
+             -�1-叠加.
+1305          // 返回: none.
+1306          //========================================================================
+1307          void tft_lcd_show_font32(uint8 lenth, uint8 *hz, int16 x, int16 y,uint16 font_color, uint16 background_col
+             -or, uint8 mode)
+1308          {
+1309   1        uint8 zz,i,j;
+1310   1        int16 zs;
+1311   1        if(x < 0)
+1312   1        {
+1313   2          zs = (0-x) / 32;  
+1314   2          for(zz = zs; zz < lenth; zz++)    //要显示的字体循环
+1315   2          {
+1316   3            for(i = 0;i < 32;i++)
+1317   3            {
+1318   4              for(j = 0;j < 32;j++)
+1319   4              {
+1320   5                if((zz * 34 + j + x -34) > 239)return;
+1321   5                if((y + i -34) > 339)return;
+1322   5                if (!((zz * 34 + x + j) < 0)){
+1323   6                  if(!mode)   //无叠加
+1324   6                  {
+1325   7                    if (hz[zz * 128 + j * 4 + i/ 8] & (0x80 >> (i % 8))){
+1326   8                      tft_lcd_set_cursor(zz * 32+ x + j,y + i);
+1327   8                      tft_lcd_wr_data_16bit(font_color);
+1328   8                    }
+1329   7                    else{ 
+1330   8                      tft_lcd_set_cursor(zz * 32+ x + j,y + i);
+1331   8                      tft_lcd_wr_data_16bit(background_color);
+1332   8                    }
+1333   7                  }
+1334   6                  else
+1335   6                  {
+1336   7                    if (hz[zz * 128 + j * 4 + i/ 8] & (0x80 >> (i % 8))){
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 23  
+
+1337   8                      tft_lcd_set_cursor(zz * 32+ x + j,y + i);
+1338   8                      tft_lcd_wr_data_16bit(font_color);
+1339   8                    }
+1340   7                  }
+1341   6                }
+1342   5              }
+1343   4            }
+1344   3          }
+1345   2        }
+1346   1        else
+1347   1        {
+1348   2          for(zz = 0; zz < lenth; zz++)   //要显示的字体循环
+1349   2          {
+1350   3            tft_lcd_set_windows(x+32*zz,y,x+32*zz+32-1,y+32-1);
+1351   3            for(i = 0;i < 32;i++)
+1352   3            {
+1353   4              for(j = 0;j < 32;j++)
+1354   4              {
+1355   5                if((zz * 32 + j + x -32) > 239)return;
+1356   5                if((y + i -32) > 339)return;
+1357   5      
+1358   5                if(!mode)   //无叠加
+1359   5                {
+1360   6                  if (hz[zz * 128 + j * 4 + i/ 8] & (0x80 >> (i % 8))){
+1361   7                    tft_lcd_set_cursor(zz * 32+ x + j,y + i);
+1362   7                    tft_lcd_wr_data_16bit(font_color);
+1363   7                  }
+1364   6                  else{
+1365   7                    tft_lcd_set_cursor(zz * 32+ x + j,y + i);
+1366   7                    tft_lcd_wr_data_16bit(background_color);
+1367   7                  }
+1368   6                }
+1369   5                else
+1370   5                {
+1371   6                  if (hz[zz * 128 + j * 4 + i/ 8] & (0x80 >> (i % 8))){
+1372   7                    tft_lcd_set_cursor(zz * 32+ x + j,y + i);
+1373   7                    tft_lcd_wr_data_16bit(font_color);
+1374   7                  }
+1375   6                }
+1376   5              }
+1377   4            }
+1378   3          }
+1379   2        }
+1380   1        tft_lcd_set_windows(0,0,lcddev.width-1,lcddev.height-1);//恢复窗口为全屏
+1381   1      }
+1382          
+1383          //========================================================================
+1384          // 描述: 显示16位的BMP图像.
+1385          // 参数: x0:起始x坐标; y0:起始y坐标;w:图片的宽度; h:图片的高度; p:图像数组的起�
+             -�地址
+1386          // 返回: none.
+1387          //========================================================================
+1388          void tft_lcd_draw_bmp16(uint16 x,uint16 y,uint16 w,uint16 h,const uint8 *p)
+1389          {
+1390   1          int i; 
+1391   1        uint8 picH,picL; 
+1392   1        tft_lcd_set_windows(x,y,x+w-1,y+h-1);       //窗口设置
+1393   1          for(i=0;i<40*40;i++)
+1394   1        { 
+1395   2          picL=*(p+i*2);    //数据低位在前
+1396   2          picH=*(p+i*2+1);        
+1397   2          tft_lcd_wr_data_16bit(picH<<8|picL);              
+C51 COMPILER V9.59.0.0   TFTLCD                                                            02/08/2021 11:44:59 PAGE 24  
+
+1398   2        } 
+1399   1        tft_lcd_set_windows(0,0,lcddev.width-1,lcddev.height-1);//恢复显示窗口为全屏
+1400   1      }
+1401          
+1402          
+1403          
+1404          
+1405          
+1406          
+1407          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =  11475    ----
+   CONSTANT SIZE    =   2667    ----
+   XDATA SIZE       =     19     351
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,50 @@
+RTT4/port/start.S文件是MIPS32 所需的典型独立启动代码，汇编语言配置总线、堆栈、存储器、高速缓存、翻译后备缓存区TLB，跳转到rtthread_startup（）函数启动内核
+    RTT4/src/components.c文件中rtthread_startup（）函数，调用以下函数启动内核：
+
+        RTT4/port/irq.c文件中rt_hw_interrupt_disable（）函数关闭中断。
+
+        RTT4/port/bsp_start.c文件中rt_hw_board_init（）函数板级初始化。		安装异常向量(数据/指令必须使用K1地址)，初始化中断向量表，获取存储空间大小并初始化RT系统堆栈，初始化控制台、操纵系统定时器、板子上的其他组件、取消中断屏蔽
+            RTT4/port/irq.c文件中mips_init_isr_table（）初始化中断向量表。（中断处理程序与参数）
+            RTT4/port/mem.c文件中rt_system_heap_init（）初始化RT系统堆栈。（对齐地址、堆开始、堆结束）
+                 RTT4/src/ipc.c文件中rt_sem_init（）初始化一个信号量。****************************************************************************************************************
+            ls1x-drv/console/console.c文件中console_init（）初始化控制台。
+                ls1x-drv/console/console.c文件中ls1x_uart_init（）设置控制台波特率
+                ls1x-drv/console/console.c文件中ls1x_uart_open（）打开串口
+            RTT4/port/tick.c文件中Clock_initialize（）初始化操作系统定时器.计算步长
+                RTT4/port/irq.c文件中rt_hw_interrupt_install（）安装时钟中断向量
+            RTT4/src/components.c文件中第83行rt_components_board_init（）此板级初始化为空
+            RTT4/port/mips/mips.c文件中mips_unmask_interrupt（）取消中断屏蔽。
+
+        RTT4/src/kservice.c文件中rt_show_version（）打印版本信息。
+
+        RTT4/src/timer.c文件中rt_system_timer_init（）初始化系统定时器。		用循环测定出硬件定时器列表rt_timer_list中定时器的个数，并挨个初始化（此处只有一个硬件定时器）
+            RTT4/include/rtsevervice.h文件中rt_list_init（）初始化列表中某个节点，前后节点都为1
+
+        RTT4/src/scheduler.c文件中rt_system_scheduler_init（）初始化调度器系统。	遍历所有优先级初始化线程优先级列表，初始化已就绪的优先组为0，初始化已经失效的线程
+            RTT4/include/rtsevervice.h文件中rt_list_init（）初始化列表中某个节点，前后节点都为1
+
+        RTT4/src/components.c文件中rt_application_init（）创建主线程。		堆栈大小为1024*8，优先级为10，时间片为20个tick
+            RTT4/src/thread.c文件中rt_thread_create（）创建主线程，创建一个线程对象并分配内存和堆栈****************************************************************************
+            RTT4/src/thread.c文件中rt_thread_startup（）开启主线程，启动一个线程并将其放入系统就绪队列（此时调度程序未启动，并不会执行主线程）***************************
+            RTT4/src/components.c文件中main_thread_entry（）为主线程入口函数
+                RTT4/src/components.c文件中rt_components_init（）初始化RT-Thread组件*******************************************************************************************
+                main.c文件中main（）即为主程序。
+
+        RTT4/src/idle.c文件中rt_thread_idle_init（）创建空闲线程。			优先级为31，时间片为32个tick
+           RTT4/src/thread.c文件中 rt_thread_init（）创建空闲线程，（静态）
+            RTT4/src/thread.c文件中rt_thread_startup（）开启空线程
+            RTT4/src/idle.c文件中rt_thread_idle_entry（）为空线程入口函数。遍历钩子函数列表
+                *************idle_hook_list[i]（）如果钩子函数列表非空，将执行该函数
+                RTT4/src/idle.c文件中rt_thread_idle_excute（）在空闲时清除线程********************************************************************************************************
+            
+
+        RTT4/src/scheduler.c文件中rt_system_scheduler_start（）启动调度程序。	选择一个具有最高优先级的线程，然后切换到它********************************************
+            
+            
+            
+            
+            
+
+        
+        
+        

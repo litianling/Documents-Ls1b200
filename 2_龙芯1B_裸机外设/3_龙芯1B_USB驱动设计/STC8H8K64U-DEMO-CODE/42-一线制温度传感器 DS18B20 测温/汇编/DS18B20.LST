@@ -1,0 +1,649 @@
+A51 MACRO ASSEMBLER  DS18B20                                                              03/15/2021 09:42:52 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN DS18B20.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE DS18B20.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* 如果要在程序中使用此代码,请在程序中注明使用了STC的资料及程序        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     
+                      14     ;/************* 功能说明    **************
+                      15     
+                      16     ;本例程基于STC8H8K64U为主控芯片的实验箱8进行编写测试，STC8G、STC8H系列芯片可通用参考.
+                      17     
+                      18     ;通过一个IO口获取一线制温度传感器 DS18B20 温度值.
+                      19     
+                      20     ;使用Timer0的16位自动重装来产生1ms节拍,程序运行于这个节拍下, 用户修改MCU主时钟频率时,自动定
+                             时于1ms.
+                      21     
+                      22     ;用STC的MCU的IO方式驱动8位数码管，通过数码管显示测量的温度值.
+                      23     
+                      24     ;下载时, 选择时钟 24MHZ (用户可自行修改频率).
+                      25     
+                      26     ;******************************************/
+                      27     
+                      28     ;/****************************** 用户定义宏 ***********************************/
+                      29     
+  5DC0                30     Fosc_KHZ    EQU 24000   ;24000KHZ
+                      31     
+  00D0                32     STACK_POIRTER   EQU     0D0H    ;堆栈开始地址
+                      33     
+  A240                34     Timer0_Reload   EQU     (65536 - Fosc_KHZ)  ; Timer 0 中断频率, 1000次/秒
+                      35     
+  0020                36     DIS_DOT         EQU     020H
+  0010                37     DIS_BLACK       EQU     010H
+  0011                38     DIS_            EQU     011H
+                      39     
+                      40     ;*******************************************************************
+                      41     ;*******************************************************************
+  008E                42     AUXR    DATA    08EH
+  00BA                43     P_SW2   DATA    0BAH
+  00C0                44     P4      DATA    0C0H
+  00C8                45     P5      DATA    0C8H
+  00E8                46     P6      DATA    0E8H
+  00F8                47     P7      DATA    0F8H
+                      48     
+  0093                49     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094                50     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091                51     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092                52     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095                53     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+  0096                54     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+  00B1                55     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2                56     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3                57     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+A51 MACRO ASSEMBLER  DS18B20                                                              03/15/2021 09:42:52 PAGE     2
+
+  00B4                58     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9                59     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA                60     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB                61     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC                62     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1                63     P7M1    DATA    0xE1    ;
+  00E2                64     P7M0    DATA    0xE2    ;
+                      65     
+                      66     ;*************  IO口定义    **************/
+  00B3                67     DQ  BIT P3.3                ;DS18B20的数据口位P3.3
+                      68     
+                      69     ;*************  本地变量声明    **************/
+  0020                70     Flag0           DATA    20H
+  0000                71     B_1ms           BIT     Flag0.0 ;   1ms标志
+                      72     
+  0030                73     LED8            DATA    30H     ;   显示缓冲 30H ~ 37H
+  0038                74     display_index   DATA    38H     ;   显示位索引
+                      75     
+  0039                76     msecond_H       DATA    39H     ;
+  003A                77     msecond_L       DATA    3AH     ;
+                      78     
+                      79     ;*******************************************************************
+                      80     ;*******************************************************************
+                      81     
+0000                  82             ORG     0000H               ;reset
+0000 020100           83             LJMP    F_Main
+                      84     
+000B                  85             ORG     000BH               ;1  Timer0 interrupt
+000B 020314           86             LJMP    F_Timer0_Interrupt
+                      87     
+0100                  88             ORG     0100H       ;reset
+0100                  89     F_Main:
+0100 E4               90         CLR     A
+0101 F593             91         MOV     P0M1, A     ;设置为准双向口
+0103 F594             92         MOV     P0M0, A
+0105 F591             93         MOV     P1M1, A     ;设置为准双向口
+0107 F592             94         MOV     P1M0, A
+0109 F595             95         MOV     P2M1, A     ;设置为准双向口
+010B F596             96         MOV     P2M0, A
+010D F5B1             97         MOV     P3M1, A     ;设置为准双向口
+010F F5B2             98         MOV     P3M0, A
+0111 F5B3             99         MOV     P4M1, A     ;设置为准双向口
+0113 F5B4            100         MOV     P4M0, A
+0115 F5C9            101         MOV     P5M1, A     ;设置为准双向口
+0117 F5CA            102         MOV     P5M0, A
+0119 F5CB            103         MOV     P6M1, A     ;设置为准双向口
+011B F5CC            104         MOV     P6M0, A
+011D F5E1            105         MOV     P7M1, A     ;设置为准双向口
+011F F5E2            106         MOV     P7M0, A
+                     107     
+0121 7581D0          108         MOV     SP, #STACK_POIRTER
+0124 75D000          109         MOV     PSW, #0
+                     110         USING   0       ;选择第0组R0~R7
+                     111     
+                     112     ;================= 用户初始化程序 ====================================
+0127 753800          113         MOV     display_index, #0
+012A 7830            114         MOV     R0, #LED8
+012C 7A08            115         MOV     R2, #8
+012E                 116     L_ClearLoop:
+012E 7610            117         MOV     @R0, #DIS_BLACK     ;上电消隐
+0130 08              118         INC     R0
+0131 DAFB            119         DJNZ    R2, L_ClearLoop
+                     120         
+0133 C28C            121         CLR     TR0
+0135 438E80          122         ORL     AUXR, #(1 SHL 7)    ; Timer0_1T();
+0138 5389FB          123         ANL     TMOD, #NOT 04H      ; Timer0_AsTimer();
+A51 MACRO ASSEMBLER  DS18B20                                                              03/15/2021 09:42:52 PAGE     3
+
+013B 5389FC          124         ANL     TMOD, #NOT 03H      ; Timer0_16bitAutoReload();
+013E 758CA2          125         MOV     TH0, #Timer0_Reload / 256   ;Timer0_Load(Timer0_Reload);
+0141 758A40          126         MOV     TL0, #Timer0_Reload MOD 256
+0144 D2A9            127         SETB    ET0         ; Timer0_InterruptEnable();
+0146 D28C            128         SETB    TR0         ; Timer0_Run();
+0148 D2AF            129         SETB    EA          ; 打开总中断
+                     130     
+                     131     ;=====================================================
+                     132     
+014A                 133     L_Main_Loop:
+014A 3000FD          134         JNB     B_1ms,  L_Main_Loop     ;1ms未到
+014D C200            135         CLR     B_1ms
+                     136         
+                     137     ;=================== 检测300ms是否到 ==================================
+014F 053A            138         INC     msecond_L       ;msecond + 1
+0151 E53A            139         MOV     A, msecond_L
+0153 7002            140         JNZ     $+4
+0155 0539            141         INC     msecond_H
+                     142         
+0157 C3              143         CLR     C
+0158 E53A            144         MOV     A, msecond_L    ;msecond - 300
+015A 942C            145         SUBB    A, #LOW 300
+015C E539            146         MOV     A, msecond_H
+015E 9401            147         SUBB    A, #HIGH 300
+0160 40E8            148         JC      L_Main_Loop     ;if(msecond < 300), jmp
+                     149         
+                     150     ;================= 300ms到 ====================================
+0162 753A00          151         MOV     msecond_L, #0   ;if(msecond >= 1000)
+0165 753900          152         MOV     msecond_H, #0
+                     153     
+0168 5159            154         CALL    DS18B20_Reset       ;设备复位
+016A 74CC            155         MOV     A,#0CCH             ;跳过ROM命令
+016C 5195            156         CALL    DS18B20_WriteByte   ;送出命令
+016E 7444            157         MOV     A,#044H             ;开始转换
+0170 5195            158         CALL    DS18B20_WriteByte   ;送出命令
+0172 30B3FD          159         JNB     DQ,$                ;等待转换完成
+                     160     
+0175 5159            161         CALL    DS18B20_Reset       ;设备复位
+0177 74CC            162         MOV     A,#0CCH             ;跳过ROM命令
+0179 5195            163         CALL    DS18B20_WriteByte   ;送出命令
+017B 74BE            164         MOV     A,#0BEH             ;读暂存存储器
+017D 5195            165         CALL    DS18B20_WriteByte   ;送出命令
+017F 5176            166         CALL    DS18B20_ReadByte    ;读温度低字节
+0181 FD              167         MOV     R5,A                ;存储数据
+0182 5176            168         CALL    DS18B20_ReadByte    ;读温度高字节
+0184 FC              169         MOV     R4,A                ;存储数据
+                     170     
+0185 7F05            171         MOV     R7, #5          ; 0.0625 * 10，保留1位小数点
+0187 1201DC          172         LCALL   F_MUL16x8       ;(R4,R5)* R7 -->(R5,R6,R7)
+018A 7C00            173         MOV     R4, #0
+018C 7A00            174         MOV     R2, #0
+018E 7B08            175         MOV     R3, #8          ; 温度 * 0.625 = 温度 * 5/8
+0190 1201ED          176         LCALL   F_ULDIV         ;(R4,R5,R6,R7)/(R2,R3)=(R4,R5,R6,R7),余数在(R2,R3),use R0~R7,B,
+                             DPL
+                     177     
+0193 1201BE          178         LCALL   F_HEX2_DEC      ;(R6 R7) HEX Change to DEC ---> (R3 R4 R5), use (R2~R7)
+0196 EC              179         MOV     A, R4
+0197 C4              180         SWAP    A
+0198 540F            181         ANL     A, #0x0F
+019A F533            182         MOV     LED8+3, A       ;显示温度值
+019C EC              183         MOV     A, R4
+019D 540F            184         ANL     A, #0x0F
+019F F532            185         MOV     LED8+2, A
+01A1 ED              186         MOV     A, R5
+01A2 C4              187         SWAP    A
+01A3 540F            188         ANL     A, #0x0F
+A51 MACRO ASSEMBLER  DS18B20                                                              03/15/2021 09:42:52 PAGE     4
+
+01A5 2420            189         ADD     A, #DIS_DOT
+01A7 F531            190         MOV     LED8+1, A
+01A9 ED              191         MOV     A, R5
+01AA 540F            192         ANL     A, #0x0F
+01AC F530            193         MOV     LED8, A
+01AE E533            194         MOV     A, LED8+3
+01B0 7003            195         JNZ     L_LED8_3_Not_0
+01B2 753310          196         MOV     LED8+3, #DIS_BLACK      ;千位为0则消隐
+01B5                 197     L_LED8_3_Not_0:
+01B5 30D503          198         JNB     F0, L_QuitRead_Temp
+01B8 753311          199         MOV     LED8+3, #DIS_   ;负温度, 显示-
+01BB                 200     L_QuitRead_Temp:
+                     201     
+01BB 02014A          202         LJMP    L_Main_Loop
+                     203     
+                     204     ;//========================================================================
+                     205     ;// 函数: F_HEX2_DEC
+                     206     ;// 描述: 把双字节十六进制数转成十进制BCD数.
+                     207     ;// 参数: (R6 R7): 要转换的双字节十六进制数.
+                     208     ;// 返回: (R3 R4 R5) = BCD码.
+                     209     ;// 版本: V1.0, 2013-10-22
+                     210     ;//========================================================================
+01BE                 211     F_HEX2_DEC:         ;(R6 R7) HEX Change to DEC ---> (R3 R4 R5), use (R2~R7)
+01BE 7A10            212         MOV     R2,#16
+01C0 7B00            213         MOV     R3,#0
+01C2 7C00            214         MOV     R4,#0
+01C4 7D00            215         MOV     R5,#0
+                     216     
+01C6                 217     L_HEX2_DEC:
+01C6 C3              218         CLR     C   
+01C7 EF              219         MOV     A,R7
+01C8 33              220         RLC     A   
+01C9 FF              221         MOV     R7,A
+01CA EE              222         MOV     A,R6
+01CB 33              223         RLC     A   
+01CC FE              224         MOV     R6,A
+                     225     
+01CD ED              226         MOV     A,R5
+01CE 3D              227         ADDC    A,R5
+01CF D4              228         DA      A   
+01D0 FD              229         MOV     R5,A
+                     230     
+01D1 EC              231         MOV     A,R4
+01D2 3C              232         ADDC    A,R4
+01D3 D4              233         DA      A   
+01D4 FC              234         MOV     R4,A
+                     235     
+01D5 EB              236         MOV     A,R3
+01D6 3B              237         ADDC    A,R3
+01D7 D4              238         DA      A   
+01D8 FB              239         MOV     R3,A
+                     240     
+01D9 DAEB            241         DJNZ    R2,L_HEX2_DEC
+01DB 22              242         RET
+                     243     
+                     244     ;***************************************************************************
+01DC                 245     F_MUL16x8:               ;(R4,R5)* R7 -->(R5,R6,R7)
+01DC EF              246         MOV   A,R7      ;1T     1
+01DD 8DF0            247         MOV   B,R5      ;2T     3
+01DF A4              248         MUL   AB        ;4T  R3*R7  4
+01E0 AEF0            249         MOV   R6,B      ;1T     4
+01E2 CF              250         XCH   A,R7      ;2T     3
+                     251         
+01E3 8CF0            252         MOV   B,R4      ;1T     3
+01E5 A4              253         MUL   AB        ;4T  R3*R6  4
+01E6 2E              254         ADD   A,R6      ;1T     2
+A51 MACRO ASSEMBLER  DS18B20                                                              03/15/2021 09:42:52 PAGE     5
+
+01E7 FE              255         MOV   R6,A      ;1T     3
+01E8 E4              256         CLR   A         ;1T     1
+01E9 35F0            257         ADDC  A,B       ;1T     3
+01EB FD              258         MOV   R5,A      ;1T     2
+01EC 22              259         RET             ;4T     10
+                     260     
+                     261     ;***************************************************************************
+01ED                 262     F_ULDIV:
+01ED                 263     F_DIV32:                            ; (R4,R5,R6,R7)/(R2,R3)=(R4,R5,R6,R7),余数在(R2,R3),use
+                              R0~R7,B,DPL
+01ED BA002D          264         CJNE    R2,#0,F_DIV32_16    ; L_0075
+                     265             
+01F0                 266     F_DIV32_8:                          ;R3非0，(R4,R5,R6,R7)/R3=(R4,R5,R6,R7),余数在 R3,use R0
+                             ~R7,B
+01F0 EC              267         MOV     A,R4
+01F1 8BF0            268         MOV     B,R3
+01F3 84              269         DIV     AB
+01F4 CF              270         XCH     A,R7
+01F5 CE              271         XCH     A,R6
+01F6 CD              272         XCH     A,R5
+01F7 FC              273         MOV     R4,A
+01F8 E5F0            274         MOV     A,B
+01FA CB              275         XCH     A,R3
+01FB F9              276         MOV     R1,A
+01FC 7818            277         MOV     R0,#24
+01FE                 278     L_0056:
+01FE EF              279         MOV     A,R7
+01FF 2F              280         ADD     A,R7
+0200 FF              281         MOV     R7,A
+0201 EE              282         MOV     A,R6
+0202 33              283         RLC     A
+0203 FE              284         MOV     R6,A
+0204 ED              285         MOV     A,R5
+0205 33              286         RLC     A
+0206 FD              287         MOV     R5,A
+0207 EC              288         MOV     A,R4
+0208 33              289         RLC     A
+0209 FC              290         MOV     R4,A
+020A EB              291         MOV     A,R3
+020B 33              292         RLC     A
+020C FB              293         MOV     R3,A
+020D 10D703          294         JBC     CY,L_006B
+0210 99              295         SUBB    A,R1
+0211 4004            296         JC      L_006F
+0213                 297     L_006B:
+0213 EB              298         MOV     A,R3
+0214 99              299         SUBB    A,R1
+0215 FB              300         MOV     R3,A
+0216 0F              301         INC     R7
+0217                 302     L_006F:
+0217 D8E5            303         DJNZ    R0,L_0056
+0219 E4              304         CLR     A
+021A F9              305         MOV     R1,A
+021B FA              306         MOV     R2,A
+021C 22              307         RET
+                     308     
+                     309     ;***************************************************************************
+021D                 310     F_DIV32_16:                     ;R2非0，(R4,R5,R6,R7)/(R2,R3)=(R5,R6,R7),余数在 (R2,R3),use
+                              R0~R7
+021D                 311     L_0075:
+021D 7818            312         MOV     R0,#24          ;开始R1=0
+021F                 313     L_0077:
+021F EF              314         MOV     A,R7            ;左移一位
+0220 2F              315         ADD     A,R7
+0221 FF              316         MOV     R7,A
+0222 EE              317         MOV     A,R6
+A51 MACRO ASSEMBLER  DS18B20                                                              03/15/2021 09:42:52 PAGE     6
+
+0223 33              318         RLC     A
+0224 FE              319         MOV     R6,A
+0225 ED              320         MOV     A,R5
+0226 33              321         RLC     A
+0227 FD              322         MOV     R5,A
+0228 EC              323         MOV     A,R4
+0229 33              324         RLC     A
+022A FC              325         MOV     R4,A
+022B C9              326         XCH     A,R1
+022C 33              327         RLC     A
+022D C9              328         XCH     A,R1
+022E 10D705          329         JBC     CY,L_008E   ;如果C=1，肯定够减
+0231 9B              330         SUBB    A,R3
+0232 E9              331         MOV     A,R1        ;测试是否够减
+0233 9A              332         SUBB    A,R2
+0234 4007            333         JC      L_0095
+0236                 334     L_008E:
+0236 EC              335         MOV     A,R4
+0237 9B              336         SUBB    A,R3
+0238 FC              337         MOV     R4,A
+0239 E9              338         MOV     A,R1
+023A 9A              339         SUBB    A,R2
+023B F9              340         MOV     R1,A
+023C 0F              341         INC     R7
+023D                 342     L_0095:
+023D D8E0            343         DJNZ    R0,L_0077
+023F E4              344         CLR     A
+0240 C9              345         XCH     A,R1
+0241 FA              346         MOV     R2,A
+0242 E4              347         CLR     A
+0243 CC              348         XCH     A,R4
+0244 FB              349         MOV     R3,A
+0245 22              350         RET
+                     351     
+                     352     ;**************************************
+                     353     ;延时X微秒(12M)
+                     354     ;不同的工作环境,需要调整此函数
+                     355     ;入口参数:R7
+                     356     ;出口参数:无
+                     357     ;**************************************
+0246                 358     DelayXus:                   ;6 此延时函数是使用1T的指令周期进行计算,与传统的12T的MCU不同
+0246 00              359         NOP                     ;1
+0247 00              360         NOP                     ;1
+0248 00              361         NOP                     ;1
+0249 00              362         NOP                     ;1
+024A 00              363         NOP                     ;1
+024B 00              364         NOP                     ;1
+024C 00              365         NOP                     ;1
+024D 00              366         NOP                     ;1
+024E 00              367         NOP                     ;1
+024F 00              368         NOP                     ;1
+0250 00              369         NOP                     ;1
+0251 00              370         NOP                     ;1
+0252 00              371         NOP                     ;1
+0253 00              372         NOP                     ;1
+0254 00              373         NOP                     ;1
+0255 00              374         NOP                     ;1
+0256 DFEE            375         DJNZ R7,DelayXus        ;4
+0258 22              376         RET                     ;4
+                     377     
+                     378     ;**************************************
+                     379     ;复位DS18B20,并检测设备是否存在
+                     380     ;入口参数:无
+                     381     ;出口参数:无
+                     382     ;**************************************
+0259                 383     DS18B20_Reset:
+A51 MACRO ASSEMBLER  DS18B20                                                              03/15/2021 09:42:52 PAGE     7
+
+0259 C2B3            384         CLR     DQ                 ;送出低电平复位信号
+025B 7FF0            385         MOV     R7,#240            ;延时至少480us
+025D 5146            386         CALL    DelayXus
+025F 7FF0            387         MOV     R7,#240
+0261 5146            388         CALL    DelayXus
+0263 D2B3            389         SETB    DQ                 ;释放数据线
+0265 7F3C            390         MOV     R7,#60             ;等待60us
+0267 5146            391         CALL    DelayXus
+0269 A2B3            392         MOV     C,DQ               ;检测存在脉冲
+026B 7FF0            393         MOV     R7,#240            ;等待设备释放数据线
+026D 5146            394         CALL    DelayXus
+026F 7FB4            395         MOV     R7,#180
+0271 5146            396         CALL    DelayXus
+0273 40E4            397         JC      DS18B20_Reset      ;如果设备不存在,则继续等待
+0275 22              398         RET
+                     399     
+                     400     ;**************************************
+                     401     ;从DS18B20读1字节数据
+                     402     ;入口参数:无
+                     403     ;出口参数:ACC
+                     404     ;**************************************
+0276                 405     DS18B20_ReadByte:
+0276 E4              406         CLR     A
+0277 C000            407         PUSH    0
+0279 750008          408         MOV     0,#8               ;8位计数器
+027C                 409     ReadNext:
+027C C2B3            410         CLR     DQ                 ;开始时间片
+027E 7F01            411         MOV     R7,#1              ;延时等待
+0280 5146            412         CALL    DelayXus
+0282 D2B3            413         SETB    DQ                 ;准备接收
+0284 7F01            414         MOV     R7,#1
+0286 5146            415         CALL    DelayXus
+0288 A2B3            416         MOV     C,DQ               ;读取数据
+028A 13              417         RRC     A
+028B 7F3C            418         MOV     R7,#60             ;等待时间片结束
+028D 5146            419         CALL    DelayXus
+028F D500EA          420         DJNZ    0,ReadNext
+0292 D000            421         POP     0
+0294 22              422         RET
+                     423     
+                     424     ;**************************************
+                     425     ;向DS18B20写1字节数据
+                     426     ;入口参数:ACC
+                     427     ;出口参数:无
+                     428     ;**************************************
+0295                 429     DS18B20_WriteByte:
+0295 C000            430         PUSH    0
+0297 750008          431         MOV     0,#8               ;8位计数器
+029A                 432     WriteNext:
+029A C2B3            433         CLR     DQ                 ;开始时间片
+029C 7F01            434         MOV     R7,#1              ;延时等待
+029E 5146            435         CALL    DelayXus
+02A0 13              436         RRC     A                  ;输出数据
+02A1 92B3            437         MOV     DQ,C
+02A3 7F3C            438         MOV     R7,#60             ;等待时间片结束
+02A5 5146            439         CALL    DelayXus
+02A7 D2B3            440         SETB    DQ                 ;准备送出下一位数据
+02A9 7F01            441         MOV     R7,#1
+02AB 5146            442         CALL    DelayXus
+02AD D500EA          443         DJNZ    0,WriteNext
+02B0 D000            444         POP     0
+02B2 22              445         RET
+                     446     
+                     447     ; *********************** 显示相关程序 ****************************************
+02B3                 448     T_Display:                      ;标准字库
+                     449     ;    0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+A51 MACRO ASSEMBLER  DS18B20                                                              03/15/2021 09:42:52 PAGE     8
+
+02B3 3F065B4F        450     DB  03FH,006H,05BH,04FH,066H,06DH,07DH,007H,07FH,06FH,077H,07CH,039H,05EH,079H,071H
+02B7 666D7D07                
+02BB 7F6F777C                
+02BF 395E7971                
+                     451     ;  black  -    H    J    K    L    N    o    P    U    t    G    Q    r    M    y
+02C3 0040761E        452     DB  000H,040H,076H,01EH,070H,038H,037H,05CH,073H,03EH,078H,03dH,067H,050H,037H,06EH
+02C7 7038375C                
+02CB 733E783D                
+02CF 6750376E                
+                     453     ;    0.   1.   2.   3.   4.   5.   6.   7.   8.   9.   -1
+02D3 BF86DBCF        454     DB  0BFH,086H,0DBH,0CFH,0E6H,0EDH,0FDH,087H,0FFH,0EFH,046H
+02D7 E6EDFD87                
+02DB FFEF46                  
+                     455     
+02DE                 456     T_COM:
+02DE 01020408        457     DB  001H,002H,004H,008H,010H,020H,040H,080H     ;   位码
+02E2 10204080                
+                     458     
+                     459     
+                     460     ;//========================================================================
+                     461     ;// 函数: F_DisplayScan
+                     462     ;// 描述: 显示扫描子程序。
+                     463     ;// 参数: none.
+                     464     ;// 返回: none.
+                     465     ;// 版本: VER1.0
+                     466     ;// 日期: 2013-4-1
+                     467     ;// 备注: 除了ACCC和PSW外, 所用到的通用寄存器都入栈
+                     468     ;//========================================================================
+02E6                 469     F_DisplayScan:
+02E6 C083            470         PUSH    DPH     ;DPH入栈
+02E8 C082            471         PUSH    DPL     ;DPL入栈
+02EA C000            472         PUSH    00H     ;R0 入栈
+                     473         
+02EC 9002DE          474         MOV     DPTR, #T_COM
+02EF E538            475         MOV     A, display_index
+02F1 93              476         MOVC    A, @A+DPTR
+02F2 F4              477         CPL     A
+02F3 F5F8            478         MOV     P7,A
+                     479         
+02F5 9002B3          480         MOV     DPTR, #T_Display
+02F8 E538            481         MOV     A, display_index
+02FA 2430            482         ADD     A, #LED8
+02FC F8              483         MOV     R0, A
+02FD E6              484         MOV     A, @R0
+02FE 93              485         MOVC    A, @A+DPTR
+02FF F4              486         CPL     A
+0300 F5E8            487         MOV     P6,A
+                     488     
+0302 0538            489         INC     display_index
+0304 E538            490         MOV     A, display_index
+0306 54F8            491         ANL     A, #0F8H            ; if(display_index >= 8)
+0308 6003            492         JZ      L_QuitDisplayScan
+030A 753800          493         MOV     display_index, #0;  ;8位结束回0
+030D                 494     L_QuitDisplayScan:
+030D D000            495         POP     00H     ;R0 出栈
+030F D082            496         POP     DPL     ;DPL出栈
+0311 D083            497         POP     DPH     ;DPH出栈
+0313 22              498         RET
+                     499     
+                     500     ;**************** 中断函数 ***************************************************
+                     501     
+0314                 502     F_Timer0_Interrupt: ;Timer0 1ms中断函数
+0314 C0D0            503         PUSH    PSW     ;PSW入栈
+0316 C0E0            504         PUSH    ACC     ;ACC入栈
+                     505     
+0318 1202E6          506         LCALL   F_DisplayScan   ; 1ms扫描显示一位
+A51 MACRO ASSEMBLER  DS18B20                                                              03/15/2021 09:42:52 PAGE     9
+
+031B D200            507         SETB    B_1ms           ; 1ms标志
+                     508     
+031D D0E0            509         POP     ACC     ;ACC出栈
+031F D0D0            510         POP     PSW     ;PSW出栈
+0321 32              511         RETI
+                     512     
+                     513         END
+                             
+A51 MACRO ASSEMBLER  DS18B20                                                              03/15/2021 09:42:52 PAGE    10
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . .  D ADDR   00E0H   A   
+AUXR . . . . . . .  D ADDR   008EH   A   
+B. . . . . . . . .  D ADDR   00F0H   A   
+B_1MS. . . . . . .  B ADDR   0020H.0 A   
+CY . . . . . . . .  B ADDR   00D0H.7 A   
+DELAYXUS . . . . .  C ADDR   0246H   A   
+DISPLAY_INDEX. . .  D ADDR   0038H   A   
+DIS_ . . . . . . .  N NUMB   0011H   A   
+DIS_BLACK. . . . .  N NUMB   0010H   A   
+DIS_DOT. . . . . .  N NUMB   0020H   A   
+DPH. . . . . . . .  D ADDR   0083H   A   
+DPL. . . . . . . .  D ADDR   0082H   A   
+DQ . . . . . . . .  B ADDR   00B0H.3 A   
+DS18B20_READBYTE .  C ADDR   0276H   A   
+DS18B20_RESET. . .  C ADDR   0259H   A   
+DS18B20_WRITEBYTE.  C ADDR   0295H   A   
+EA . . . . . . . .  B ADDR   00A8H.7 A   
+ET0. . . . . . . .  B ADDR   00A8H.1 A   
+F0 . . . . . . . .  B ADDR   00D0H.5 A   
+FLAG0. . . . . . .  D ADDR   0020H   A   
+FOSC_KHZ . . . . .  N NUMB   5DC0H   A   
+F_DISPLAYSCAN. . .  C ADDR   02E6H   A   
+F_DIV32. . . . . .  C ADDR   01EDH   A   
+F_DIV32_16 . . . .  C ADDR   021DH   A   
+F_DIV32_8. . . . .  C ADDR   01F0H   A   
+F_HEX2_DEC . . . .  C ADDR   01BEH   A   
+F_MAIN . . . . . .  C ADDR   0100H   A   
+F_MUL16X8. . . . .  C ADDR   01DCH   A   
+F_TIMER0_INTERRUPT  C ADDR   0314H   A   
+F_ULDIV. . . . . .  C ADDR   01EDH   A   
+LED8 . . . . . . .  D ADDR   0030H   A   
+L_0056 . . . . . .  C ADDR   01FEH   A   
+L_006B . . . . . .  C ADDR   0213H   A   
+L_006F . . . . . .  C ADDR   0217H   A   
+L_0075 . . . . . .  C ADDR   021DH   A   
+L_0077 . . . . . .  C ADDR   021FH   A   
+L_008E . . . . . .  C ADDR   0236H   A   
+L_0095 . . . . . .  C ADDR   023DH   A   
+L_CLEARLOOP. . . .  C ADDR   012EH   A   
+L_HEX2_DEC . . . .  C ADDR   01C6H   A   
+L_LED8_3_NOT_0 . .  C ADDR   01B5H   A   
+L_MAIN_LOOP. . . .  C ADDR   014AH   A   
+L_QUITDISPLAYSCAN.  C ADDR   030DH   A   
+L_QUITREAD_TEMP. .  C ADDR   01BBH   A   
+MSECOND_H. . . . .  D ADDR   0039H   A   
+MSECOND_L. . . . .  D ADDR   003AH   A   
+P0M0 . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . .  D ADDR   0093H   A   
+P1M0 . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . .  D ADDR   0095H   A   
+P3 . . . . . . . .  D ADDR   00B0H   A   
+P3M0 . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . .  D ADDR   00B1H   A   
+P4 . . . . . . . .  D ADDR   00C0H   A   
+P4M0 . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . .  D ADDR   00B3H   A   
+P5 . . . . . . . .  D ADDR   00C8H   A   
+P5M0 . . . . . . .  D ADDR   00CAH   A   
+A51 MACRO ASSEMBLER  DS18B20                                                              03/15/2021 09:42:52 PAGE    11
+
+P5M1 . . . . . . .  D ADDR   00C9H   A   
+P6 . . . . . . . .  D ADDR   00E8H   A   
+P6M0 . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . .  D ADDR   00CBH   A   
+P7 . . . . . . . .  D ADDR   00F8H   A   
+P7M0 . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . .  D ADDR   00E1H   A   
+PSW. . . . . . . .  D ADDR   00D0H   A   
+P_SW2. . . . . . .  D ADDR   00BAH   A   
+READNEXT . . . . .  C ADDR   027CH   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER. . .  N NUMB   00D0H   A   
+TH0. . . . . . . .  D ADDR   008CH   A   
+TIMER0_RELOAD. . .  N NUMB   A240H   A   
+TL0. . . . . . . .  D ADDR   008AH   A   
+TMOD . . . . . . .  D ADDR   0089H   A   
+TR0. . . . . . . .  B ADDR   0088H.4 A   
+T_COM. . . . . . .  C ADDR   02DEH   A   
+T_DISPLAY. . . . .  C ADDR   02B3H   A   
+WRITENEXT. . . . .  C ADDR   029AH   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

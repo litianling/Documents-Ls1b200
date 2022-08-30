@@ -1,0 +1,3 @@
+板子上H1用来短接插入电脑下载程序，程序下载用WCHISPTool
+立创EDA开源工程地址：
+https://oshwhub.com/TheLight/zi-ding-yi-jian-pan

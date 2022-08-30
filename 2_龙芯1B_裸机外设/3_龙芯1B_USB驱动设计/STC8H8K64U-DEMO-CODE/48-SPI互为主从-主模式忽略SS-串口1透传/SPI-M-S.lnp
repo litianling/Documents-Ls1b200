@@ -1,0 +1,3 @@
+"SPI-M-S.obj" 
+TO "SPI-M-S" 
+RAMSIZE(256) 

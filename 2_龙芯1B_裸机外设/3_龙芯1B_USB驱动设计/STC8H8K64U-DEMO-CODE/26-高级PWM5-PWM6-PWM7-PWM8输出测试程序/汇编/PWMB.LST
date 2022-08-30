@@ -1,0 +1,546 @@
+A51 MACRO ASSEMBLER  PWMB                                                                 03/04/2021 10:58:51 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN PWMB.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE PWMB.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* 如果要在程序中使用此代码,请在程序中注明使用了STC的资料及程序        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     
+                      14     ;/************* 功能说明    **************
+                      15     
+                      16     ;本例程基于STC8H8K64U为主控芯片的实验箱8进行编写测试，STC8H系列芯片可通用参考.
+                      17     
+                      18     ;高级PWM定时器 PWM5,PWM6,PWM7,PWM8 每个通道都可独立实现PWM输出.
+                      19     
+                      20     ;4个通道PWM根据需要设置对应输出口，可通过示波器观察输出的信号.
+                      21     
+                      22     ;PWM周期和占空比可以根据需要自行设置，最高可达65535.
+                      23     
+                      24     ;下载时, 选择时钟 24MHZ (用户可自行修改频率).
+                      25     
+                      26     ;******************************************/
+                      27     
+                      28     ;/****************************** 用户定义宏 ***********************************/
+                      29     
+  5DC0                30     Fosc_KHZ    EQU 24000   ;24000KHZ
+                      31     
+  00D0                32     STACK_POIRTER   EQU     0D0H    ;堆栈开始地址
+                      33     
+  A240                34     Timer0_Reload   EQU     (65536 - Fosc_KHZ)  ; Timer 0 中断频率, 1000次/秒
+                      35     
+                      36     ;*******************************************************************
+                      37     ;*******************************************************************
+                      38     
+                      39     
+                      40     ;*******************************************************************
+  008E                41     AUXR        DATA 08EH
+  00C0                42     P4          DATA 0C0H
+  00C8                43     P5          DATA 0C8H
+  00E8                44     P6          DATA 0E8H
+  00F8                45     P7          DATA 0F8H
+  0097                46     PCON2       DATA 097H
+                      47     
+  008F                48     INT_CLKO    DATA    0x8F
+  00A2                49     P_SW1       DATA    0A2H
+  00AF                50     IE2         DATA    0AFH
+  00D6                51     T2H         DATA    0D6H
+  00D7                52     T2L         DATA    0D7H
+                      53     
+  0093                54     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094                55     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091                56     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092                57     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095                58     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+A51 MACRO ASSEMBLER  PWMB                                                                 03/04/2021 10:58:51 PAGE     2
+
+  0096                59     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+  00B1                60     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2                61     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3                62     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+  00B4                63     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9                64     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA                65     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB                66     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC                67     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1                68     P7M1    DATA    0xE1    ;
+  00E2                69     P7M0    DATA    0xE2    ;
+                      70     
+                      71     ;*******************************************************************
+  00BA                72     P_SW2   DATA    0BAH
+                      73     
+  FEB5                74     PWMB_ENO      XDATA   0FEB5H
+  FEB6                75     PWMB_PS       XDATA   0FEB6H
+                      76     
+  FEE0                77     PWMB_CR1      XDATA   0FEE0H
+  FEE1                78     PWMB_CR2      XDATA   0FEE1H
+  FEE2                79     PWMB_SMCR     XDATA   0FEE2H
+  FEE3                80     PWMB_ETR      XDATA   0FEE3H
+  FEE4                81     PWMB_IER      XDATA   0FEE4H
+  FEE5                82     PWMB_SR1      XDATA   0FEE5H
+  FEE6                83     PWMB_SR2      XDATA   0FEE6H
+  FEE7                84     PWMB_EGR      XDATA   0FEE7H
+  FEE8                85     PWMB_CCMR1    XDATA   0FEE8H
+  FEE9                86     PWMB_CCMR2    XDATA   0FEE9H
+  FEEA                87     PWMB_CCMR3    XDATA   0FEEAH
+  FEEB                88     PWMB_CCMR4    XDATA   0FEEBH
+  FEEC                89     PWMB_CCER1    XDATA   0FEECH
+  FEED                90     PWMB_CCER2    XDATA   0FEEDH
+  FEEE                91     PWMB_CNTRH    XDATA   0FEEEH
+  FEEF                92     PWMB_CNTRL    XDATA   0FEEFH
+  FEF0                93     PWMB_PSCRH    XDATA   0FEF0H
+  FEF1                94     PWMB_PSCRL    XDATA   0FEF1H
+  FEF2                95     PWMB_ARRH     XDATA   0FEF2H
+  FEF3                96     PWMB_ARRL     XDATA   0FEF3H
+  FEF4                97     PWMB_RCR      XDATA   0FEF4H
+  FEF5                98     PWMB_CCR5H    XDATA   0FEF5H
+  FEF6                99     PWMB_CCR5L    XDATA   0FEF6H
+  FEF7               100     PWMB_CCR6H    XDATA   0FEF7H
+  FEF8               101     PWMB_CCR6L    XDATA   0FEF8H
+  FEF9               102     PWMB_CCR7H    XDATA   0FEF9H
+  FEFA               103     PWMB_CCR7L    XDATA   0FEFAH
+  FEFB               104     PWMB_CCR8H    XDATA   0FEFBH
+  FEFC               105     PWMB_CCR8L    XDATA   0FEFCH
+  FEFD               106     PWMB_BKR      XDATA   0FEFDH
+  FEFE               107     PWMB_DTR      XDATA   0FEFEH
+  FEFF               108     PWMB_OISR     XDATA   0FEFFH
+                     109     
+                     110     ;*******************************************************************
+                     111     
+                     112     ;*************  本地变量声明    **************/
+  0000               113     PWM5_Flag       BIT     20H.0
+  0001               114     PWM6_Flag       BIT     20H.1
+  0002               115     PWM7_Flag       BIT     20H.2
+  0003               116     PWM8_Flag       BIT     20H.3
+                     117     
+  0030               118     PWM5_Duty_H     DATA    30H
+  0031               119     PWM5_Duty_L     DATA    31H
+  0032               120     PWM6_Duty_H     DATA    32H
+  0033               121     PWM6_Duty_L     DATA    33H
+  0034               122     PWM7_Duty_H     DATA    34H
+  0035               123     PWM7_Duty_L     DATA    35H
+  0036               124     PWM8_Duty_H     DATA    36H
+A51 MACRO ASSEMBLER  PWMB                                                                 03/04/2021 10:58:51 PAGE     3
+
+  0037               125     PWM8_Duty_L     DATA    37H
+                     126     
+                     127     ;*******************************************************************
+                     128     ;*******************************************************************
+0000                 129             ORG     0000H               ;reset
+0000 020100          130             LJMP    F_Main
+                     131     
+000B                 132             ORG     000BH               ;1  Timer0 interrupt
+000B 0201EC          133             LJMP    F_Timer0_Interrupt
+                     134     
+                     135     ;******************** 主程序 **************************/
+0100                 136             ORG     0100H       ;reset
+0100                 137     F_Main:
+0100 E4              138         CLR     A
+0101 F593            139         MOV     P0M1, A     ;设置为准双向口
+0103 F594            140         MOV     P0M0, A
+0105 F591            141         MOV     P1M1, A     ;设置为准双向口
+0107 F592            142         MOV     P1M0, A
+0109 F595            143         MOV     P2M1, A     ;设置为准双向口
+010B F596            144         MOV     P2M0, A
+010D F5B1            145         MOV     P3M1, A     ;设置为准双向口
+010F F5B2            146         MOV     P3M0, A
+0111 F5B3            147         MOV     P4M1, A     ;设置为准双向口
+0113 F5B4            148         MOV     P4M0, A
+0115 F5C9            149         MOV     P5M1, A     ;设置为准双向口
+0117 F5CA            150         MOV     P5M0, A
+0119 F5CB            151         MOV     P6M1, A     ;设置为准双向口
+011B F5CC            152         MOV     P6M0, A
+011D F5E1            153         MOV     P7M1, A     ;设置为准双向口
+011F F5E2            154         MOV     P7M0, A
+                     155     
+                     156         
+0121 7581D0          157         MOV     SP, #STACK_POIRTER
+0124 75D000          158         MOV     PSW, #0
+                     159         USING   0       ;选择第0组R0~R7
+                     160     
+                     161     ;================= 用户初始化程序 ====================================
+0127 C200            162         CLR     PWM5_Flag
+0129 C201            163         CLR     PWM6_Flag
+012B C202            164         CLR     PWM7_Flag
+012D C203            165         CLR     PWM8_Flag
+012F 753100          166         MOV     PWM5_Duty_L, #0
+0132 753000          167         MOV     PWM5_Duty_H, #0
+0135 753300          168         MOV     PWM6_Duty_L, #LOW 256
+0138 753201          169         MOV     PWM6_Duty_H, #HIGH 256
+013B 753500          170         MOV     PWM7_Duty_L, #LOW 512
+013E 753402          171         MOV     PWM7_Duty_H, #HIGH 512
+0141 753700          172         MOV     PWM8_Duty_L, #LOW 1024
+0144 753604          173         MOV     PWM8_Duty_H, #HIGH 1024
+                     174     
+0147 C28C            175         CLR     TR0
+0149 438E80          176         ORL     AUXR, #(1 SHL 7)    ; Timer0_1T();
+014C 5389FB          177         ANL     TMOD, #NOT 04H      ; Timer0_AsTimer();
+014F 5389FC          178         ANL     TMOD, #NOT 03H      ; Timer0_16bitAutoReload();
+0152 758CA2          179         MOV     TH0, #Timer0_Reload / 256   ;Timer0_Load(Timer0_Reload);
+0155 758A40          180         MOV     TL0, #Timer0_Reload MOD 256
+0158 D2A9            181         SETB    ET0         ; Timer0_InterruptEnable();
+015A D28C            182         SETB    TR0         ; Timer0_Run();
+015C D2AF            183         SETB    EA          ; 打开总中断
+                     184         
+015E 120164          185         LCALL   F_PWM_Init          ; PWM初始化
+                     186     
+                     187     ;=================== 主循环 ==================================
+0161                 188     L_Main_Loop:
+                     189     
+0161 020161          190         LJMP    L_Main_Loop
+A51 MACRO ASSEMBLER  PWMB                                                                 03/04/2021 10:58:51 PAGE     4
+
+                     191     
+                     192     ;========================================================================
+                     193     ; 函数: F_PWM_Init
+                     194     ; 描述: PWM初始化程序.
+                     195     ; 参数: none
+                     196     ; 返回: none.
+                     197     ; 版本: V1.0, 2021-3-3
+                     198     ;========================================================================
+0164                 199     F_PWM_Init:
+0164 43BA80          200         ORL     P_SW2, #080H        ;使能访问XFR
+                     201     
+0167 E4              202         CLR     A                   ;写 CCMRx 前必须先清零 CCxE 关闭通道
+0168 90FEEC          203         MOV     DPTR,#PWMB_CCER1
+016B F0              204         MOVX    @DPTR,A
+016C 90FEED          205         MOV     DPTR,#PWMB_CCER2
+016F F0              206         MOVX    @DPTR,A
+0170 7460            207         MOV     A,#060H             ;设置 PWMx 模式1 输出
+0172 90FEE8          208         MOV     DPTR,#PWMB_CCMR1
+0175 F0              209         MOVX    @DPTR,A
+0176 90FEE9          210         MOV     DPTR,#PWMB_CCMR2
+0179 F0              211         MOVX    @DPTR,A
+017A 90FEEA          212         MOV     DPTR,#PWMB_CCMR3
+017D F0              213         MOVX    @DPTR,A
+017E 90FEEB          214         MOV     DPTR,#PWMB_CCMR4
+0181 F0              215         MOVX    @DPTR,A
+0182 7433            216         MOV     A,#033H             ;配置通道输出使能和极性
+0184 90FEEC          217         MOV     DPTR,#PWMB_CCER1
+0187 F0              218         MOVX    @DPTR,A
+0188 90FEED          219         MOV     DPTR,#PWMB_CCER2
+018B F0              220         MOVX    @DPTR,A
+                     221     
+018C 7403            222         MOV     A,#3                ;设置周期时间
+018E 90FEF2          223         MOV     DPTR,#PWMB_ARRH
+0191 F0              224         MOVX    @DPTR,A
+0192 74FF            225         MOV     A,#0FFH
+0194 90FEF3          226         MOV     DPTR,#PWMB_ARRL
+0197 F0              227         MOVX    @DPTR,A
+                     228     
+0198 7455            229         MOV     A,#055H             ;使能 PWM5~8 输出
+019A 90FEB5          230         MOV     DPTR,#PWMB_ENO
+019D F0              231         MOVX    @DPTR,A
+019E 7400            232         MOV     A,#00H              ;高级 PWM 通道输出脚选择位, P2
+01A0 90FEB6          233         MOV     DPTR,#PWMB_PS
+01A3 F0              234         MOVX    @DPTR,A
+01A4 7480            235         MOV     A,#080H             ;使能主输出
+01A6 90FEFD          236         MOV     DPTR,#PWMB_BKR
+01A9 F0              237         MOVX    @DPTR,A
+                     238     
+01AA 90FEE0          239         MOV     DPTR,#PWMB_CR1
+01AD E0              240         MOVX    A,@DPTR
+01AE 4401            241         ORL     A,#01H              ;开始计时
+01B0 F0              242         MOVX    @DPTR,A
+                     243     
+01B1 53BA7F          244         ANL     P_SW2, #NOT 080H    ;禁止访问XFR
+01B4 22              245         RET
+                     246     
+                     247     ;========================================================================
+                     248     ; 函数: F_UpdatePwm
+                     249     ; 描述: 更新PWM占空比值. 
+                     250     ; 参数: [PWMn_Duty_H PWMn_Duty_L]: pwm占空比值.
+                     251     ; 返回: none.
+                     252     ; 版本: V1.0, 2021-3-3
+                     253     ;========================================================================
+01B5                 254     F_UpdatePwm:
+01B5 43BA80          255         ORL     P_SW2, #080H        ;使能访问XFR
+                     256     
+A51 MACRO ASSEMBLER  PWMB                                                                 03/04/2021 10:58:51 PAGE     5
+
+01B8 E530            257         MOV     A, PWM5_Duty_H      ;设置占空比时间
+01BA 90FEF5          258         MOV     DPTR, #PWMB_CCR5H
+01BD F0              259         MOVX    @DPTR, A
+01BE E531            260         MOV     A, PWM5_Duty_L
+01C0 90FEF6          261         MOV     DPTR, #PWMB_CCR5L
+01C3 F0              262         MOVX    @DPTR, A
+                     263     
+01C4 E532            264         MOV     A, PWM6_Duty_H      ;设置占空比时间
+01C6 90FEF7          265         MOV     DPTR, #PWMB_CCR6H
+01C9 F0              266         MOVX    @DPTR, A
+01CA E533            267         MOV     A, PWM6_Duty_L
+01CC 90FEF8          268         MOV     DPTR, #PWMB_CCR6L
+01CF F0              269         MOVX    @DPTR, A
+                     270     
+01D0 E534            271         MOV     A, PWM7_Duty_H      ;设置占空比时间
+01D2 90FEF9          272         MOV     DPTR, #PWMB_CCR7H
+01D5 F0              273         MOVX    @DPTR, A
+01D6 E535            274         MOV     A, PWM7_Duty_L
+01D8 90FEFA          275         MOV     DPTR, #PWMB_CCR7L
+01DB F0              276         MOVX    @DPTR, A
+                     277     
+01DC E536            278         MOV     A, PWM8_Duty_H      ;设置占空比时间
+01DE 90FEFB          279         MOV     DPTR, #PWMB_CCR8H
+01E1 F0              280         MOVX    @DPTR, A
+01E2 E537            281         MOV     A, PWM8_Duty_L
+01E4 90FEFC          282         MOV     DPTR, #PWMB_CCR8L
+01E7 F0              283         MOVX    @DPTR, A
+                     284     
+01E8 53BA7F          285         ANL     P_SW2, #NOT 080H    ;禁止访问XFR
+01EB 22              286         RET
+                     287     
+                     288     ;**************** 中断函数 ***************************************************
+01EC                 289     F_Timer0_Interrupt: ;Timer0 1ms中断函数
+01EC C0D0            290         PUSH    PSW     ;PSW入栈
+01EE C0E0            291         PUSH    ACC     ;ACC入栈
+                     292     
+01F0 200017          293         JB      PWM5_Flag, T0_PWM5_SUB
+01F3 0531            294         INC     PWM5_Duty_L       ;PWM5_Duty + 1
+01F5 E531            295         MOV     A, PWM5_Duty_L
+01F7 7002            296         JNZ     $+4
+01F9 0530            297         INC     PWM5_Duty_H
+                     298         
+01FB C3              299         CLR     C
+01FC E531            300         MOV     A, PWM5_Duty_L
+01FE 94FF            301         SUBB    A, #LOW 2047
+0200 E530            302         MOV     A, PWM5_Duty_H
+0202 9407            303         SUBB    A, #HIGH 2047
+0204 4016            304         JC      T0_PWM6_Start
+0206 D200            305         SETB    PWM5_Flag
+0208 8012            306         SJMP    T0_PWM6_Start
+020A                 307     T0_PWM5_SUB:
+020A E531            308         MOV     A, PWM5_Duty_L
+020C 1531            309         DEC     PWM5_Duty_L       ;PWM5_Duty - 1
+020E 7002            310         JNZ     $+4
+0210 1530            311         DEC     PWM5_Duty_H
+                     312         
+0212 E531            313         MOV     A, PWM5_Duty_L
+0214 7006            314         JNZ     T0_PWM6_Start
+0216 E530            315         MOV     A, PWM5_Duty_H
+0218 7002            316         JNZ     T0_PWM6_Start
+021A C200            317         CLR     PWM5_Flag
+                     318     
+021C                 319     T0_PWM6_Start:
+021C 200117          320         JB      PWM6_Flag, T0_PWM6_SUB
+021F 0533            321         INC     PWM6_Duty_L       ;PWM6_Duty + 1
+0221 E533            322         MOV     A, PWM6_Duty_L
+A51 MACRO ASSEMBLER  PWMB                                                                 03/04/2021 10:58:51 PAGE     6
+
+0223 7002            323         JNZ     $+4
+0225 0532            324         INC     PWM6_Duty_H
+                     325         
+0227 C3              326         CLR     C
+0228 E533            327         MOV     A, PWM6_Duty_L
+022A 94FF            328         SUBB    A, #LOW 2047
+022C E532            329         MOV     A, PWM6_Duty_H
+022E 9407            330         SUBB    A, #HIGH 2047
+0230 4016            331         JC      T0_PWM7_Start
+0232 D201            332         SETB    PWM6_Flag
+0234 8012            333         SJMP    T0_PWM7_Start
+0236                 334     T0_PWM6_SUB:
+0236 E533            335         MOV     A, PWM6_Duty_L
+0238 1533            336         DEC     PWM6_Duty_L       ;PWM6_Duty - 1
+023A 7002            337         JNZ     $+4
+023C 1532            338         DEC     PWM6_Duty_H
+                     339         
+023E E533            340         MOV     A, PWM6_Duty_L
+0240 7006            341         JNZ     T0_PWM7_Start
+0242 E532            342         MOV     A, PWM6_Duty_H
+0244 7002            343         JNZ     T0_PWM7_Start
+0246 C201            344         CLR     PWM6_Flag
+                     345         
+0248                 346     T0_PWM7_Start:
+0248 200217          347         JB      PWM7_Flag, T0_PWM7_SUB
+024B 0535            348         INC     PWM7_Duty_L       ;PWM7_Duty + 1
+024D E535            349         MOV     A, PWM7_Duty_L
+024F 7002            350         JNZ     $+4
+0251 0534            351         INC     PWM7_Duty_H
+                     352         
+0253 C3              353         CLR     C
+0254 E535            354         MOV     A, PWM7_Duty_L
+0256 94FF            355         SUBB    A, #LOW 2047
+0258 E534            356         MOV     A, PWM7_Duty_H
+025A 9407            357         SUBB    A, #HIGH 2047
+025C 4016            358         JC      T0_PWM8_Start
+025E D202            359         SETB    PWM7_Flag
+0260 8012            360         SJMP    T0_PWM8_Start
+0262                 361     T0_PWM7_SUB:
+0262 E535            362         MOV     A, PWM7_Duty_L
+0264 1535            363         DEC     PWM7_Duty_L       ;PWM7_Duty - 1
+0266 7002            364         JNZ     $+4
+0268 1534            365         DEC     PWM7_Duty_H
+                     366         
+026A E535            367         MOV     A, PWM7_Duty_L
+026C 7006            368         JNZ     T0_PWM8_Start
+026E E534            369         MOV     A, PWM7_Duty_H
+0270 7002            370         JNZ     T0_PWM8_Start
+0272 C202            371         CLR     PWM7_Flag
+                     372         
+0274                 373     T0_PWM8_Start:
+0274 200317          374         JB      PWM8_Flag, T0_PWM8_SUB
+0277 0537            375         INC     PWM8_Duty_L       ;PWM8_Duty + 1
+0279 E537            376         MOV     A, PWM8_Duty_L
+027B 7002            377         JNZ     $+4
+027D 0536            378         INC     PWM8_Duty_H
+                     379         
+027F C3              380         CLR     C
+0280 E537            381         MOV     A, PWM8_Duty_L
+0282 94FF            382         SUBB    A, #LOW 2047
+0284 E536            383         MOV     A, PWM8_Duty_H
+0286 9407            384         SUBB    A, #HIGH 2047
+0288 4016            385         JC      F_QuitTimer0
+028A D203            386         SETB    PWM8_Flag
+028C 8012            387         SJMP    F_QuitTimer0
+028E                 388     T0_PWM8_SUB:
+A51 MACRO ASSEMBLER  PWMB                                                                 03/04/2021 10:58:51 PAGE     7
+
+028E E537            389         MOV     A, PWM8_Duty_L
+0290 1537            390         DEC     PWM8_Duty_L       ;PWM8_Duty - 1
+0292 7002            391         JNZ     $+4
+0294 1536            392         DEC     PWM8_Duty_H
+                     393         
+0296 E537            394         MOV     A, PWM8_Duty_L
+0298 7006            395         JNZ     F_QuitTimer0
+029A E536            396         MOV     A, PWM8_Duty_H
+029C 7002            397         JNZ     F_QuitTimer0
+029E C203            398         CLR     PWM8_Flag
+                     399             
+02A0                 400     F_QuitTimer0:
+02A0 1201B5          401         LCALL   F_UpdatePwm
+                     402     
+02A3 D0E0            403         POP     ACC     ;ACC出栈
+02A5 D0D0            404         POP     PSW     ;PSW出栈
+02A7 32              405         RETI
+                     406     
+                     407     ;======================================================================
+                     408     
+                     409         END
+                             
+A51 MACRO ASSEMBLER  PWMB                                                                 03/04/2021 10:58:51 PAGE     8
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . .  D ADDR   00E0H   A   
+AUXR . . . . . . .  D ADDR   008EH   A   
+EA . . . . . . . .  B ADDR   00A8H.7 A   
+ET0. . . . . . . .  B ADDR   00A8H.1 A   
+FOSC_KHZ . . . . .  N NUMB   5DC0H   A   
+F_MAIN . . . . . .  C ADDR   0100H   A   
+F_PWM_INIT . . . .  C ADDR   0164H   A   
+F_QUITTIMER0 . . .  C ADDR   02A0H   A   
+F_TIMER0_INTERRUPT  C ADDR   01ECH   A   
+F_UPDATEPWM. . . .  C ADDR   01B5H   A   
+IE2. . . . . . . .  D ADDR   00AFH   A   
+INT_CLKO . . . . .  D ADDR   008FH   A   
+L_MAIN_LOOP. . . .  C ADDR   0161H   A   
+P0M0 . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . .  D ADDR   0093H   A   
+P1M0 . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . .  D ADDR   0095H   A   
+P3M0 . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . .  D ADDR   00B1H   A   
+P4 . . . . . . . .  D ADDR   00C0H   A   
+P4M0 . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . .  D ADDR   00B3H   A   
+P5 . . . . . . . .  D ADDR   00C8H   A   
+P5M0 . . . . . . .  D ADDR   00CAH   A   
+P5M1 . . . . . . .  D ADDR   00C9H   A   
+P6 . . . . . . . .  D ADDR   00E8H   A   
+P6M0 . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . .  D ADDR   00CBH   A   
+P7 . . . . . . . .  D ADDR   00F8H   A   
+P7M0 . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . .  D ADDR   00E1H   A   
+PCON2. . . . . . .  D ADDR   0097H   A   
+PSW. . . . . . . .  D ADDR   00D0H   A   
+PWM5_DUTY_H. . . .  D ADDR   0030H   A   
+PWM5_DUTY_L. . . .  D ADDR   0031H   A   
+PWM5_FLAG. . . . .  B ADDR   0020H.0 A   
+PWM6_DUTY_H. . . .  D ADDR   0032H   A   
+PWM6_DUTY_L. . . .  D ADDR   0033H   A   
+PWM6_FLAG. . . . .  B ADDR   0020H.1 A   
+PWM7_DUTY_H. . . .  D ADDR   0034H   A   
+PWM7_DUTY_L. . . .  D ADDR   0035H   A   
+PWM7_FLAG. . . . .  B ADDR   0020H.2 A   
+PWM8_DUTY_H. . . .  D ADDR   0036H   A   
+PWM8_DUTY_L. . . .  D ADDR   0037H   A   
+PWM8_FLAG. . . . .  B ADDR   0020H.3 A   
+PWMB_ARRH. . . . .  X ADDR   FEF2H   A   
+PWMB_ARRL. . . . .  X ADDR   FEF3H   A   
+PWMB_BKR . . . . .  X ADDR   FEFDH   A   
+PWMB_CCER1 . . . .  X ADDR   FEECH   A   
+PWMB_CCER2 . . . .  X ADDR   FEEDH   A   
+PWMB_CCMR1 . . . .  X ADDR   FEE8H   A   
+PWMB_CCMR2 . . . .  X ADDR   FEE9H   A   
+PWMB_CCMR3 . . . .  X ADDR   FEEAH   A   
+PWMB_CCMR4 . . . .  X ADDR   FEEBH   A   
+PWMB_CCR5H . . . .  X ADDR   FEF5H   A   
+PWMB_CCR5L . . . .  X ADDR   FEF6H   A   
+PWMB_CCR6H . . . .  X ADDR   FEF7H   A   
+PWMB_CCR6L . . . .  X ADDR   FEF8H   A   
+A51 MACRO ASSEMBLER  PWMB                                                                 03/04/2021 10:58:51 PAGE     9
+
+PWMB_CCR7H . . . .  X ADDR   FEF9H   A   
+PWMB_CCR7L . . . .  X ADDR   FEFAH   A   
+PWMB_CCR8H . . . .  X ADDR   FEFBH   A   
+PWMB_CCR8L . . . .  X ADDR   FEFCH   A   
+PWMB_CNTRH . . . .  X ADDR   FEEEH   A   
+PWMB_CNTRL . . . .  X ADDR   FEEFH   A   
+PWMB_CR1 . . . . .  X ADDR   FEE0H   A   
+PWMB_CR2 . . . . .  X ADDR   FEE1H   A   
+PWMB_DTR . . . . .  X ADDR   FEFEH   A   
+PWMB_EGR . . . . .  X ADDR   FEE7H   A   
+PWMB_ENO . . . . .  X ADDR   FEB5H   A   
+PWMB_ETR . . . . .  X ADDR   FEE3H   A   
+PWMB_IER . . . . .  X ADDR   FEE4H   A   
+PWMB_OISR. . . . .  X ADDR   FEFFH   A   
+PWMB_PS. . . . . .  X ADDR   FEB6H   A   
+PWMB_PSCRH . . . .  X ADDR   FEF0H   A   
+PWMB_PSCRL . . . .  X ADDR   FEF1H   A   
+PWMB_RCR . . . . .  X ADDR   FEF4H   A   
+PWMB_SMCR. . . . .  X ADDR   FEE2H   A   
+PWMB_SR1 . . . . .  X ADDR   FEE5H   A   
+PWMB_SR2 . . . . .  X ADDR   FEE6H   A   
+P_SW1. . . . . . .  D ADDR   00A2H   A   
+P_SW2. . . . . . .  D ADDR   00BAH   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER. . .  N NUMB   00D0H   A   
+T0_PWM5_SUB. . . .  C ADDR   020AH   A   
+T0_PWM6_START. . .  C ADDR   021CH   A   
+T0_PWM6_SUB. . . .  C ADDR   0236H   A   
+T0_PWM7_START. . .  C ADDR   0248H   A   
+T0_PWM7_SUB. . . .  C ADDR   0262H   A   
+T0_PWM8_START. . .  C ADDR   0274H   A   
+T0_PWM8_SUB. . . .  C ADDR   028EH   A   
+T2H. . . . . . . .  D ADDR   00D6H   A   
+T2L. . . . . . . .  D ADDR   00D7H   A   
+TH0. . . . . . . .  D ADDR   008CH   A   
+TIMER0_RELOAD. . .  N NUMB   A240H   A   
+TL0. . . . . . . .  D ADDR   008AH   A   
+TMOD . . . . . . .  D ADDR   0089H   A   
+TR0. . . . . . . .  B ADDR   0088H.4 A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

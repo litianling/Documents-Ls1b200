@@ -1,0 +1,298 @@
+C51 COMPILER V9.59.0.0   UART3                                                             02/08/2021 11:28:45 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE UART3
+OBJECT MODULE PLACED IN UART3.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE UART3.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          /*---------------------------------------------------------------------*/
+   2          /* --- STC MCU Limited ------------------------------------------------*/
+   3          /* --- STC 1T Series MCU Demo Programme -------------------------------*/
+   4          /* --- Mobile: (86)13922805190 ----------------------------------------*/
+   5          /* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+   6          /* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+   7          /* --- Web: www.STCMCU.com --------------------------------------------*/
+   8          /* --- Web: www.STCMCUDATA.com  ---------------------------------------*/
+   9          /* --- QQ:  800003751 -------------------------------------------------*/
+  10          /* 如果要在程序中使用此代码,请在程序中注明使用了STC的资料及程序        */
+  11          /*---------------------------------------------------------------------*/
+  12          
+  13          
+  14          /*************  功能说明    **************
+  15          
+  16          本例程基于STC8H8K64U为主控芯片的实验箱8进行编写测试，STC8G、STC8H系列芯片可通用参考.
+  17          
+  18          串口3全双工中断方式收发通讯程序。
+  19          
+  20          通过PC向MCU发送数据, MCU收到后通过串口3把收到的数据原样返回.
+  21          
+  22          下载时, 选择时钟 22.1184MHz (用户可自行修改频率).
+  23          
+  24          ******************************************/
+  25          
+  26          #include    "reg51.h"       //包含此头文件后，里面声明的寄存器不需要再手动输入，避免重复定义
+  27          
+  28          #define MAIN_Fosc       22118400L   //定义主时钟（精确计算115200波特率）
+  29          
+  30          typedef     unsigned char   u8;
+  31          typedef     unsigned int    u16;
+  32          typedef     unsigned long   u32;
+  33          
+  34          //手动输入声明"reg51.h"头文件里面没有定义的寄存器
+  35          sfr T2H  = 0xD6;
+  36          sfr T2L  = 0xD7;
+  37          sfr T3H  = 0xD4;
+  38          sfr T3L  = 0xD5;
+  39          sfr T4T3M = 0xD1;
+  40          sfr IE2   = 0xAF;
+  41          sfr INT_CLKO = 0x8F;
+  42          sfr AUXR = 0x8E;
+  43          sfr P_SW1 = 0xA2;
+  44          sfr P_SW2 = 0xBA;
+  45          sfr S3CON = 0xAC;
+  46          sfr S3BUF = 0xAD;
+  47          
+  48          sfr P4   = 0xC0;
+  49          sfr P5   = 0xC8;
+  50          sfr P6   = 0xE8;
+  51          sfr P7   = 0xF8;
+  52          sfr P1M1 = 0x91;    //PxM1.n,PxM0.n     =00--->Standard,    01--->push-pull
+  53          sfr P1M0 = 0x92;    //                  =10--->pure input,  11--->open drain
+  54          sfr P0M1 = 0x93;
+  55          sfr P0M0 = 0x94;
+C51 COMPILER V9.59.0.0   UART3                                                             02/08/2021 11:28:45 PAGE 2   
+
+  56          sfr P2M1 = 0x95;
+  57          sfr P2M0 = 0x96;
+  58          sfr P3M1 = 0xB1;
+  59          sfr P3M0 = 0xB2;
+  60          sfr P4M1 = 0xB3;
+  61          sfr P4M0 = 0xB4;
+  62          sfr P5M1 = 0xC9;
+  63          sfr P5M0 = 0xCA;
+  64          sfr P6M1 = 0xCB;
+  65          sfr P6M0 = 0xCC;
+  66          sfr P7M1 = 0xE1;
+  67          sfr P7M0 = 0xE2;
+  68          
+  69          sbit P00 = P0^0;
+  70          sbit P01 = P0^1;
+  71          sbit P02 = P0^2;
+  72          sbit P03 = P0^3;
+  73          sbit P04 = P0^4;
+  74          sbit P05 = P0^5;
+  75          sbit P06 = P0^6;
+  76          sbit P07 = P0^7;
+  77          sbit P10 = P1^0;
+  78          sbit P11 = P1^1;
+  79          sbit P12 = P1^2;
+  80          sbit P13 = P1^3;
+  81          sbit P14 = P1^4;
+  82          sbit P15 = P1^5;
+  83          sbit P16 = P1^6;
+  84          sbit P17 = P1^7;
+  85          sbit P20 = P2^0;
+  86          sbit P21 = P2^1;
+  87          sbit P22 = P2^2;
+  88          sbit P23 = P2^3;
+  89          sbit P24 = P2^4;
+  90          sbit P25 = P2^5;
+  91          sbit P26 = P2^6;
+  92          sbit P27 = P2^7;
+  93          sbit P30 = P3^0;
+  94          sbit P31 = P3^1;
+  95          sbit P32 = P3^2;
+  96          sbit P33 = P3^3;
+  97          sbit P34 = P3^4;
+  98          sbit P35 = P3^5;
+  99          sbit P36 = P3^6;
+ 100          sbit P37 = P3^7;
+ 101          sbit P40 = P4^0;
+ 102          sbit P41 = P4^1;
+ 103          sbit P42 = P4^2;
+ 104          sbit P43 = P4^3;
+ 105          sbit P44 = P4^4;
+ 106          sbit P45 = P4^5;
+ 107          sbit P46 = P4^6;
+ 108          sbit P47 = P4^7;
+ 109          sbit P50 = P5^0;
+ 110          sbit P51 = P5^1;
+ 111          sbit P52 = P5^2;
+ 112          sbit P53 = P5^3;
+ 113          sbit P54 = P5^4;
+ 114          sbit P55 = P5^5;
+ 115          sbit P56 = P5^6;
+ 116          sbit P57 = P5^7;
+ 117          
+C51 COMPILER V9.59.0.0   UART3                                                             02/08/2021 11:28:45 PAGE 3   
+
+ 118          
+ 119          #define Baudrate3   115200L
+ 120          #define UART3_BUF_LENGTH    64
+ 121          
+ 122          
+ 123          u8  TX3_Cnt;    //发送计数
+ 124          u8  RX3_Cnt;    //接收计数
+ 125          bit B_TX3_Busy; //发送忙标志
+ 126          
+ 127          u8  idata RX3_Buffer[UART3_BUF_LENGTH]; //接收缓冲
+ 128          
+ 129          
+ 130          void    UART3_config(u8 brt);   // 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer3做波特率.
+ 131          void    PrintString3(u8 *puts);
+ 132          
+ 133          
+ 134          //========================================================================
+ 135          // 函数: void main(void)
+ 136          // 描述: 主函数。
+ 137          // 参数: none.
+ 138          // 返回: none.
+ 139          // 版本: VER1.0
+ 140          // 日期: 2014-11-28
+ 141          // 备注: 
+ 142          //========================================================================
+ 143          void main(void)
+ 144          {
+ 145   1          P0M1 = 0;   P0M0 = 0;   //设置为准双向口
+ 146   1          P1M1 = 0;   P1M0 = 0;   //设置为准双向口
+ 147   1          P2M1 = 0;   P2M0 = 0;   //设置为准双向口
+ 148   1          P3M1 = 0;   P3M0 = 0;   //设置为准双向口
+ 149   1          P4M1 = 0xC0;   P4M0 = 0;//P4.6,P4.7设置为输入口(防止实验箱串口2数据口干扰)
+ 150   1          P5M1 = 0;   P5M0 = 0;   //设置为准双向口
+ 151   1          P6M1 = 0;   P6M0 = 0;   //设置为准双向口
+ 152   1          P7M1 = 0;   P7M0 = 0;   //设置为准双向口
+ 153   1      
+ 154   1          UART3_config(0);    // 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer3做波特率.
+ 155   1          EA = 1; //允许全局中断
+ 156   1          
+ 157   1          PrintString3("STC8H8K64U UART3 Test Programme!\r\n");  //UART3发送一个字符串
+ 158   1      
+ 159   1          while (1)
+ 160   1          {
+ 161   2              if((TX3_Cnt != RX3_Cnt) && (!B_TX3_Busy))   //收到数据, 发送空闲
+ 162   2              {
+ 163   3                  S3BUF = RX3_Buffer[TX3_Cnt];
+ 164   3                  B_TX3_Busy = 1;
+ 165   3                  if(++TX3_Cnt >= UART3_BUF_LENGTH)   TX3_Cnt = 0;
+ 166   3              }
+ 167   2          }
+ 168   1      }
+ 169          
+ 170          
+ 171          //========================================================================
+ 172          // 函数: void PrintString3(u8 *puts)
+ 173          // 描述: 串口3发送字符串函数。
+ 174          // 参数: puts:  字符串指针.
+ 175          // 返回: none.
+ 176          // 版本: VER1.0
+ 177          // 日期: 2014-11-28
+ 178          // 备注: 
+ 179          //========================================================================
+C51 COMPILER V9.59.0.0   UART3                                                             02/08/2021 11:28:45 PAGE 4   
+
+ 180          void PrintString3(u8 *puts)
+ 181          {
+ 182   1          for (; *puts != 0;  puts++)     //遇到停止符0结束
+ 183   1          {
+ 184   2              S3BUF = *puts;
+ 185   2              B_TX3_Busy = 1;
+ 186   2              while(B_TX3_Busy);
+ 187   2          }
+ 188   1      }
+ 189          
+ 190          //========================================================================
+ 191          // 函数: SetTimer2Baudraye(u16 dat)
+ 192          // 描述: 设置Timer2做波特率发生器。
+ 193          // 参数: dat: Timer2的重装值.
+ 194          // 返回: none.
+ 195          // 版本: VER1.0
+ 196          // 日期: 2014-11-28
+ 197          // 备注: 
+ 198          //========================================================================
+ 199          void SetTimer2Baudraye(u16 dat)  // 使用Timer2做波特率.
+ 200          {
+ 201   1          AUXR &= ~(1<<4);    //Timer stop
+ 202   1          AUXR &= ~(1<<3);    //Timer2 set As Timer
+ 203   1          AUXR |=  (1<<2);    //Timer2 set as 1T mode
+ 204   1          T2H = dat / 256;
+ 205   1          T2L = dat % 256;
+ 206   1          IE2  &= ~(1<<2);    //禁止T2中断
+ 207   1          AUXR |=  (1<<4);    //Timer run enable
+ 208   1      }
+ 209          
+ 210          //========================================================================
+ 211          // 函数: void UART3_config(u8 brt)
+ 212          // 描述: UART3初始化函数。
+ 213          // 参数: brt: 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer3做波特率.
+ 214          // 返回: none.
+ 215          // 版本: VER1.0
+ 216          // 日期: 2014-11-28
+ 217          // 备注: 
+ 218          //========================================================================
+ 219          void UART3_config(u8 brt)    // 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer3做波特率.
+ 220          {
+ 221   1          if(brt == 2)
+ 222   1          {
+ 223   2              SetTimer2Baudraye(65536UL - (MAIN_Fosc / 4) / Baudrate3);
+ 224   2              S3CON = 0x10;       //8位数据, 使用Timer2做波特率发生器, 允许接收
+ 225   2          }
+ 226   1          else
+ 227   1          {
+ 228   2              S3CON = 0x50;       //8位数据, 使用Timer3做波特率发生器, 允许接收
+ 229   2              T3H = (65536UL - (MAIN_Fosc / 4) / Baudrate3) / 256;
+ 230   2              T3L = (65536UL - (MAIN_Fosc / 4) / Baudrate3) % 256;
+ 231   2              T4T3M = 0x0a;
+ 232   2          }
+ 233   1          IE2 |= 0x08;          //允许UART3中断
+ 234   1          P_SW2 &= ~0x02; 
+ 235   1          //P_SW2 |= 0x02;      //UART3 switch bit1 to: 0: P0.0 P0.1,  1: P5.0 P5.1
+ 236   1      
+ 237   1          B_TX3_Busy = 0;
+ 238   1          TX3_Cnt = 0;
+ 239   1          RX3_Cnt = 0;
+ 240   1      }
+ 241          
+C51 COMPILER V9.59.0.0   UART3                                                             02/08/2021 11:28:45 PAGE 5   
+
+ 242          
+ 243          //========================================================================
+ 244          // 函数: void UART3_int (void) interrupt UART3_VECTOR
+ 245          // 描述: UART3中断函数。
+ 246          // 参数: nine.
+ 247          // 返回: none.
+ 248          // 版本: VER1.0
+ 249          // 日期: 2014-11-28
+ 250          // 备注: 
+ 251          //========================================================================
+ 252          void UART3_int (void) interrupt 17
+ 253          {
+ 254   1          if((S3CON & 0x01) != 0)
+ 255   1          {
+ 256   2              S3CON &= ~0x01;    //Clear Rx flag
+ 257   2              RX3_Buffer[RX3_Cnt] = S3BUF;
+ 258   2              if(++RX3_Cnt >= UART3_BUF_LENGTH)   RX3_Cnt = 0;
+ 259   2          }
+ 260   1      
+ 261   1          if((S3CON & 0x02) != 0)
+ 262   1          {
+ 263   2              S3CON &= ~0x02;    //Clear Tx flag
+ 264   2              B_TX3_Busy = 0;
+ 265   2          }
+ 266   1      }
+ 267          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    236    ----
+   CONSTANT SIZE    =     35    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2    ----
+   IDATA SIZE       =     64    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

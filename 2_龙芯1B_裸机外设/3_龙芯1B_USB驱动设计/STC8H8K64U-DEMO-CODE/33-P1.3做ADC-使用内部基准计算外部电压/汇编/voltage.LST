@@ -1,0 +1,641 @@
+A51 MACRO ASSEMBLER  VOLTAGE                                                              03/11/2021 11:32:30 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN voltage.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE voltage.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* Èç¹ûÒªÔÚ³ÌÐòÖÐÊ¹ÓÃ´Ë´úÂë,ÇëÔÚ³ÌÐòÖÐ×¢Ã÷Ê¹ÓÃÁËSTCµÄ×ÊÁÏ¼°³ÌÐò        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     
+                      14     ;*************  ¹¦ÄÜËµÃ÷    **************
+                      15     
+                      16     ;±¾Àý³Ì»ùÓÚSTC8H8K64UÎªÖ÷¿ØÐ¾Æ¬µÄÊµÑéÏä8½øÐÐ±àÐ´²âÊÔ£¬STC8G¡¢STC8HÏµÁÐÐ¾Æ¬¿ÉÍ¨ÓÃ²Î¿¼.
+                      17     
+                      18     ;¶ÁADC²âÁ¿Íâ²¿µçÑ¹£¬Ê¹ÓÃÄÚ²¿»ù×¼¼ÆËãµçÑ¹.
+                      19     
+                      20     ;ÓÃSTCµÄMCUµÄIO·½Ê½Çý¶¯8Î»ÊýÂë¹Ü¡£
+                      21     
+                      22     ;Ê¹ÓÃTimer0µÄ16Î»×Ô¶¯ÖØ×°À´²úÉú1ms½ÚÅÄ,³ÌÐòÔËÐÐÓÚÕâ¸ö½ÚÅÄÏÂ, ÓÃ»§ÐÞ¸ÄMCUÖ÷Ê±ÖÓÆµÂÊÊ±,×Ô¶¯¶¨
+                             Ê±ÓÚ1ms.
+                      23     
+                      24     ;ÓÒ±ß4Î»ÊýÂë¹ÜÏÔÊ¾²âÁ¿µÄµçÑ¹Öµ.
+                      25     
+                      26     ;Íâ²¿µçÑ¹´Ó°åÉÏ²âÎÂµç×èÁ½¶ËÊäÈë, ÊäÈëµçÑ¹0~Vref, ²»Òª³¬¹ýVref»òµÍÓÚ0V. 
+                      27     
+                      28     ;Êµ¼ÊÏîÄ¿Ê¹ÓÃÇë´®Ò»¸ö1KµÄµç×èµ½ADCÊäÈë¿Ú, ADCÊäÈë¿ÚÔÙ²¢Ò»¸öµçÈÝµ½µØ.
+                      29     
+                      30     ;ÏÂÔØÊ±, Ñ¡ÔñÊ±ÖÓ 24MHZ (ÓÃ»§¿É×ÔÐÐÐÞ¸ÄÆµÂÊ).
+                      31     
+                      32     ;******************************************/
+                      33     
+                      34     ;/****************************** ÓÃ»§¶¨Òåºê ***********************************/
+                      35     
+  5DC0                36     Fosc_KHZ    EQU 24000   ;24000KHZ
+                      37     
+  00D0                38     STACK_POIRTER   EQU     0D0H    ;¶ÑÕ»¿ªÊ¼µØÖ·
+                      39     
+  A240                40     Timer0_Reload   EQU     (65536 - Fosc_KHZ)  ; Timer 0 ÖÐ¶ÏÆµÂÊ, 1000´Î/Ãë
+                      41     
+  0020                42     DIS_DOT         EQU     020H
+  0010                43     DIS_BLACK       EQU     010H
+  0011                44     DIS_            EQU     011H
+                      45     
+                      46     ;*******************************************************************
+                      47     
+                      48     ;*******************************************************************
+  008E                49     AUXR    DATA    08EH
+  00C0                50     P4      DATA    0C0H
+  00C8                51     P5      DATA    0C8H
+  00E8                52     P6      DATA    0E8H
+  00F8                53     P7      DATA    0F8H
+                      54     
+  00BC                55     ADC_CONTR DATA  0BCH ;´øADÏµÁÐ
+  00BD                56     ADC_RES   DATA  0BDH ;´øADÏµÁÐ
+  00BE                57     ADC_RESL  DATA  0BEH ;´øADÏµÁÐ
+A51 MACRO ASSEMBLER  VOLTAGE                                                              03/11/2021 11:32:30 PAGE     2
+
+  00DE                58     ADCCFG    DATA  0DEH
+                      59     
+  0093                60     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094                61     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091                62     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092                63     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095                64     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+  0096                65     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+  00B1                66     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2                67     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3                68     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+  00B4                69     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9                70     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA                71     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB                72     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC                73     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1                74     P7M1    DATA    0xE1    ;
+  00E2                75     P7M0    DATA    0xE2    ;
+                      76     
+  00BA                77     P_SW2   DATA    0BAH
+  FEA8                78     ADCTIM  XDATA   0FEA8H
+                      79     
+                      80     ;*************  IO¿Ú¶¨Òå    **************/
+                      81     
+                      82     
+                      83     ;*************  ±¾µØ±äÁ¿ÉùÃ÷    **************/
+  0020                84     Flag0           DATA    20H
+  0000                85     B_1ms           BIT     Flag0.0 ;   1ms±êÖ¾
+                      86     
+  0030                87     LED8            DATA    30H     ;   ÏÔÊ¾»º³å 30H ~ 37H
+  0038                88     display_index   DATA    38H     ;   ÏÔÊ¾Î»Ë÷Òý
+                      89     
+  0039                90     msecond_H       DATA    39H     ;
+  003A                91     msecond_L       DATA    3AH     ;
+  003B                92     BandgapH        DATA    3BH     ;
+  003C                93     BandgapL        DATA    3CH     ;
+  003D                94     ADC3_H          DATA    3DH     ;
+  003E                95     ADC3_L          DATA    3EH     ;
+                      96     
+                      97     
+                      98     
+                      99     ;*******************************************************************
+                     100     ;*******************************************************************
+0000                 101             ORG     0000H               ;reset
+0000 020100          102             LJMP    F_Main
+                     103     
+000B                 104             ORG     000BH               ;1  Timer0 interrupt
+000B 020261          105             LJMP    F_Timer0_Interrupt
+                     106     
+                     107     
+                     108     ;*******************************************************************
+                     109     ;*******************************************************************
+                     110     
+                     111     
+                     112     
+                     113     ;******************** Ö÷³ÌÐò **************************/
+0100                 114             ORG     0100H       ;reset
+0100                 115     F_Main:
+0100 E4              116         CLR     A
+0101 F593            117         MOV     P0M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0103 F594            118         MOV     P0M0, A
+0105 F595            119         MOV     P2M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0107 F596            120         MOV     P2M0, A
+0109 F5B1            121         MOV     P3M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010B F5B2            122         MOV     P3M0, A
+010D F5B3            123         MOV     P4M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+A51 MACRO ASSEMBLER  VOLTAGE                                                              03/11/2021 11:32:30 PAGE     3
+
+010F F5B4            124         MOV     P4M0, A
+0111 F5C9            125         MOV     P5M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0113 F5CA            126         MOV     P5M0, A
+0115 F5CB            127         MOV     P6M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0117 F5CC            128         MOV     P6M0, A
+0119 F5E1            129         MOV     P7M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+011B F5E2            130         MOV     P7M0, A
+                     131     
+011D F592            132         MOV     P1M0, A
+011F 759108          133         MOV     P1M1, #08H  ;ÉèÖÃ P1.3 Îª ADC ÊäÈë¿Ú
+                     134         
+0122 7581D0          135         MOV     SP, #STACK_POIRTER
+0125 75D000          136         MOV     PSW, #0
+                     137         USING   0       ;Ñ¡ÔñµÚ0×éR0~R7
+                     138     
+                     139     ;================= ÓÃ»§³õÊ¼»¯³ÌÐò ====================================
+                     140     
+0128 753800          141         MOV     display_index, #0
+012B 7830            142         MOV     R0, #LED8
+012D 7A08            143         MOV     R2, #8
+012F                 144     L_ClearLoop:
+012F 7610            145         MOV     @R0, #DIS_BLACK     ;ÉÏµçÏûÒþ
+0131 08              146         INC     R0
+0132 DAFB            147         DJNZ    R2, L_ClearLoop
+                     148         
+0134 C28C            149         CLR     TR0
+0136 438E80          150         ORL     AUXR, #(1 SHL 7)    ; Timer0_1T();
+0139 5389FB          151         ANL     TMOD, #NOT 04H      ; Timer0_AsTimer();
+013C 5389FC          152         ANL     TMOD, #NOT 03H      ; Timer0_16bitAutoReload();
+013F 758CA2          153         MOV     TH0, #Timer0_Reload / 256   ;Timer0_Load(Timer0_Reload);
+0142 758A40          154         MOV     TL0, #Timer0_Reload MOD 256
+0145 D2A9            155         SETB    ET0         ; Timer0_InterruptEnable();
+0147 D28C            156         SETB    TR0         ; Timer0_Run();
+0149 D2AF            157         SETB    EA          ; ´ò¿ª×ÜÖÐ¶Ï
+                     158         
+                     159     
+014B 1201C9          160         LCALL   F_ADC_config    ; ADC³õÊ¼»¯
+                     161     
+                     162     ;=====================================================
+                     163     
+                     164     ;=====================================================
+014E                 165     L_Main_Loop:
+014E 3000FD          166         JNB     B_1ms,  L_Main_Loop     ;1msÎ´µ½
+0151 C200            167         CLR     B_1ms
+                     168         
+                     169     ;=================== ¼ì²â300msÊÇ·ñµ½ ==================================
+0153 053A            170         INC     msecond_L       ;msecond + 1
+0155 E53A            171         MOV     A, msecond_L
+0157 7002            172         JNZ     $+4
+0159 0539            173         INC     msecond_H
+                     174         
+015B C3              175         CLR     C
+015C E53A            176         MOV     A, msecond_L    ;msecond - 300
+015E 942C            177         SUBB    A, #LOW 300
+0160 E539            178         MOV     A, msecond_H
+0162 9401            179         SUBB    A, #HIGH 300
+0164 40E8            180         JC      L_Main_Loop     ;if(msecond < 300), jmp
+                     181         
+                     182     ;================= 300msµ½ ====================================
+0166 753A00          183         MOV     msecond_L, #0   ;if(msecond >= 1000)
+0169 753900          184         MOV     msecond_H, #0
+                     185     
+                     186         ;MOV     A, #15
+                     187         ;LCALL   F_Get_ADC12bitResult    ;ACC - Í¨µÀ0~15, ÏÈ¶ÁÒ»´Î²¢¶ªÆú½á¹û, ÈÃÄÚ²¿µÄ²ÉÑùµçÈÝµ
+                             ÄµçÑ¹µÈÓÚÊäÈëÖµ.
+016C 740F            188         MOV     A, #15
+A51 MACRO ASSEMBLER  VOLTAGE                                                              03/11/2021 11:32:30 PAGE     4
+
+016E 1201DC          189         LCALL   F_Get_ADC12bitResult    ;¶ÁÄÚ²¿»ù×¼ADC, ¶Á15Í¨µÀ, ²éÑ¯·½Ê½×öÒ»´ÎADC, ·µ»ØÖµ(R6 
+                             R7)¾ÍÊÇADC½á¹û, == 4096 Îª´íÎó
+0171 8E3B            190         MOV     BandgapH, R6            ;±£´æBandgap
+0173 8F3C            191         MOV     BandgapL, R7
+                     192         
+0175 7403            193         MOV     A, #3
+0177 1201DC          194         LCALL   F_Get_ADC12bitResult    ; ¶ÁÍâ²¿µçÑ¹ADC, ²éÑ¯·½Ê½×öÒ»´ÎADC, ·µ»ØÖµ(R6 R7)¾ÍÊÇAD
+                             C½á¹û, == 4096 Îª´íÎó
+017A 8E3D            195         MOV     ADC3_H, R6              ;±£´æadc
+017C 8F3E            196         MOV     ADC3_L, R7
+                     197         
+017E AC3D            198         MOV     R4, ADC3_H      ; adc * 119 / Bandgap, ¼ÆËãÍâ²¿µçÑ¹, BandgapÎª1.19V, ²âµçÑ¹·Ö±æ
+                             ÂÊ0.01V
+0180 AD3E            199         MOV     R5, ADC3_L
+0182 7F77            200         MOV     R7, #119        ; BandgapÎª1.19V, ¶¨µã¼ÆËã, ·Å´ó100±¶
+0184 1202C8          201         LCALL   F_MUL16x8       ;(R4,R5)* R7 -->(R5,R6,R7)
+0187 7C00            202         MOV     R4, #0
+0189 AA3B            203         MOV     R2, BandgapH
+018B AB3C            204         MOV     R3, BandgapL
+018D 12026F          205         LCALL   F_ULDIV         ; (R4,R5,R6,R7)/(R2,R3)=(R4,R5,R6,R7),ÓàÊýÔÚ(R2,R3),use R0~R7,B
+                             ,DPL
+                     206     
+0190 1201AB          207         LCALL   F_HEX2_DEC      ;(R6 R7) HEX Change to DEC ---> (R3 R4 R5), use (R2~R7)
+0193 753310          208         MOV     LED8+3, #DIS_BLACK
+0196 EC              209         MOV     A, R4
+0197 540F            210         ANL     A, #0x0F
+0199 2420            211         ADD     A, #DIS_DOT     ;;ÏÔÊ¾µçÑ¹Öµ, Ð¡Êýµã
+019B F532            212         MOV     LED8+2, A
+019D ED              213         MOV     A, R5
+019E C4              214         SWAP    A
+019F 540F            215         ANL     A, #0x0F
+01A1 F531            216         MOV     LED8+1, A
+01A3 ED              217         MOV     A, R5
+01A4 540F            218         ANL     A, #0x0F
+01A6 F530            219         MOV     LED8+0, A
+                     220     
+01A8                 221     L_Quit_Check_300ms:
+                     222     
+                     223     ;=====================================================
+                     224     
+                     225     
+01A8 02014E          226         LJMP    L_Main_Loop
+                     227     
+                     228     ;**********************************************/
+                     229     
+                     230     ;//========================================================================
+                     231     ;// º¯Êý: F_HEX2_DEC
+                     232     ;// ÃèÊö: °ÑË«×Ö½ÚÊ®Áù½øÖÆÊý×ª³ÉÊ®½øÖÆBCDÊý.
+                     233     ;// ²ÎÊý: (R6 R7): Òª×ª»»µÄË«×Ö½ÚÊ®Áù½øÖÆÊý.
+                     234     ;// ·µ»Ø: (R3 R4 R5) = BCDÂë.
+                     235     ;// °æ±¾: V1.0, 2013-10-22
+                     236     ;//========================================================================
+01AB                 237     F_HEX2_DEC:         ;(R6 R7) HEX Change to DEC ---> (R3 R4 R5), use (R2~R7)
+01AB 7A10            238             MOV     R2,#16
+01AD 7B00            239             MOV     R3,#0
+01AF 7C00            240             MOV     R4,#0
+01B1 7D00            241             MOV     R5,#0
+                     242     
+01B3                 243     L_HEX2_DEC:
+01B3 C3              244             CLR     C   
+01B4 EF              245             MOV     A,R7
+01B5 33              246             RLC     A   
+01B6 FF              247             MOV     R7,A
+01B7 EE              248             MOV     A,R6
+01B8 33              249             RLC     A   
+01B9 FE              250             MOV     R6,A
+A51 MACRO ASSEMBLER  VOLTAGE                                                              03/11/2021 11:32:30 PAGE     5
+
+                     251     
+01BA ED              252             MOV     A,R5
+01BB 3D              253             ADDC    A,R5
+01BC D4              254             DA      A   
+01BD FD              255             MOV     R5,A
+                     256     
+01BE EC              257             MOV     A,R4
+01BF 3C              258             ADDC    A,R4
+01C0 D4              259             DA      A   
+01C1 FC              260             MOV     R4,A
+                     261     
+01C2 EB              262             MOV     A,R3
+01C3 3B              263             ADDC    A,R3
+01C4 D4              264             DA      A   
+01C5 FB              265             MOV     R3,A
+                     266     
+01C6 DAEB            267             DJNZ    R2,L_HEX2_DEC
+01C8 22              268             RET
+                     269     ;**********************************************/
+                     270     
+01C9                 271     F_ADC_config:
+01C9 43BA80          272         ORL     P_SW2, #080H        ; Ê¹ÄÜ·ÃÎÊXFR
+01CC 743F            273         MOV     A,#03FH             ; ÉèÖÃ ADC ÄÚ²¿Ê±Ðò£¬ADC²ÉÑùÊ±¼ä½¨ÒéÉè×î´óÖµ
+01CE 90FEA8          274         MOV     DPTR,#ADCTIM
+01D1 F0              275         MOVX    @DPTR,A
+01D2 53BA7F          276         ANL     P_SW2, #NOT 080H    ; ½ûÖ¹·ÃÎÊXFR
+                     277     
+01D5 75DE2F          278         MOV     ADCCFG, #02FH       ; ÉèÖÃ×ª»»½á¹ûÓÒ¶ÔÆëÄ£Ê½£¬ ADC Ê±ÖÓÎªÏµÍ³Ê±ÖÓ/2/16
+01D8 75BC80          279         MOV     ADC_CONTR, #080H    ; Ê¹ÄÜ ADC Ä£¿é
+01DB 22              280         RET
+                     281     
+                     282     ;========================================================================
+                     283     ; º¯Êý: F_Get_ADC12bitResult
+                     284     ; ÃèÊö: ²éÑ¯·¨¶ÁÒ»´ÎADC½á¹û.
+                     285     ; ²ÎÊý: ACC: Ñ¡ÔñÒª×ª»»µÄADC.
+                     286     ; ·µ»Ø: (R6 R7) = 12Î»ADC½á¹û.
+                     287     ; °æ±¾: V1.0, 2020-11-09
+                     288     ;========================================================================
+01DC                 289     F_Get_ADC12bitResult:   ;ACC - Í¨µÀ0~7, ²éÑ¯·½Ê½×öÒ»´ÎADC, ·µ»ØÖµ(R6 R7)¾ÍÊÇADC½á¹û, == 409
+                             6 Îª´íÎó
+01DC FF              290         MOV     R7, A            
+01DD 75BD00          291         MOV     ADC_RES,  #0;
+01E0 75BE00          292         MOV     ADC_RESL, #0;
+                     293     
+01E3 E5BC            294         MOV     A, ADC_CONTR        ;ADC_CONTR = (ADC_CONTR & 0xd0) | ADC_START | channel; 
+01E5 54D0            295         ANL     A, #0D0H
+01E7 4440            296         ORL     A, #40H
+01E9 4F              297         ORL     A, R7
+01EA F5BC            298         MOV     ADC_CONTR, A
+01EC 00              299         NOP
+01ED 00              300         NOP
+01EE 00              301         NOP
+01EF 00              302         NOP
+                     303     
+01F0                 304     L_WaitAdcLoop:
+01F0 E5BC            305         MOV     A, ADC_CONTR
+01F2 30E5FB          306         JNB     ACC.5, L_WaitAdcLoop
+                     307     
+01F5 53BCDF          308         ANL     ADC_CONTR, #NOT 020H    ;Çå³ýÍê³É±êÖ¾
+                     309     
+01F8 E5BD            310         MOV     A, ADC_RES      ;12Î»AD½á¹ûµÄ¸ß4Î»·ÅADC_RESµÄµÍ4Î»£¬µÍ8Î»ÔÚADC_RESL¡£
+01FA 540F            311         ANL     A, #0FH
+01FC FE              312         MOV     R6, A
+01FD AFBE            313         MOV     R7, ADC_RESL
+                     314     
+01FF                 315     L_QuitAdc:
+A51 MACRO ASSEMBLER  VOLTAGE                                                              03/11/2021 11:32:30 PAGE     6
+
+01FF 22              316         RET
+                     317     
+                     318     
+                     319     ; *********************** ÏÔÊ¾Ïà¹Ø³ÌÐò ****************************************
+0200                 320     T_Display:                      ;±ê×¼×Ö¿â
+                     321     ;    0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+0200 3F065B4F        322     DB  03FH,006H,05BH,04FH,066H,06DH,07DH,007H,07FH,06FH,077H,07CH,039H,05EH,079H,071H
+0204 666D7D07                
+0208 7F6F777C                
+020C 395E7971                
+                     323     ;  black  -    H    J    K    L    N    o    P    U    t    G    Q    r    M    y
+0210 0040761E        324     DB  000H,040H,076H,01EH,070H,038H,037H,05CH,073H,03EH,078H,03dH,067H,050H,037H,06EH
+0214 7038375C                
+0218 733E783D                
+021C 6750376E                
+                     325     ;    0.   1.   2.   3.   4.   5.   6.   7.   8.   9.   -1
+0220 BF86DBCF        326     DB  0BFH,086H,0DBH,0CFH,0E6H,0EDH,0FDH,087H,0FFH,0EFH,046H
+0224 E6EDFD87                
+0228 FFEF46                  
+                     327     
+022B                 328     T_COM:
+022B 01020408        329     DB  001H,002H,004H,008H,010H,020H,040H,080H     ;   Î»Âë
+022F 10204080                
+                     330     
+                     331     
+                     332     ;//========================================================================
+                     333     ;// º¯Êý: F_DisplayScan
+                     334     ;// ÃèÊö: ÏÔÊ¾É¨Ãè×Ó³ÌÐò¡£
+                     335     ;// ²ÎÊý: none.
+                     336     ;// ·µ»Ø: none.
+                     337     ;// °æ±¾: VER1.0
+                     338     ;// ÈÕÆÚ: 2013-4-1
+                     339     ;// ±¸×¢: ³ýÁËACCCºÍPSWÍâ, ËùÓÃµ½µÄÍ¨ÓÃ¼Ä´æÆ÷¶¼ÈëÕ»
+                     340     ;//========================================================================
+0233                 341     F_DisplayScan:
+0233 C083            342         PUSH    DPH     ;DPHÈëÕ»
+0235 C082            343         PUSH    DPL     ;DPLÈëÕ»
+0237 C000            344         PUSH    00H     ;R0 ÈëÕ»
+                     345         
+0239 90022B          346         MOV     DPTR, #T_COM
+023C E538            347         MOV     A, display_index
+023E 93              348         MOVC    A, @A+DPTR
+023F F4              349         CPL     A
+0240 F5F8            350         MOV     P7,A
+                     351         
+0242 900200          352         MOV     DPTR, #T_Display
+0245 E538            353         MOV     A, display_index
+0247 2430            354         ADD     A, #LED8
+0249 F8              355         MOV     R0, A
+024A E6              356         MOV     A, @R0
+024B 93              357         MOVC    A, @A+DPTR
+024C F4              358         CPL     A
+024D F5E8            359         MOV     P6,A
+                     360     
+024F 0538            361         INC     display_index
+0251 E538            362         MOV     A, display_index
+0253 54F8            363         ANL     A, #0F8H            ; if(display_index >= 8)
+0255 6003            364         JZ      L_QuitDisplayScan
+0257 753800          365         MOV     display_index, #0;  ;8Î»½áÊø»Ø0
+025A                 366     L_QuitDisplayScan:
+025A D000            367         POP     00H     ;R0 ³öÕ»
+025C D082            368         POP     DPL     ;DPL³öÕ»
+025E D083            369         POP     DPH     ;DPH³öÕ»
+0260 22              370         RET
+                     371     
+                     372     
+A51 MACRO ASSEMBLER  VOLTAGE                                                              03/11/2021 11:32:30 PAGE     7
+
+                     373     ;*******************************************************************
+                     374     ;**************** ÖÐ¶Ïº¯Êý ***************************************************
+                     375     
+0261                 376     F_Timer0_Interrupt: ;Timer0 1msÖÐ¶Ïº¯Êý
+0261 C0D0            377         PUSH    PSW     ;PSWÈëÕ»
+0263 C0E0            378         PUSH    ACC     ;ACCÈëÕ»
+                     379     
+0265 120233          380         LCALL   F_DisplayScan   ; 1msÉ¨ÃèÏÔÊ¾Ò»Î»
+0268 D200            381         SETB    B_1ms           ; 1ms±êÖ¾
+                     382     
+026A D0E0            383         POP     ACC     ;ACC³öÕ»
+026C D0D0            384         POP     PSW     ;PSW³öÕ»
+026E 32              385         RETI
+                     386     
+                     387     
+                     388     
+                     389     ;***************************************************************************
+026F                 390     F_ULDIV:
+026F                 391     F_DIV32:                            ; (R4,R5,R6,R7)/(R2,R3)=(R4,R5,R6,R7),ÓàÊýÔÚ(R2,R3),use
+                              R0~R7,B,DPL
+026F BA002D          392             CJNE    R2,#0,F_DIV32_16    ; L_0075
+                     393             
+0272                 394     F_DIV32_8:                          ;R3·Ç0£¬(R4,R5,R6,R7)/R3=(R4,R5,R6,R7),ÓàÊýÔÚ R3,use R0
+                             ~R7,B
+0272 EC              395             MOV     A,R4
+0273 8BF0            396             MOV     B,R3
+0275 84              397             DIV     AB
+0276 CF              398             XCH     A,R7
+0277 CE              399             XCH     A,R6
+0278 CD              400             XCH     A,R5
+0279 FC              401             MOV     R4,A
+027A E5F0            402             MOV     A,B
+027C CB              403             XCH     A,R3
+027D F9              404             MOV     R1,A
+027E 7818            405             MOV     R0,#24
+0280                 406     L_0056:
+0280 EF              407             MOV     A,R7
+0281 2F              408             ADD     A,R7
+0282 FF              409             MOV     R7,A
+0283 EE              410             MOV     A,R6
+0284 33              411             RLC     A
+0285 FE              412             MOV     R6,A
+0286 ED              413             MOV     A,R5
+0287 33              414             RLC     A
+0288 FD              415             MOV     R5,A
+0289 EC              416             MOV     A,R4
+028A 33              417             RLC     A
+028B FC              418             MOV     R4,A
+028C EB              419             MOV     A,R3
+028D 33              420             RLC     A
+028E FB              421             MOV     R3,A
+028F 10D703          422             JBC     CY,L_006B
+0292 99              423             SUBB    A,R1
+0293 4004            424             JC      L_006F
+0295                 425     L_006B:
+0295 EB              426             MOV     A,R3
+0296 99              427             SUBB    A,R1
+0297 FB              428             MOV     R3,A
+0298 0F              429             INC     R7
+0299                 430     L_006F:
+0299 D8E5            431             DJNZ    R0,L_0056
+029B E4              432             CLR     A
+029C F9              433             MOV     R1,A
+029D FA              434             MOV     R2,A
+029E 22              435             RET
+                     436             
+A51 MACRO ASSEMBLER  VOLTAGE                                                              03/11/2021 11:32:30 PAGE     8
+
+                     437     
+                     438     ;***************************************************************************
+029F                 439     F_DIV32_16:                     ;R2·Ç0£¬(R4,R5,R6,R7)/(R2,R3)=(R5,R6,R7),ÓàÊýÔÚ (R2,R3),use
+                              R0~R7
+029F                 440     L_0075:
+029F 7818            441             MOV     R0,#24          ;¿ªÊ¼R1=0
+02A1                 442     L_0077:
+02A1 EF              443             MOV     A,R7            ;×óÒÆÒ»Î»
+02A2 2F              444             ADD     A,R7
+02A3 FF              445             MOV     R7,A
+02A4 EE              446             MOV     A,R6
+02A5 33              447             RLC     A
+02A6 FE              448             MOV     R6,A
+02A7 ED              449             MOV     A,R5
+02A8 33              450             RLC     A
+02A9 FD              451             MOV     R5,A
+02AA EC              452             MOV     A,R4
+02AB 33              453             RLC     A
+02AC FC              454             MOV     R4,A
+02AD C9              455             XCH     A,R1
+02AE 33              456             RLC     A
+02AF C9              457             XCH     A,R1
+02B0 10D705          458             JBC     CY,L_008E   ;Èç¹ûC=1£¬¿Ï¶¨¹»¼õ
+02B3 9B              459             SUBB    A,R3
+02B4 E9              460             MOV     A,R1        ;²âÊÔÊÇ·ñ¹»¼õ
+02B5 9A              461             SUBB    A,R2
+02B6 4007            462             JC      L_0095
+02B8                 463     L_008E:
+02B8 EC              464             MOV     A,R4
+02B9 9B              465             SUBB    A,R3
+02BA FC              466             MOV     R4,A
+02BB E9              467             MOV     A,R1
+02BC 9A              468             SUBB    A,R2
+02BD F9              469             MOV     R1,A
+02BE 0F              470             INC     R7
+02BF                 471     L_0095:
+02BF D8E0            472             DJNZ    R0,L_0077
+02C1 E4              473             CLR     A
+02C2 C9              474             XCH     A,R1
+02C3 FA              475             MOV     R2,A
+02C4 E4              476             CLR     A
+02C5 CC              477             XCH     A,R4
+02C6 FB              478             MOV     R3,A
+02C7 22              479             RET
+                     480     
+                     481     ;***************************************************************************
+02C8                 482     F_MUL16x8:               ;(R4,R5)* R7 -->(R5,R6,R7)
+02C8 EF              483             MOV   A,R7      ;1T     1
+02C9 8DF0            484             MOV   B,R5      ;2T     3
+02CB A4              485             MUL   AB        ;4T  R3*R7  4
+02CC AEF0            486             MOV   R6,B      ;1T     4
+02CE CF              487             XCH   A,R7      ;2T     3
+                     488             
+02CF 8CF0            489             MOV   B,R4      ;1T     3
+02D1 A4              490             MUL   AB        ;4T  R3*R6  4
+02D2 2E              491             ADD   A,R6      ;1T     2
+02D3 FE              492             MOV   R6,A      ;1T     3
+02D4 E4              493             CLR   A         ;1T     1
+02D5 35F0            494             ADDC  A,B       ;1T     3
+02D7 FD              495             MOV   R5,A      ;1T     2
+02D8 22              496             RET             ;4T     10
+                     497     
+                     498     
+                     499             END
+                             
+A51 MACRO ASSEMBLER  VOLTAGE                                                              03/11/2021 11:32:30 PAGE     9
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E               T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . . .  D ADDR   00E0H   A   
+ADC3_H . . . . . . .  D ADDR   003DH   A   
+ADC3_L . . . . . . .  D ADDR   003EH   A   
+ADCCFG . . . . . . .  D ADDR   00DEH   A   
+ADCTIM . . . . . . .  X ADDR   FEA8H   A   
+ADC_CONTR. . . . . .  D ADDR   00BCH   A   
+ADC_RES. . . . . . .  D ADDR   00BDH   A   
+ADC_RESL . . . . . .  D ADDR   00BEH   A   
+AUXR . . . . . . . .  D ADDR   008EH   A   
+B. . . . . . . . . .  D ADDR   00F0H   A   
+BANDGAPH . . . . . .  D ADDR   003BH   A   
+BANDGAPL . . . . . .  D ADDR   003CH   A   
+B_1MS. . . . . . . .  B ADDR   0020H.0 A   
+CY . . . . . . . . .  B ADDR   00D0H.7 A   
+DISPLAY_INDEX. . . .  D ADDR   0038H   A   
+DIS_ . . . . . . . .  N NUMB   0011H   A   
+DIS_BLACK. . . . . .  N NUMB   0010H   A   
+DIS_DOT. . . . . . .  N NUMB   0020H   A   
+DPH. . . . . . . . .  D ADDR   0083H   A   
+DPL. . . . . . . . .  D ADDR   0082H   A   
+EA . . . . . . . . .  B ADDR   00A8H.7 A   
+ET0. . . . . . . . .  B ADDR   00A8H.1 A   
+FLAG0. . . . . . . .  D ADDR   0020H   A   
+FOSC_KHZ . . . . . .  N NUMB   5DC0H   A   
+F_ADC_CONFIG . . . .  C ADDR   01C9H   A   
+F_DISPLAYSCAN. . . .  C ADDR   0233H   A   
+F_DIV32. . . . . . .  C ADDR   026FH   A   
+F_DIV32_16 . . . . .  C ADDR   029FH   A   
+F_DIV32_8. . . . . .  C ADDR   0272H   A   
+F_GET_ADC12BITRESULT  C ADDR   01DCH   A   
+F_HEX2_DEC . . . . .  C ADDR   01ABH   A   
+F_MAIN . . . . . . .  C ADDR   0100H   A   
+F_MUL16X8. . . . . .  C ADDR   02C8H   A   
+F_TIMER0_INTERRUPT .  C ADDR   0261H   A   
+F_ULDIV. . . . . . .  C ADDR   026FH   A   
+LED8 . . . . . . . .  D ADDR   0030H   A   
+L_0056 . . . . . . .  C ADDR   0280H   A   
+L_006B . . . . . . .  C ADDR   0295H   A   
+L_006F . . . . . . .  C ADDR   0299H   A   
+L_0075 . . . . . . .  C ADDR   029FH   A   
+L_0077 . . . . . . .  C ADDR   02A1H   A   
+L_008E . . . . . . .  C ADDR   02B8H   A   
+L_0095 . . . . . . .  C ADDR   02BFH   A   
+L_CLEARLOOP. . . . .  C ADDR   012FH   A   
+L_HEX2_DEC . . . . .  C ADDR   01B3H   A   
+L_MAIN_LOOP. . . . .  C ADDR   014EH   A   
+L_QUITADC. . . . . .  C ADDR   01FFH   A   
+L_QUITDISPLAYSCAN. .  C ADDR   025AH   A   
+L_QUIT_CHECK_300MS .  C ADDR   01A8H   A   
+L_WAITADCLOOP. . . .  C ADDR   01F0H   A   
+MSECOND_H. . . . . .  D ADDR   0039H   A   
+MSECOND_L. . . . . .  D ADDR   003AH   A   
+P0M0 . . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . . .  D ADDR   0093H   A   
+P1M0 . . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . . .  D ADDR   0095H   A   
+P3M0 . . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . . .  D ADDR   00B1H   A   
+A51 MACRO ASSEMBLER  VOLTAGE                                                              03/11/2021 11:32:30 PAGE    10
+
+P4 . . . . . . . . .  D ADDR   00C0H   A   
+P4M0 . . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . . .  D ADDR   00B3H   A   
+P5 . . . . . . . . .  D ADDR   00C8H   A   
+P5M0 . . . . . . . .  D ADDR   00CAH   A   
+P5M1 . . . . . . . .  D ADDR   00C9H   A   
+P6 . . . . . . . . .  D ADDR   00E8H   A   
+P6M0 . . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . . .  D ADDR   00CBH   A   
+P7 . . . . . . . . .  D ADDR   00F8H   A   
+P7M0 . . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . . .  D ADDR   00E1H   A   
+PSW. . . . . . . . .  D ADDR   00D0H   A   
+P_SW2. . . . . . . .  D ADDR   00BAH   A   
+SP . . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER. . . .  N NUMB   00D0H   A   
+TH0. . . . . . . . .  D ADDR   008CH   A   
+TIMER0_RELOAD. . . .  N NUMB   A240H   A   
+TL0. . . . . . . . .  D ADDR   008AH   A   
+TMOD . . . . . . . .  D ADDR   0089H   A   
+TR0. . . . . . . . .  B ADDR   0088H.4 A   
+T_COM. . . . . . . .  C ADDR   022BH   A   
+T_DISPLAY. . . . . .  C ADDR   0200H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

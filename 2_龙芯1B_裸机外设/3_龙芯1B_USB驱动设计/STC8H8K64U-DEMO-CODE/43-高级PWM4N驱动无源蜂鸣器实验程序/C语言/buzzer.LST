@@ -1,0 +1,389 @@
+C51 COMPILER V9.59.0.0   BUZZER                                                            08/23/2021 15:04:25 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE BUZZER
+OBJECT MODULE PLACED IN buzzer.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE buzzer.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          /*---------------------------------------------------------------------*/
+   2          /* --- STC MCU Limited ------------------------------------------------*/
+   3          /* --- STC 1T Series MCU Demo Programme -------------------------------*/
+   4          /* --- Mobile: (86)13922805190 ----------------------------------------*/
+   5          /* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+   6          /* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+   7          /* --- Web: www.STCMCU.com --------------------------------------------*/
+   8          /* --- Web: www.STCMCUDATA.com  ---------------------------------------*/
+   9          /* --- QQ:  800003751 -------------------------------------------------*/
+  10          /* 如果要在程序中使用此代码,请在程序中注明使用了STC的资料及程序        */
+  11          /*---------------------------------------------------------------------*/
+  12          
+  13          
+  14          /*************  功能说明    **************
+  15          
+  16          本例程基于STC8H8K64U为主控芯片的实验箱8进行编写测试，STC8H系列芯片可通用参考.
+  17          
+  18          通过P2.7口输出PWM驱动蜂鸣器.
+  19          
+  20          行列扫描按键每个按键按下后蜂鸣器响一下.
+  21          
+  22          下载时, 选择时钟 24MHZ (用户可自行修改频率).
+  23          
+  24          ******************************************/
+  25          
+  26          #include    "reg51.h"       //包含此头文件后，里面声明的寄存器不需要再手动输入，避免重复定义
+  27          #include    "intrins.h"
+  28          
+  29          #define     MAIN_Fosc       24000000L   //定义主时钟
+  30          
+  31          typedef     unsigned char   u8;
+  32          typedef     unsigned int    u16;
+  33          typedef     unsigned long   u32;
+  34          
+  35          //手动输入声明"reg51.h"头文件里面没有定义的寄存器
+  36          sfr TH2  = 0xD6;
+  37          sfr TL2  = 0xD7;
+  38          sfr IE2   = 0xAF;
+  39          sfr INT_CLKO = 0x8F;
+  40          sfr AUXR = 0x8E;
+  41          sfr P_SW1 = 0xA2;
+  42          sfr P_SW2 = 0xBA;
+  43          
+  44          sfr P4   = 0xC0;
+  45          sfr P5   = 0xC8;
+  46          sfr P6   = 0xE8;
+  47          sfr P7   = 0xF8;
+  48          sfr P1M1 = 0x91;    //PxM1.n,PxM0.n     =00--->Standard,    01--->push-pull
+  49          sfr P1M0 = 0x92;    //                  =10--->pure input,  11--->open drain
+  50          sfr P0M1 = 0x93;
+  51          sfr P0M0 = 0x94;
+  52          sfr P2M1 = 0x95;
+  53          sfr P2M0 = 0x96;
+  54          sfr P3M1 = 0xB1;
+  55          sfr P3M0 = 0xB2;
+C51 COMPILER V9.59.0.0   BUZZER                                                            08/23/2021 15:04:25 PAGE 2   
+
+  56          sfr P4M1 = 0xB3;
+  57          sfr P4M0 = 0xB4;
+  58          sfr P5M1 = 0xC9;
+  59          sfr P5M0 = 0xCA;
+  60          sfr P6M1 = 0xCB;
+  61          sfr P6M0 = 0xCC;
+  62          sfr P7M1 = 0xE1;
+  63          sfr P7M0 = 0xE2;
+  64          
+  65          sbit P00 = P0^0;
+  66          sbit P01 = P0^1;
+  67          sbit P02 = P0^2;
+  68          sbit P03 = P0^3;
+  69          sbit P04 = P0^4;
+  70          sbit P05 = P0^5;
+  71          sbit P06 = P0^6;
+  72          sbit P07 = P0^7;
+  73          sbit P10 = P1^0;
+  74          sbit P11 = P1^1;
+  75          sbit P12 = P1^2;
+  76          sbit P13 = P1^3;
+  77          sbit P14 = P1^4;
+  78          sbit P15 = P1^5;
+  79          sbit P16 = P1^6;
+  80          sbit P17 = P1^7;
+  81          sbit P20 = P2^0;
+  82          sbit P21 = P2^1;
+  83          sbit P22 = P2^2;
+  84          sbit P23 = P2^3;
+  85          sbit P24 = P2^4;
+  86          sbit P25 = P2^5;
+  87          sbit P26 = P2^6;
+  88          sbit P27 = P2^7;
+  89          sbit P30 = P3^0;
+  90          sbit P31 = P3^1;
+  91          sbit P32 = P3^2;
+  92          sbit P33 = P3^3;
+  93          sbit P34 = P3^4;
+  94          sbit P35 = P3^5;
+  95          sbit P36 = P3^6;
+  96          sbit P37 = P3^7;
+  97          sbit P40 = P4^0;
+  98          sbit P41 = P4^1;
+  99          sbit P42 = P4^2;
+ 100          sbit P43 = P4^3;
+ 101          sbit P44 = P4^4;
+ 102          sbit P45 = P4^5;
+ 103          sbit P46 = P4^6;
+ 104          sbit P47 = P4^7;
+ 105          sbit P50 = P5^0;
+ 106          sbit P51 = P5^1;
+ 107          sbit P52 = P5^2;
+ 108          sbit P53 = P5^3;
+ 109          sbit P54 = P5^4;
+ 110          sbit P55 = P5^5;
+ 111          sbit P56 = P5^6;
+ 112          sbit P57 = P5^7;
+ 113          
+ 114          /****************************** 用户定义宏 ***********************************/
+ 115          
+ 116          #define Timer0_Reload   (65536UL -(MAIN_Fosc / 1000))       //Timer 0 中断频率, 1000次/秒
+ 117          
+C51 COMPILER V9.59.0.0   BUZZER                                                            08/23/2021 15:04:25 PAGE 3   
+
+ 118          #define PWMA_ENO     (*(unsigned char  volatile xdata *)  0xFEB1)
+ 119          #define PWMA_PS      (*(unsigned char  volatile xdata *)  0xFEB2)
+ 120          
+ 121          #define PWMA_CR1     (*(unsigned char  volatile xdata *)  0xFEC0)
+ 122          #define PWMA_CR2     (*(unsigned char  volatile xdata *)  0xFEC1)
+ 123          #define PWMA_SMCR    (*(unsigned char  volatile xdata *)  0xFEC2) 
+ 124          #define PWMA_ETR     (*(unsigned char  volatile xdata *)  0xFEC3) 
+ 125          #define PWMA_IER     (*(unsigned char  volatile xdata *)  0xFEC4) 
+ 126          #define PWMA_SR1     (*(unsigned char  volatile xdata *)  0xFEC5) 
+ 127          #define PWMA_SR2     (*(unsigned char  volatile xdata *)  0xFEC6) 
+ 128          #define PWMA_EGR     (*(unsigned char  volatile xdata *)  0xFEC7) 
+ 129          #define PWMA_CCMR1   (*(unsigned char  volatile xdata *)  0xFEC8) 
+ 130          #define PWMA_CCMR2   (*(unsigned char  volatile xdata *)  0xFEC9)
+ 131          #define PWMA_CCMR3   (*(unsigned char  volatile xdata *)  0xFECA)
+ 132          #define PWMA_CCMR4   (*(unsigned char  volatile xdata *)  0xFECB)
+ 133          #define PWMA_CCER1   (*(unsigned char  volatile xdata *)  0xFECC)
+ 134          #define PWMA_CCER2   (*(unsigned char  volatile xdata *)  0xFECD)
+ 135          #define PWMA_CNTRH   (*(unsigned char  volatile xdata *)  0xFECE)
+ 136          #define PWMA_CNTRL   (*(unsigned char  volatile xdata *)  0xFECF)
+ 137          #define PWMA_PSCRH   (*(unsigned char  volatile xdata *)  0xFED0)
+ 138          #define PWMA_PSCRL   (*(unsigned char  volatile xdata *)  0xFED1)
+ 139          #define PWMA_ARRH    (*(unsigned char  volatile xdata *)  0xFED2)
+ 140          #define PWMA_ARRL    (*(unsigned char  volatile xdata *)  0xFED3)
+ 141          #define PWMA_RCR     (*(unsigned char  volatile xdata *)  0xFED4)
+ 142          #define PWMA_CCR1H   (*(unsigned char  volatile xdata *)  0xFED5)
+ 143          #define PWMA_CCR1L   (*(unsigned char  volatile xdata *)  0xFED6)
+ 144          #define PWMA_CCR2H   (*(unsigned char  volatile xdata *)  0xFED7)
+ 145          #define PWMA_CCR2L   (*(unsigned char  volatile xdata *)  0xFED8)
+ 146          #define PWMA_CCR3H   (*(unsigned char  volatile xdata *)  0xFED9)
+ 147          #define PWMA_CCR3L   (*(unsigned char  volatile xdata *)  0xFEDA)
+ 148          #define PWMA_CCR4H   (*(unsigned char  volatile xdata *)  0xFEDB)
+ 149          #define PWMA_CCR4L   (*(unsigned char  volatile xdata *)  0xFEDC)
+ 150          #define PWMA_BKR     (*(unsigned char  volatile xdata *)  0xFEDD)
+ 151          #define PWMA_DTR     (*(unsigned char  volatile xdata *)  0xFEDE)
+ 152          #define PWMA_OISR    (*(unsigned char  volatile xdata *)  0xFEDF)
+ 153          
+ 154          /*****************************************************************************/
+ 155          
+ 156          #define PWM1_1      0x00  //P:P1.0  N:P1.1
+ 157          #define PWM1_2      0x01  //P:P2.0  N:P2.1
+ 158          #define PWM1_3      0x02  //P:P6.0  N:P6.1
+ 159          
+ 160          #define PWM2_1      0x00  //P:P1.2/P5.4  N:P1.3
+ 161          #define PWM2_2      0x04  //P:P2.2  N:P2.3
+ 162          #define PWM2_3      0x08  //P:P6.2  N:P6.3
+ 163          
+ 164          #define PWM3_1      0x00  //P:P1.4  N:P1.5
+ 165          #define PWM3_2      0x10  //P:P2.4  N:P2.5
+ 166          #define PWM3_3      0x20  //P:P6.4  N:P6.5
+ 167          
+ 168          #define PWM4_1      0x00  //P:P1.6  N:P1.7
+ 169          #define PWM4_2      0x40  //P:P2.6  N:P2.7
+ 170          #define PWM4_3      0x80  //P:P6.6  N:P6.7
+ 171          #define PWM4_4      0xC0  //P:P3.4  N:P3.3
+ 172          
+ 173          #define ENO1P       0x01
+ 174          #define ENO1N       0x02
+ 175          #define ENO2P       0x04
+ 176          #define ENO2N       0x08
+ 177          #define ENO3P       0x10
+ 178          #define ENO3N       0x20
+ 179          #define ENO4P       0x40
+C51 COMPILER V9.59.0.0   BUZZER                                                            08/23/2021 15:04:25 PAGE 4   
+
+ 180          #define ENO4N       0x80
+ 181          
+ 182          /*************  本地变量声明    **************/
+ 183          bit B_1ms;          //1ms标志
+ 184          
+ 185          u8 cnt50ms;
+ 186          u8  KeyCode;    //给用户使用的键码, 1~16有效
+ 187          u8 IO_KeyState, IO_KeyState1, IO_KeyHoldCnt;    //行列键盘变量
+ 188          
+ 189          void IO_KeyScan(void);   //50ms call
+ 190          void  delay_ms(u8 ms);
+ 191          /******************** 主函数 **************************/
+ 192          void main(void)
+ 193          {
+ 194   1          P0M1 = 0x00;   P0M0 = 0x00;   //设置为准双向口
+ 195   1          P1M1 = 0x00;   P1M0 = 0x00;   //设置为准双向口
+ 196   1          P2M1 = 0x00;   P2M0 = 0x00;   //设置为准双向口
+ 197   1          P3M1 = 0x00;   P3M0 = 0x00;   //设置为准双向口
+ 198   1          P4M1 = 0x00;   P4M0 = 0x00;   //设置为准双向口
+ 199   1          P5M1 = 0x00;   P5M0 = 0x00;   //设置为准双向口
+ 200   1          P6M1 = 0x00;   P6M0 = 0x00;   //设置为准双向口
+ 201   1          P7M1 = 0x00;   P7M0 = 0x00;   //设置为准双向口
+ 202   1      
+ 203   1          //  Timer0初始化
+ 204   1          AUXR = 0x80;    //Timer0 set as 1T, 16 bits timer auto-reload, 
+ 205   1          TH0 = (u8)(Timer0_Reload / 256);
+ 206   1          TL0 = (u8)(Timer0_Reload % 256);
+ 207   1          ET0 = 1;    //Timer0 interrupt enable
+ 208   1          TR0 = 1;    //Tiner0 run
+ 209   1      
+ 210   1          P_SW2 |= 0x80;
+ 211   1          
+ 212   1          PWMA_CCER2 = 0x00;
+ 213   1          PWMA_CCMR4 = 0x30;
+ 214   1          PWMA_CCER2 = 0x50;
+ 215   1      
+ 216   1          PWMA_ARRH = 0x07; //设置周期时间
+ 217   1          PWMA_ARRL = 0xff;
+ 218   1      
+ 219   1          PWMA_ENO = 0x00;
+ 220   1          PWMA_ENO |= ENO4N; //使能输出
+ 221   1      
+ 222   1          PWMA_PS = 0x00;  //高级 PWM 通道输出脚选择位
+ 223   1          PWMA_PS |= PWM4_2; //选择 PWM4_2 通道
+ 224   1      
+ 225   1          PWMA_BKR = 0x80; //使能主输出
+ 226   1          PWMA_CR1 |= 0x01; //开始计时
+ 227   1      
+ 228   1          delay_ms(250);
+ 229   1          delay_ms(250);
+ 230   1          PWMA_ENO = 0x00;
+ 231   1          
+ 232   1          P_SW2 &= 0x7f;
+ 233   1          EA = 1;     //打开总中断
+ 234   1      
+ 235   1          while (1)
+ 236   1          {
+ 237   2              if(B_1ms)   //1ms到
+ 238   2              {
+ 239   3                  B_1ms = 0;
+ 240   3                  if(++cnt50ms >= 50)     //50ms扫描一次行列键盘
+ 241   3                  {
+C51 COMPILER V9.59.0.0   BUZZER                                                            08/23/2021 15:04:25 PAGE 5   
+
+ 242   4                      cnt50ms = 0;
+ 243   4                      IO_KeyScan();
+ 244   4                  }
+ 245   3                  
+ 246   3                  if(KeyCode > 0)     //有键按下
+ 247   3                  {
+ 248   4                      P_SW2 |= 0x80;
+ 249   4                      PWMA_ENO |= ENO4N; //使能输出
+ 250   4                      delay_ms(250);
+ 251   4                      PWMA_ENO = 0x00;
+ 252   4                      P_SW2 &= 0x7f;
+ 253   4                      KeyCode = 0;
+ 254   4                  }
+ 255   3              }
+ 256   2          }
+ 257   1      }
+ 258          
+ 259          //========================================================================
+ 260          // 函数: void  delay_ms(u8 ms)
+ 261          // 描述: 延时函数。
+ 262          // 参数: ms,要延时的ms数, 这里只支持1~255ms. 自动适应主时钟.
+ 263          // 返回: none.
+ 264          // 版本: VER1.0
+ 265          // 日期: 2013-4-1
+ 266          // 备注: 
+ 267          //========================================================================
+ 268          void  delay_ms(u8 ms)
+ 269          {
+ 270   1           u16 i;
+ 271   1           do{
+ 272   2                i = MAIN_Fosc / 13000;
+ 273   2                while(--i);   //14T per loop
+ 274   2           }while(--ms);
+ 275   1      }
+ 276          
+ 277          
+ 278          /********************** Timer0 1ms中断函数 ************************/
+ 279          void timer0(void) interrupt 1
+ 280          {
+ 281   1          B_1ms = 1;      //1ms标志
+ 282   1      }
+ 283          
+ 284          
+ 285          /*****************************************************
+ 286              行列键扫描程序
+ 287              使用XY查找4x4键的方法，只能单键，速度快
+ 288          
+ 289             Y     P04      P05      P06      P07
+ 290                    |        |        |        |
+ 291          X         |        |        |        |
+ 292          P00 ---- K00 ---- K01 ---- K02 ---- K03 ----
+ 293                    |        |        |        |
+ 294          P01 ---- K04 ---- K05 ---- K06 ---- K07 ----
+ 295                    |        |        |        |
+ 296          P02 ---- K08 ---- K09 ---- K10 ---- K11 ----
+ 297                    |        |        |        |
+ 298          P03 ---- K12 ---- K13 ---- K14 ---- K15 ----
+ 299                    |        |        |        |
+ 300          ******************************************************/
+ 301          
+ 302          
+ 303          u8 code T_KeyTable[16] = {0,1,2,0,3,0,0,0,4,0,0,0,0,0,0,0};
+C51 COMPILER V9.59.0.0   BUZZER                                                            08/23/2021 15:04:25 PAGE 6   
+
+ 304          
+ 305          void IO_KeyDelay(void)
+ 306          {
+ 307   1          u8 i;
+ 308   1          i = 60;
+ 309   1          while(--i)  ;
+ 310   1      }
+ 311          
+ 312          void IO_KeyScan(void)    //50ms call
+ 313          {
+ 314   1          u8  j;
+ 315   1      
+ 316   1          j = IO_KeyState1;   //保存上一次状态
+ 317   1      
+ 318   1          P0 = 0xf0;  //X低，读Y
+ 319   1          IO_KeyDelay();
+ 320   1          IO_KeyState1 = P0 & 0xf0;
+ 321   1      
+ 322   1          P0 = 0x0f;  //Y低，读X
+ 323   1          IO_KeyDelay();
+ 324   1          IO_KeyState1 |= (P0 & 0x0f);
+ 325   1          IO_KeyState1 ^= 0xff;   //取反
+ 326   1          
+ 327   1          if(j == IO_KeyState1)   //连续两次读相等
+ 328   1          {
+ 329   2              j = IO_KeyState;
+ 330   2              IO_KeyState = IO_KeyState1;
+ 331   2              if(IO_KeyState != 0)    //有键按下
+ 332   2              {
+ 333   3                  F0 = 0;
+ 334   3                  if(j == 0)  F0 = 1; //第一次按下
+ 335   3                  else if(j == IO_KeyState)
+ 336   3                  {
+ 337   4                      if(++IO_KeyHoldCnt >= 20)   //1秒后重键
+ 338   4                      {
+ 339   5                          IO_KeyHoldCnt = 18;
+ 340   5                          F0 = 1;
+ 341   5                      }
+ 342   4                  }
+ 343   3                  if(F0)
+ 344   3                  {
+ 345   4                      j = T_KeyTable[IO_KeyState >> 4];
+ 346   4                      if((j != 0) && (T_KeyTable[IO_KeyState& 0x0f] != 0)) 
+ 347   4                          KeyCode = (j - 1) * 4 + T_KeyTable[IO_KeyState & 0x0f] + 16;    //计算键码，17~32
+ 348   4                  }
+ 349   3              }
+ 350   2              else    IO_KeyHoldCnt = 0;
+ 351   2          }
+ 352   1          P0 = 0xff;
+ 353   1      }
+ 354          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    328    ----
+   CONSTANT SIZE    =     16    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      5    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+C51 COMPILER V9.59.0.0   BUZZER                                                            08/23/2021 15:04:25 PAGE 7   
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

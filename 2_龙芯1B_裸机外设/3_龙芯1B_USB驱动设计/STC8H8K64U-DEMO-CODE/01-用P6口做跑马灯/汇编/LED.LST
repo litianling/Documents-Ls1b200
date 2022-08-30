@@ -1,0 +1,310 @@
+A51 MACRO ASSEMBLER  LED                                                                  03/09/2021 15:30:01 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN LED.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE LED.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* 如果要在程序中使用此代码,请在程序中注明使用了STC的资料及程序        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     
+                      14     ;*************  功能说明    **************
+                      15     
+                      16     ; 本例程基于STC8H8K64U为主控芯片的实验箱8进行编写测试，STC8G、STC8H系列芯片可通用参考.
+                      17     
+                      18     ; 程序使用P6口来演示跑马灯，输出低驱动。
+                      19     
+                      20     ; 下载时, 选择时钟 24MHZ (用户可自行修改频率).
+                      21     
+                      22     ; 当用户使用硬件 USB 对 STC8H8K64U 系列进行 ISP 下载时不能调节内部 IRC 的频率，
+                      23     ; 但用户可用选择内部预置的 16 个频率
+                      24     ; （分别是 5.5296M、 6M、 11.0592M、 12M、 18.432M、 20M、 22.1184M、 
+                      25     ; 24M、27M、 30M、 33.1776M、 35M、 36.864M、 40M、 44.2368M 和 48M）。
+                      26     ; 下载时用户只能从频率下拉列表中进行选择其中之一，而不能手动输入其他频率。
+                      27     ; （使用串口下载则可用输入 4M～48M 之间的任意频率）。
+                      28     
+                      29     ;******************************************
+                      30     
+  5DC0                31     Fosc_KHZ    EQU 24000   ;24000KHZ
+                      32     
+  00D0                33     STACK_POIRTER   EQU     0D0H    ;堆栈开始地址
+                      34     
+                      35     ;*******************************************************************
+                      36     ;*******************************************************************
+  00C0                37     P4   DATA 0C0H
+  00C8                38     P5   DATA 0C8H
+  00E8                39     P6   DATA 0E8H
+  00F8                40     P7   DATA 0F8H
+                      41     
+  0093                42     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094                43     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091                44     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092                45     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095                46     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+  0096                47     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+  00B1                48     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2                49     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3                50     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+  00B4                51     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9                52     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA                53     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB                54     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC                55     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1                56     P7M1    DATA    0xE1    ;
+  00E2                57     P7M0    DATA    0xE2    ;
+                      58     
+A51 MACRO ASSEMBLER  LED                                                                  03/09/2021 15:30:01 PAGE     2
+
+                      59     
+                      60     ;*******************************************************************
+                      61     ;*******************************************************************
+0000                  62             ORG     0000H               ;reset
+0000 020100           63             LJMP    F_Main
+                      64     
+0003                  65             ORG     0003H               ;0 INT0 interrupt
+0003 32               66             RETI
+0004 02015A           67             LJMP    F_INT0_Interrupt      
+                      68     
+000B                  69             ORG     000BH               ;1  Timer0 interrupt
+000B 020157           70             LJMP    F_Timer0_Interrupt
+                      71     
+0013                  72             ORG     0013H               ;2  INT1 interrupt
+0013 02015B           73             LJMP    F_INT1_Interrupt      
+                      74     
+001B                  75             ORG     001BH               ;3  Timer1 interrupt
+001B 020158           76             LJMP    F_Timer1_Interrupt
+                      77     
+0023                  78             ORG     0023H               ;4  UART1 interrupt
+0023 02015F           79             LJMP    F_UART1_Interrupt
+                      80     
+002B                  81             ORG     002BH               ;5  ADC and SPI interrupt
+002B 020161           82             LJMP    F_ADC_Interrupt
+                      83     
+0033                  84             ORG     0033H               ;6  Low Voltage Detect interrupt
+0033 020162           85             LJMP    F_LVD_Interrupt
+                      86     
+003B                  87             ORG     003BH               ;7  PCA interrupt
+003B 020163           88             LJMP    F_PCA_Interrupt
+                      89     
+0043                  90             ORG     0043H               ;8  UART2 interrupt
+0043 020160           91             LJMP    F_UART2_Interrupt
+                      92     
+004B                  93             ORG     004BH               ;9  SPI interrupt
+004B 020164           94             LJMP    F_SPI_Interrupt
+                      95     
+0053                  96             ORG     0053H               ;10  INT2 interrupt
+0053 02015C           97             LJMP    F_INT2_Interrupt
+                      98     
+005B                  99             ORG     005BH               ;11  INT3 interrupt
+005B 02015D          100             LJMP    F_INT3_Interrupt
+                     101     
+0063                 102             ORG     0063H               ;12  Timer2 interrupt
+0063 020159          103             LJMP    F_Timer2_Interrupt
+                     104     
+0083                 105             ORG     0083H               ;16  INT4 interrupt
+0083 02015E          106             LJMP    F_INT4_Interrupt
+                     107     
+                     108     
+                     109     ;******************** 主程序 **************************/
+0100                 110             ORG     0100H       ;reset
+0100                 111     F_Main:
+0100 E4              112         CLR     A
+0101 F593            113         MOV     P0M1, A     ;设置为准双向口
+0103 F594            114         MOV     P0M0, A
+0105 F591            115         MOV     P1M1, A     ;设置为准双向口
+0107 F592            116         MOV     P1M0, A
+0109 F595            117         MOV     P2M1, A     ;设置为准双向口
+010B F596            118         MOV     P2M0, A
+010D F5B1            119         MOV     P3M1, A     ;设置为准双向口
+010F F5B2            120         MOV     P3M0, A
+0111 F5B3            121         MOV     P4M1, A     ;设置为准双向口
+0113 F5B4            122         MOV     P4M0, A
+0115 F5C9            123         MOV     P5M1, A     ;设置为准双向口
+0117 F5CA            124         MOV     P5M0, A
+A51 MACRO ASSEMBLER  LED                                                                  03/09/2021 15:30:01 PAGE     3
+
+0119 F5CB            125         MOV     P6M1, A     ;设置为准双向口
+011B F5CC            126         MOV     P6M0, A
+011D F5E1            127         MOV     P7M1, A     ;设置为准双向口
+011F F5E2            128         MOV     P7M0, A
+                     129     
+0121 7581D0          130         MOV     SP, #STACK_POIRTER
+0124 75D000          131         MOV     PSW, #0     ;选择第0组R0~R7
+                     132     
+0127 C2C0            133         CLR     P4.0        ;LED Power On
+0129 78FE            134         MOV     R0, #0XFE
+012B                 135     L_MainLoop:
+012B 88E8            136         MOV     P6,R0
+                     137         
+012D E8              138         MOV     A,R0
+012E 23              139             RL      A
+012F F8              140         MOV     R0,A
+                     141         
+0130 74FA            142         MOV     A, #250
+0132 12013A          143         LCALL   F_delay_ms      ;延时250ms
+0135 12013A          144         LCALL   F_delay_ms      ;延时250ms
+                     145     
+0138 80F1            146         SJMP    L_MainLoop
+                     147     
+                     148     ;*******************************************************************
+                     149     ;*******************************************************************
+                     150     
+                     151     
+                     152     
+                     153     ;========================================================================
+                     154     ; 函数: F_delay_ms
+                     155     ; 描述: 延时子程序。
+                     156     ; 参数: ACC: 延时ms数.
+                     157     ; 返回: none.
+                     158     ; 版本: VER1.0
+                     159     ; 日期: 2013-4-1
+                     160     ; 备注: 除了ACCC和PSW外, 所用到的通用寄存器都入栈
+                     161     ;========================================================================
+013A                 162     F_delay_ms:
+013A C002            163         PUSH    02H     ;入栈R2
+013C C003            164         PUSH    03H     ;入栈R3
+013E C004            165         PUSH    04H     ;入栈R4
+                     166     
+0140 FA              167         MOV     R2,A
+                     168     
+0141                 169     L_delay_ms_1:
+0141 7B09            170         MOV     R3, #HIGH (Fosc_KHZ / 10)
+0143 7C60            171         MOV     R4, #LOW (Fosc_KHZ / 10)
+                     172         
+0145                 173     L_delay_ms_2:
+0145 EC              174         MOV     A, R4           ;1T     Total 10T/loop
+0146 1C              175         DEC     R4              ;1T
+0147 7001            176         JNZ     L_delay_ms_3    ;3T
+0149 1B              177         DEC     R3
+014A                 178     L_delay_ms_3:
+014A 14              179         DEC     A               ;1T
+014B 4B              180         ORL     A, R3           ;1T
+014C 70F7            181         JNZ     L_delay_ms_2    ;3T
+                     182         
+014E DAF1            183         DJNZ    R2, L_delay_ms_1
+                     184     
+0150 D004            185         POP     04H     ;出栈R2
+0152 D003            186         POP     03H     ;出栈R3
+0154 D002            187         POP     02H     ;出栈R4
+0156 22              188         RET
+                     189     
+                     190     
+A51 MACRO ASSEMBLER  LED                                                                  03/09/2021 15:30:01 PAGE     4
+
+                     191     ;**************** 中断函数 ***************************************************
+                     192     
+0157                 193     F_Timer0_Interrupt: ;Timer0 1ms中断函数
+0157 32              194         RETI
+                     195         
+0158                 196     F_Timer1_Interrupt:
+0158 32              197         RETI
+                     198     
+0159                 199     F_Timer2_Interrupt:
+0159 32              200         RETI
+                     201     
+015A                 202     F_INT0_Interrupt:
+015A 32              203         RETI
+                     204         
+015B                 205     F_INT1_Interrupt:
+015B 32              206         RETI
+                     207     
+015C                 208     F_INT2_Interrupt:
+015C 32              209         RETI
+                     210     
+015D                 211     F_INT3_Interrupt:
+015D 32              212         RETI
+                     213     
+015E                 214     F_INT4_Interrupt:
+015E 32              215         RETI
+                     216     
+015F                 217     F_UART1_Interrupt:
+015F 32              218         RETI
+                     219     
+0160                 220     F_UART2_Interrupt:
+0160 32              221         RETI
+                     222     
+0161                 223     F_ADC_Interrupt:
+0161 32              224         RETI
+                     225     
+0162                 226     F_LVD_Interrupt:
+0162 32              227         RETI
+                     228     
+0163                 229     F_PCA_Interrupt:
+0163 32              230         RETI
+                     231     
+0164                 232     F_SPI_Interrupt:
+0164 32              233         RETI
+                     234     
+                     235     
+                     236         END
+                             
+A51 MACRO ASSEMBLER  LED                                                                  03/09/2021 15:30:01 PAGE     5
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+FOSC_KHZ . . . . .  N NUMB   5DC0H   A   
+F_ADC_INTERRUPT. .  C ADDR   0161H   A   
+F_DELAY_MS . . . .  C ADDR   013AH   A   
+F_INT0_INTERRUPT .  C ADDR   015AH   A   
+F_INT1_INTERRUPT .  C ADDR   015BH   A   
+F_INT2_INTERRUPT .  C ADDR   015CH   A   
+F_INT3_INTERRUPT .  C ADDR   015DH   A   
+F_INT4_INTERRUPT .  C ADDR   015EH   A   
+F_LVD_INTERRUPT. .  C ADDR   0162H   A   
+F_MAIN . . . . . .  C ADDR   0100H   A   
+F_PCA_INTERRUPT. .  C ADDR   0163H   A   
+F_SPI_INTERRUPT. .  C ADDR   0164H   A   
+F_TIMER0_INTERRUPT  C ADDR   0157H   A   
+F_TIMER1_INTERRUPT  C ADDR   0158H   A   
+F_TIMER2_INTERRUPT  C ADDR   0159H   A   
+F_UART1_INTERRUPT.  C ADDR   015FH   A   
+F_UART2_INTERRUPT.  C ADDR   0160H   A   
+L_DELAY_MS_1 . . .  C ADDR   0141H   A   
+L_DELAY_MS_2 . . .  C ADDR   0145H   A   
+L_DELAY_MS_3 . . .  C ADDR   014AH   A   
+L_MAINLOOP . . . .  C ADDR   012BH   A   
+P0M0 . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . .  D ADDR   0093H   A   
+P1M0 . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . .  D ADDR   0095H   A   
+P3M0 . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . .  D ADDR   00B1H   A   
+P4 . . . . . . . .  D ADDR   00C0H   A   
+P4M0 . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . .  D ADDR   00B3H   A   
+P5 . . . . . . . .  D ADDR   00C8H   A   
+P5M0 . . . . . . .  D ADDR   00CAH   A   
+P5M1 . . . . . . .  D ADDR   00C9H   A   
+P6 . . . . . . . .  D ADDR   00E8H   A   
+P6M0 . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . .  D ADDR   00CBH   A   
+P7 . . . . . . . .  D ADDR   00F8H   A   
+P7M0 . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . .  D ADDR   00E1H   A   
+PSW. . . . . . . .  D ADDR   00D0H   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER. . .  N NUMB   00D0H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

@@ -1,0 +1,427 @@
+C51 COMPILER V9.59.0.0   LCD128X64                                                         02/08/2021 11:40:04 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE LCD128X64
+OBJECT MODULE PLACED IN LCD128x64.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE LCD128x64.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          /*---------------------------------------------------------------------*/
+   2          /* --- STC MCU Limited ------------------------------------------------*/
+   3          /* --- STC 1T Series MCU Demo Programme -------------------------------*/
+   4          /* --- Mobile: (86)13922805190 ----------------------------------------*/
+   5          /* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+   6          /* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+   7          /* --- Web: www.STCMCU.com --------------------------------------------*/
+   8          /* --- Web: www.STCMCUDATA.com  ---------------------------------------*/
+   9          /* --- QQ:  800003751 -------------------------------------------------*/
+  10          /* 如果要在程序中使用此代码,请在程序中注明使用了STC的资料及程序        */
+  11          /*---------------------------------------------------------------------*/
+  12          
+  13          
+  14          /*************  功能说明    **************
+  15          
+  16          本例程基于STC8H8K64U为主控芯片的实验箱8进行编写测试，STC8G、STC8H系列芯片可通用参考.
+  17          
+  18          128*64的LCD显示程序
+  19          
+  20          显示图形，汉字，英文，数字
+  21          
+  22          下载时, 选择时钟 24MHz (用户可自行修改频率).
+  23          
+  24          ******************************************/
+  25          
+  26          
+  27          #include    "reg51.h"       //包含此头文件后，里面声明的寄存器不需要再手动输入，避免重复定义
+  28          #include    "intrins.h"
+  29          
+  30          #define     MAIN_Fosc       24000000L   //定义主时钟
+  31          
+  32          typedef     unsigned char   u8;
+  33          typedef     unsigned int    u16;
+  34          typedef     unsigned long   u32;
+  35          
+  36          //手动输入声明"reg51.h"头文件里面没有定义的寄存器
+  37          sfr TH2  = 0xD6;
+  38          sfr TL2  = 0xD7;
+  39          sfr IE2   = 0xAF;
+  40          sfr INT_CLKO = 0x8F;
+  41          sfr AUXR = 0x8E;
+  42          sfr AUXR1 = 0xA2;
+  43          sfr P_SW1 = 0xA2;
+  44          sfr P_SW2 = 0xBA;
+  45          sfr S2CON = 0x9A;
+  46          sfr S2BUF = 0x9B;
+  47          
+  48          sfr P4   = 0xC0;
+  49          sfr P5   = 0xC8;
+  50          sfr P6   = 0xE8;
+  51          sfr P7   = 0xF8;
+  52          sfr P1M1 = 0x91;    //PxM1.n,PxM0.n     =00--->Standard,    01--->push-pull
+  53          sfr P1M0 = 0x92;    //                  =10--->pure input,  11--->open drain
+  54          sfr P0M1 = 0x93;
+  55          sfr P0M0 = 0x94;
+C51 COMPILER V9.59.0.0   LCD128X64                                                         02/08/2021 11:40:04 PAGE 2   
+
+  56          sfr P2M1 = 0x95;
+  57          sfr P2M0 = 0x96;
+  58          sfr P3M1 = 0xB1;
+  59          sfr P3M0 = 0xB2;
+  60          sfr P4M1 = 0xB3;
+  61          sfr P4M0 = 0xB4;
+  62          sfr P5M1 = 0xC9;
+  63          sfr P5M0 = 0xCA;
+  64          sfr P6M1 = 0xCB;
+  65          sfr P6M0 = 0xCC;
+  66          sfr P7M1 = 0xE1;
+  67          sfr P7M0 = 0xE2;
+  68          
+  69          sbit P00 = P0^0;
+  70          sbit P01 = P0^1;
+  71          sbit P02 = P0^2;
+  72          sbit P03 = P0^3;
+  73          sbit P04 = P0^4;
+  74          sbit P05 = P0^5;
+  75          sbit P06 = P0^6;
+  76          sbit P07 = P0^7;
+  77          sbit P10 = P1^0;
+  78          sbit P11 = P1^1;
+  79          sbit P12 = P1^2;
+  80          sbit P13 = P1^3;
+  81          sbit P14 = P1^4;
+  82          sbit P15 = P1^5;
+  83          sbit P16 = P1^6;
+  84          sbit P17 = P1^7;
+  85          sbit P20 = P2^0;
+  86          sbit P21 = P2^1;
+  87          sbit P22 = P2^2;
+  88          sbit P23 = P2^3;
+  89          sbit P24 = P2^4;
+  90          sbit P25 = P2^5;
+  91          sbit P26 = P2^6;
+  92          sbit P27 = P2^7;
+  93          sbit P30 = P3^0;
+  94          sbit P31 = P3^1;
+  95          sbit P32 = P3^2;
+  96          sbit P33 = P3^3;
+  97          sbit P34 = P3^4;
+  98          sbit P35 = P3^5;
+  99          sbit P36 = P3^6;
+ 100          sbit P37 = P3^7;
+ 101          sbit P40 = P4^0;
+ 102          sbit P41 = P4^1;
+ 103          sbit P42 = P4^2;
+ 104          sbit P43 = P4^3;
+ 105          sbit P44 = P4^4;
+ 106          sbit P45 = P4^5;
+ 107          sbit P46 = P4^6;
+ 108          sbit P47 = P4^7;
+ 109          sbit P50 = P5^0;
+ 110          sbit P51 = P5^1;
+ 111          sbit P52 = P5^2;
+ 112          sbit P53 = P5^3;
+ 113          sbit P54 = P5^4;
+ 114          sbit P55 = P5^5;
+ 115          sbit P56 = P5^6;
+ 116          sbit P57 = P5^7;
+ 117          
+C51 COMPILER V9.59.0.0   LCD128X64                                                         02/08/2021 11:40:04 PAGE 3   
+
+ 118          
+ 119          sbit    LCD_RS = P4^5;  //定义引脚
+ 120          sbit    LCD_RW = P4^4;
+ 121          sbit    LCD_E  = P4^2;
+ 122          sbit    PSB    = P3^5;      //PSB脚为12864的串、并通讯功能切换，我们使用8位并行接口，PSB=1
+ 123          sbit    LCD_RESET   =   P3^4;   //  17---RESET  L-->Enable
+ 124          #define LCD_Data P0
+ 125          
+ 126          
+ 127          #define Busy    0x80 //用于检测LCD状态字中的Busy标识
+ 128          void    delay_ms(u16 ms);
+ 129          void    WriteDataLCD(u8 WDLCD);
+ 130          void    WriteCommandLCD(u8 WCLCD,BuysC);
+ 131          u8      ReadDataLCD(void);
+ 132          u8      ReadStatusLCD(void);
+ 133          void    LCDInit(void);
+ 134          void    LCDClear(void);
+ 135          void    LCDFlash(void);
+ 136          void    DisplayOneChar(u8 X, u8 Y, u8 DData);
+ 137          void    DisplayListChar(u8 X, u8 Y, u8 code *DData);
+ 138          void    DisplayImage (u8 code *DData);
+ 139          
+ 140          u8  code uctech[] = {"南通国芯微电子  "};
+ 141          u8  code net[]    = {" www.stcmcu.com "};
+ 142          u8  code mcu[]    = {"专业制造51单片机"};
+ 143          u8  code qq[]     = {" QQ: 800003751  "};
+ 144          
+ 145              //128*64点阵图形数据
+ 146          code u8 gImage_gxw[1024] = { /* 0X10,0X01,0X00,0X80,0X00,0X40, */
+ 147          0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
+ 148          0X00,0X3F,0X03,0XF0,0X3F,0X03,0XF0,0X00,0X00,0X00,0X0C,0X00,0X00,0X00,0XC0,0X00,
+ 149          0X00,0X21,0X02,0X10,0X21,0X02,0X10,0X00,0X00,0X00,0X0C,0X00,0X18,0XFF,0XE0,0X00,
+ 150          0X00,0X21,0X02,0X10,0X21,0X02,0X10,0X00,0X00,0X00,0X08,0X1C,0X1C,0X1B,0X00,0X00,
+ 151          0X00,0X21,0X02,0X10,0X21,0X02,0X10,0X00,0X00,0X1F,0XFF,0XFE,0X0C,0X0E,0X00,0X00,
+ 152          0X00,0X21,0X02,0X10,0X21,0X02,0X10,0X00,0X00,0X00,0X0C,0X00,0X00,0X8C,0X60,0X00,
+ 153          0X00,0X21,0X02,0X10,0X21,0X02,0X10,0X00,0X00,0X04,0X0C,0X10,0X00,0XFF,0XF0,0X00,
+ 154          0X00,0X21,0X02,0X10,0X21,0X02,0X10,0X00,0X00,0X07,0XFF,0XF8,0X0C,0XCC,0X60,0X00,
+ 155          0X00,0X21,0X02,0X10,0X21,0X02,0X10,0X00,0X00,0X06,0X63,0X18,0X7E,0XCC,0X60,0X00,
+ 156          0X7F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X06,0X33,0X98,0X0C,0XFF,0XE0,0X00,
+ 157          0X7F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X06,0X32,0X18,0X0C,0XCC,0X60,0X00,
+ 158          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X06,0X05,0XD8,0X0C,0XCC,0X60,0X00,
+ 159          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X06,0XFF,0X78,0X0C,0XFF,0XE0,0X00,
+ 160          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X06,0X08,0XD8,0X0C,0XCC,0X60,0X00,
+ 161          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X07,0XFF,0XF8,0X0C,0XCC,0X60,0X00,
+ 162          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X06,0X0C,0X18,0X0C,0XCF,0XE0,0X00,
+ 163          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X06,0X0C,0X18,0X3E,0X80,0X40,0X00,
+ 164          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X06,0X0C,0X18,0X73,0XC0,0X00,0X00,
+ 165          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X06,0X0D,0XF0,0X20,0X7F,0XF8,0X00,
+ 166          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X06,0X00,0X30,0X00,0X00,0X00,0X00,
+ 167          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
+ 168          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
+ 169          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X06,0X00,0X18,0X01,0X84,0X00,0X00,
+ 170          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X07,0XFF,0XFC,0X01,0XC6,0X00,0X00,
+ 171          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X06,0X00,0X58,0X01,0X86,0X30,0X00,
+ 172          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X07,0XFF,0XD8,0X7F,0XFF,0XF8,0X00,
+ 173          0X60,0X00,0XFD,0X1F,0XF0,0X7A,0X00,0X18,0X00,0X06,0X0C,0X18,0X01,0X86,0X00,0X00,
+ 174          0X60,0X01,0X87,0X13,0X30,0XC6,0X00,0X18,0X00,0X06,0X0C,0X18,0X01,0X86,0X00,0X00,
+ 175          0X60,0X03,0X03,0X33,0X11,0X83,0X00,0X18,0X00,0X06,0X0C,0X18,0X00,0X40,0X00,0X00,
+ 176          0X60,0X03,0X03,0X03,0X01,0X83,0X00,0X18,0X00,0X06,0X0C,0XD8,0X00,0X30,0X00,0X00,
+ 177          0X60,0X03,0X80,0X03,0X03,0X80,0X00,0X18,0X00,0X06,0XFF,0XF8,0X03,0X38,0X00,0X00,
+ 178          0X60,0X01,0XC0,0X03,0X03,0X00,0X00,0X18,0X00,0X06,0X0F,0X18,0X0B,0X98,0X80,0X00,
+ 179          0X60,0X00,0X78,0X03,0X03,0X00,0X00,0X18,0X00,0X06,0X0D,0X98,0X0B,0X18,0XC0,0X00,
+C51 COMPILER V9.59.0.0   LCD128X64                                                         02/08/2021 11:40:04 PAGE 4   
+
+ 180          0X60,0X00,0X1E,0X03,0X03,0X00,0X00,0X18,0X00,0X06,0X0C,0XD8,0X1B,0X00,0X70,0X00,
+ 181          0X60,0X00,0X07,0X03,0X03,0X00,0X00,0X18,0X00,0X06,0X0C,0X18,0X1B,0X01,0X30,0X00,
+ 182          0X60,0X00,0X03,0X03,0X03,0X80,0X00,0X18,0X00,0X06,0X0C,0XD8,0X3B,0X01,0X30,0X00,
+ 183          0X60,0X03,0X03,0X03,0X03,0X83,0X00,0X18,0X00,0X07,0XF7,0XB8,0X33,0X01,0X80,0X00,
+ 184          0X60,0X03,0X03,0X03,0X01,0X82,0X00,0X18,0X00,0X06,0X00,0X18,0X03,0X01,0X80,0X00,
+ 185          0X60,0X01,0XC6,0X03,0X01,0XC6,0X00,0X18,0X00,0X07,0XFF,0XF8,0X01,0XFF,0X80,0X00,
+ 186          0X60,0X01,0X7C,0X07,0XC0,0X7C,0X00,0X18,0X00,0X06,0X00,0X18,0X00,0X00,0X00,0X00,
+ 187          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X04,0X00,0X00,0X00,0X00,0X00,0X00,
+ 188          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
+ 189          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
+ 190          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
+ 191          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X21,0X86,0X00,0X07,0X00,0X00,0X00,0X10,
+ 192          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X31,0X86,0X00,0X07,0X00,0X03,0XFF,0XF8,
+ 193          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X65,0X66,0X00,0X02,0X00,0X00,0X00,0X68,
+ 194          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0XC7,0X7C,0X00,0X02,0X08,0X00,0X00,0XC0,
+ 195          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X95,0X6C,0X41,0XFF,0XFC,0X00,0X03,0X80,
+ 196          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X19,0X3D,0X6F,0XE1,0X82,0X0C,0X00,0X0E,0X00,
+ 197          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X3E,0XE9,0XA1,0X82,0X0C,0X00,0X0E,0X00,
+ 198          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X60,0X59,0X81,0X82,0X0C,0X00,0X0C,0X0C,
+ 199          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X6F,0XFD,0X81,0XFF,0XFC,0X1F,0XFF,0XFE,
+ 200          0X60,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0XE0,0X15,0X81,0X82,0X0C,0X00,0X0C,0X02,
+ 201          0X7F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0XA6,0X45,0X81,0X82,0X0C,0X00,0X0C,0X00,
+ 202          0X7F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF9,0X27,0XC7,0X01,0X82,0X0C,0X00,0X0C,0X00,
+ 203          0X00,0X21,0X02,0X10,0X21,0X02,0X10,0X00,0X26,0X47,0X01,0XFF,0XFC,0X00,0X0C,0X00,
+ 204          0X00,0X21,0X02,0X10,0X21,0X02,0X10,0X00,0X26,0X5F,0X01,0X82,0X0B,0X00,0X0C,0X00,
+ 205          0X00,0X21,0X02,0X10,0X21,0X02,0X10,0X00,0X26,0X77,0X01,0X02,0X03,0X00,0X0C,0X00,
+ 206          0X00,0X21,0X02,0X10,0X21,0X02,0X10,0X00,0X26,0XEF,0X80,0X02,0X03,0X00,0X0C,0X00,
+ 207          0X00,0X21,0X02,0X10,0X21,0X02,0X10,0X00,0X24,0X59,0XC0,0X02,0X03,0X00,0X0C,0X00,
+ 208          0X00,0X21,0X02,0X10,0X21,0X02,0X10,0X00,0X38,0X30,0XE0,0X03,0XFF,0X80,0X7C,0X00,
+ 209          0X00,0X21,0X02,0X10,0X21,0X02,0X10,0X00,0X38,0XE0,0X00,0X00,0X00,0X00,0X18,0X00,
+ 210          0X00,0X3F,0X03,0XF0,0X3F,0X03,0XF0,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
+ 211          };
+ 212          
+ 213          
+ 214          void main(void)
+ 215          {
+ 216   1          P0M1 = 0;   P0M0 = 0;   //设置为准双向口
+ 217   1          P1M1 = 0;   P1M0 = 0;   //设置为准双向口
+ 218   1          P2M1 = 0;   P2M0 = 0;   //设置为准双向口
+ 219   1          P3M1 = 0;   P3M0 = 0;   //设置为准双向口
+ 220   1          P4M1 = 0;   P4M0 = 0;   //设置为准双向口
+ 221   1          P5M1 = 0;   P5M0 = 0;   //设置为准双向口
+ 222   1          P6M1 = 0;   P6M0 = 0;   //设置为准双向口
+ 223   1          P7M1 = 0;   P7M0 = 0;   //设置为准双向口
+ 224   1      
+ 225   1          delay_ms(100); //启动等待，等LCD讲入工作状态
+ 226   1          LCDInit(); //LCM初始化
+ 227   1          delay_ms(5); //延时片刻(可不要)
+ 228   1          while(1)
+ 229   1          {
+ 230   2              LCDClear();
+ 231   2              DisplayImage(gImage_gxw);//显示图形
+ 232   2              delay_ms(5000);
+ 233   2              LCDClear();
+ 234   2              DisplayListChar(0,1,uctech);    //显示字库中的中文数字
+ 235   2              DisplayListChar(0,2,net);       //显示字库中的中文数字
+ 236   2              DisplayListChar(0,3,mcu);       //显示字库中的中文
+ 237   2              DisplayListChar(0,4,qq);        //显示字库中的中文数字
+ 238   2              delay_ms(5000);
+ 239   2          }
+ 240   1      }
+ 241          
+C51 COMPILER V9.59.0.0   LCD128X64                                                         02/08/2021 11:40:04 PAGE 5   
+
+ 242          
+ 243          //========================================================================
+ 244          // 函数: void delay_ms(u8 ms)
+ 245          // 描述: 延时函数。
+ 246          // 参数: ms,要延时的ms数, 这里只支持1~255ms. 自动适应主时钟.
+ 247          // 返回: none.
+ 248          // 版本: VER1.0
+ 249          // 日期: 2013-4-1
+ 250          // 备注: 
+ 251          //========================================================================
+ 252          void delay_ms(u16 ms)
+ 253          {
+ 254   1           u16 i;
+ 255   1           do{
+ 256   2                i = MAIN_Fosc / 13000;
+ 257   2                while(--i)    ;   //14T per loop
+ 258   2           }while(--ms);
+ 259   1      }
+ 260          
+ 261          
+ 262          //******************************************
+ 263          void LCD_delay(void)
+ 264          {
+ 265   1          _nop_();
+ 266   1          _nop_();
+ 267   1          _nop_();
+ 268   1          _nop_();
+ 269   1          _nop_();
+ 270   1          _nop_();
+ 271   1          _nop_();
+ 272   1          _nop_();
+ 273   1          _nop_();
+ 274   1          _nop_();
+ 275   1      }
+ 276          
+ 277          
+ 278          //写数据
+ 279          void WriteDataLCD(u8 WDLCD)
+ 280          {
+ 281   1          ReadStatusLCD(); //检测忙 
+ 282   1          LCD_RS = 1;
+ 283   1          LCD_RW = 0;
+ 284   1          LCD_Data = WDLCD;
+ 285   1          LCD_delay();
+ 286   1          LCD_E = 1;
+ 287   1          LCD_delay();
+ 288   1          LCD_E = 0;
+ 289   1      }
+ 290          
+ 291          //写指令
+ 292          void WriteCommandLCD(u8 WCLCD,BuysC) //BuysC为0时忽略忙检测
+ 293          {
+ 294   1          if (BuysC) ReadStatusLCD(); //根据需要检测忙 
+ 295   1          LCD_RS = 0;
+ 296   1          LCD_RW = 0; 
+ 297   1          LCD_Data = WCLCD;
+ 298   1          LCD_delay();
+ 299   1          LCD_E = 1; 
+ 300   1          LCD_delay();
+ 301   1          LCD_E = 0;  
+ 302   1      }
+ 303          
+C51 COMPILER V9.59.0.0   LCD128X64                                                         02/08/2021 11:40:04 PAGE 6   
+
+ 304          //读状态
+ 305          u8 ReadStatusLCD(void)
+ 306          {
+ 307   1          LCD_Data = 0xFF; 
+ 308   1          LCD_RS = 0;
+ 309   1          LCD_RW = 1; 
+ 310   1          LCD_delay();
+ 311   1          LCD_E = 1;
+ 312   1          LCD_delay();
+ 313   1          while (LCD_Data & Busy); //检测忙信号
+ 314   1          LCD_E = 0;
+ 315   1          return(LCD_Data);
+ 316   1      }
+ 317          
+ 318          void LCDInit(void) //LCM初始化
+ 319          {
+ 320   1          PSB = 1;    //并口
+ 321   1      //  PSB = 0;    //SPI口
+ 322   1          delay_ms(10);
+ 323   1          LCD_RESET = 0;
+ 324   1          delay_ms(10);
+ 325   1          LCD_RESET = 1;
+ 326   1          delay_ms(100);
+ 327   1          
+ 328   1          WriteCommandLCD(0x30,1); //显示模式设置,开始要求每次检测忙信号
+ 329   1          WriteCommandLCD(0x01,1); //显示清屏
+ 330   1          WriteCommandLCD(0x06,1); // 显示光标移动设置
+ 331   1          WriteCommandLCD(0x0C,1); // 显示开及光标设置
+ 332   1      }
+ 333          
+ 334          void LCDClear(void) //清屏
+ 335          {
+ 336   1          WriteCommandLCD(0x01,1); //显示清屏
+ 337   1          WriteCommandLCD(0x34,1); // 显示光标移动设置
+ 338   1          WriteCommandLCD(0x30,1); // 显示开及光标设置
+ 339   1      }
+ 340          
+ 341          
+ 342          //按指定位置显示一串字符
+ 343          void DisplayListChar(u8 X, u8 Y, u8 code *DData)
+ 344          {
+ 345   1          u8 ListLength,X2;
+ 346   1          ListLength = 0;
+ 347   1          X2 = X;
+ 348   1          if(Y < 1)   Y=1;
+ 349   1          if(Y > 4)   Y=4;
+ 350   1          X &= 0x0F; //限制X不能大于16，Y在1-4之内
+ 351   1          switch(Y)
+ 352   1          {
+ 353   2              case 1: X2 |= 0X80; break;  //根据行数来选择相应地址
+ 354   2              case 2: X2 |= 0X90; break;
+ 355   2              case 3: X2 |= 0X88; break;
+ 356   2              case 4: X2 |= 0X98; break;
+ 357   2          }
+ 358   1          WriteCommandLCD(X2, 1); //发送地址码
+ 359   1          while (DData[ListLength] >= 0x20) //若到达字串尾则退出
+ 360   1          {
+ 361   2              if (X <= 0x0F) //X坐标应小于0xF
+ 362   2              {
+ 363   3                  WriteDataLCD(DData[ListLength]); //
+ 364   3                  ListLength++;
+ 365   3                  X++;
+C51 COMPILER V9.59.0.0   LCD128X64                                                         02/08/2021 11:40:04 PAGE 7   
+
+ 366   3              }
+ 367   2          }
+ 368   1      }
+ 369          
+ 370          //图形显示122*32
+ 371          void DisplayImage (u8 code *DData)
+ 372          {
+ 373   1          u8 x,y,i;
+ 374   1          unsigned int tmp=0;
+ 375   1          for(i=0;i<9;)       //分两屏，上半屏和下半屏，因为起始地址不同，需要分开
+ 376   1          {
+ 377   2              for(x=0;x<32;x++)   //32行
+ 378   2              {
+ 379   3                  WriteCommandLCD(0x34,1);
+ 380   3                  WriteCommandLCD((0x80+x),1);//列地址
+ 381   3                  WriteCommandLCD((0x80+i),1);    //行地址，下半屏，即第三行地址0X88
+ 382   3                  WriteCommandLCD(0x30,1);        
+ 383   3                  for(y=0;y<16;y++)   
+ 384   3                      WriteDataLCD(DData[tmp+y]);//读取数据写入LCD
+ 385   3                  tmp+=16;        
+ 386   3              }
+ 387   2              i+=8;
+ 388   2          }
+ 389   1          WriteCommandLCD(0x36,1);    //扩充功能设定
+ 390   1          WriteCommandLCD(0x30,1);
+ 391   1      }
+ 392          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    590    ----
+   CONSTANT SIZE    =   1092    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      13
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

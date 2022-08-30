@@ -1,0 +1,115 @@
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                    03/03/2021  16:10:37  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22.2.0, INVOKED BY:
+C:\KEIL_V5\C51\BIN\BL51.EXE Comparator.obj TO Comparator RAMSIZE (256)
+
+
+INPUT MODULES INCLUDED:
+  Comparator.obj (COMPARATOR)
+
+
+LINK MAP OF MODULE:  Comparator (COMPARATOR)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     015AH     ABSOLUTE     
+
+
+
+SYMBOL TABLE OF MODULE:  Comparator (COMPARATOR)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        COMPARATOR
+  D:00E0H         SYMBOL        ACC
+  D:00E6H         SYMBOL        CMPCR1
+  D:00E7H         SYMBOL        CMPCR2
+  B:00A8H.7       SYMBOL        EA
+  N:5DC0H         SYMBOL        FOSC_KHZ
+  C:0145H         SYMBOL        F_CMP_INTERRUPT
+  C:0100H         SYMBOL        F_MAIN
+  C:0142H         SYMBOL        L_MAINLOOP
+  C:0153H         SYMBOL        L_QUITCMP_INIT
+  D:0094H         SYMBOL        P0M0
+  D:0093H         SYMBOL        P0M1
+  D:0092H         SYMBOL        P1M0
+  D:0091H         SYMBOL        P1M1
+  D:0096H         SYMBOL        P2M0
+  D:0095H         SYMBOL        P2M1
+  D:00B2H         SYMBOL        P3M0
+  D:00B1H         SYMBOL        P3M1
+  D:00C0H         SYMBOL        P4
+  D:00B4H         SYMBOL        P4M0
+  D:00B3H         SYMBOL        P4M1
+  D:00CAH         SYMBOL        P5M0
+  D:00C9H         SYMBOL        P5M1
+  D:00CCH         SYMBOL        P6M0
+  D:00CBH         SYMBOL        P6M1
+  D:00E2H         SYMBOL        P7M0
+  D:00E1H         SYMBOL        P7M1
+  D:00D0H         SYMBOL        PSW
+  D:00BAH         SYMBOL        P_SW2
+  D:0081H         SYMBOL        SP
+  N:00D0H         SYMBOL        STACK_POIRTER
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  03/03/2021  16:10:37  PAGE 2
+
+
+  C:0000H         LINE#         68
+  C:00ABH         LINE#         71
+  C:0100H         LINE#         81
+  C:0101H         LINE#         82
+  C:0103H         LINE#         83
+  C:0105H         LINE#         84
+  C:0107H         LINE#         85
+  C:0109H         LINE#         86
+  C:010BH         LINE#         87
+  C:010DH         LINE#         88
+  C:010FH         LINE#         89
+  C:0111H         LINE#         90
+  C:0113H         LINE#         91
+  C:0115H         LINE#         92
+  C:0117H         LINE#         93
+  C:0119H         LINE#         94
+  C:011BH         LINE#         95
+  C:011DH         LINE#         96
+  C:011FH         LINE#         97
+  C:0121H         LINE#         100
+  C:0124H         LINE#         101
+  C:0127H         LINE#         106
+  C:012AH         LINE#         107
+  C:012BH         LINE#         108
+  C:012DH         LINE#         110
+  C:012FH         LINE#         113
+  C:0131H         LINE#         114
+  C:0133H         LINE#         116
+  C:0134H         LINE#         117
+  C:0136H         LINE#         122
+  C:0138H         LINE#         124
+  C:013AH         LINE#         127
+  C:013CH         LINE#         128
+  C:013EH         LINE#         129
+  C:0140H         LINE#         133
+  C:0142H         LINE#         142
+  C:0145H         LINE#         155
+  C:0147H         LINE#         156
+  C:0149H         LINE#         157
+  C:014BH         LINE#         159
+  C:014EH         LINE#         160
+  C:0150H         LINE#         161
+  C:0151H         LINE#         162
+  C:0153H         LINE#         165
+  C:0155H         LINE#         166
+  C:0157H         LINE#         167
+  C:0159H         LINE#         168
+  -------         ENDMOD        COMPARATOR
+
+Program Size: data=8.0 xdata=0 code=346
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

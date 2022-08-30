@@ -1,0 +1,12 @@
+".\Out_File\Main.obj",
+".\Out_File\delay.obj",
+".\Out_File\sys.obj",
+".\Out_File\hc595.obj",
+".\Out_File\led8.obj",
+".\Out_File\tftlcd.obj",
+".\Out_File\touch.obj",
+".\Out_File\adc.obj",
+".\Out_File\eeprom.obj" 
+TO ".\Out_File\TOUCH" 
+PRINT(".\TOUCH.m51") RAMSIZE(256) 
+DISABLEWARNING (16) 

@@ -1,0 +1,766 @@
+A51 MACRO ASSEMBLER  ADC_KEYSCAN                                                          03/01/2021 13:24:59 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN ADC_KeyScan.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE ADC_KeyScan.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* Èç¹ûÒªÔÚ³ÌÐòÖÐÊ¹ÓÃ´Ë´úÂë,ÇëÔÚ³ÌÐòÖÐ×¢Ã÷Ê¹ÓÃÁËSTCµÄ×ÊÁÏ¼°³ÌÐò        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     
+                      14     ;*************  ¹¦ÄÜËµÃ÷    **************
+                      15     
+                      16     ;±¾Àý³Ì»ùÓÚSTC8H8K64UÎªÖ÷¿ØÐ¾Æ¬µÄÊµÑéÏä8½øÐÐ±àÐ´²âÊÔ£¬STC8G¡¢STC8HÏµÁÐÐ¾Æ¬¿ÉÍ¨ÓÃ²Î¿¼.
+                      17     
+                      18     ;ÓÃSTCµÄMCUµÄIO·½Ê½Çý¶¯8Î»ÊýÂë¹Ü¡£
+                      19     
+                      20     ;ÏÔÊ¾Ð§¹ûÎª: ÊýÂëÊ±ÖÓ.
+                      21     
+                      22     ;Ê¹ÓÃTimer0µÄ16Î»×Ô¶¯ÖØ×°À´²úÉú1ms½ÚÅÄ,³ÌÐòÔËÐÐÓÚÕâ¸ö½ÚÅÄÏÂ, ÓÃ»§ÐÞ¸ÄMCUÖ÷Ê±ÖÓÆµÂÊÊ±,×Ô¶¯¶¨
+                             Ê±ÓÚ1ms.
+                      23     
+                      24     ;×ó±ß4Î»LEDÏÔÊ¾Ê±¼ä(Ð¡Ê±,·ÖÖÓ), ÓÒ±ß×îºóÁ½Î»ÏÔÊ¾°´¼üÖµ.
+                      25     
+                      26     ;ADC°´¼ü¼üÂëÎª1~16.
+                      27     
+                      28     ;°´¼üÖ»Ö§³Öµ¥¼ü°´ÏÂ, ²»Ö§³Ö¶à¼üÍ¬Ê±°´ÏÂ, ÄÇÑù½«»áÓÐ²»¿ÉÔ¤ÖªµÄ½á¹û.
+                      29     
+                      30     ;¼ü°´ÏÂ³¬¹ý1Ãëºó,½«ÒÔ10¼ü/ÃëµÄËÙ¶ÈÌá¹©ÖØ¼üÊä³ö. ÓÃ»§Ö»ÐèÒª¼ì²âKeyCodeÊÇ·ñ·Ç0À´ÅÐ¶Ï¼üÊÇ·ñ°´Ï
+                             Â.
+                      31     
+                      32     ;µ÷ÕûÊ±¼ä¼ü:
+                      33     ;¼üÂë1: Ð¡Ê±+.
+                      34     ;¼üÂë2: Ð¡Ê±-.
+                      35     ;¼üÂë3: ·ÖÖÓ+.
+                      36     ;¼üÂë4: ·ÖÖÓ-.
+                      37     
+                      38     ;ÏÂÔØÊ±, Ñ¡ÔñÊ±ÖÓ 24MHZ (ÓÃ»§¿É×ÔÐÐÐÞ¸ÄÆµÂÊ).
+                      39     
+                      40     ;******************************************/
+                      41     
+                      42     ;/****************************** ÓÃ»§¶¨Òåºê ***********************************/
+                      43     
+  5DC0                44     Fosc_KHZ    EQU 24000   ;24000KHZ
+                      45     
+  00D0                46     STACK_POIRTER   EQU     0D0H    ;¶ÑÕ»¿ªÊ¼µØÖ·
+                      47     
+  A240                48     Timer0_Reload   EQU     (65536 - Fosc_KHZ)  ; Timer 0 ÖÐ¶ÏÆµÂÊ, 1000´Î/Ãë
+                      49     
+  0020                50     DIS_DOT         EQU     020H
+  0010                51     DIS_BLACK       EQU     010H
+  0011                52     DIS_            EQU     011H
+                      53     
+                      54     ;*******************************************************************
+                      55     ;*******************************************************************
+                      56     
+A51 MACRO ASSEMBLER  ADC_KEYSCAN                                                          03/01/2021 13:24:59 PAGE     2
+
+  008E                57     AUXR    DATA    08EH
+  00C0                58     P4      DATA    0C0H
+  00C8                59     P5      DATA    0C8H
+  00E8                60     P6      DATA    0E8H
+  00F8                61     P7      DATA    0F8H
+                      62     
+  00BC                63     ADC_CONTR DATA  0BCH ;´øADÏµÁÐ
+  00BD                64     ADC_RES   DATA  0BDH ;´øADÏµÁÐ
+  00BE                65     ADC_RESL  DATA  0BEH ;´øADÏµÁÐ
+  00DE                66     ADCCFG    DATA  0DEH
+                      67     
+  0093                68     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094                69     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091                70     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092                71     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095                72     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+  0096                73     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+  00B1                74     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2                75     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3                76     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+  00B4                77     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9                78     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA                79     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB                80     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC                81     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1                82     P7M1    DATA    0xE1    ;
+  00E2                83     P7M0    DATA    0xE2    ;
+                      84     
+  00BA                85     P_SW2   DATA    0BAH
+  FEA8                86     ADCTIM  XDATA   0FEA8H
+                      87     
+                      88     ;*************  IO¿Ú¶¨Òå    **************/
+                      89     
+                      90     
+                      91     ;*************  ±¾µØ±äÁ¿ÉùÃ÷    **************/
+  0020                92     Flag0           DATA    20H
+  0000                93     B_1ms           BIT     Flag0.0 ;   1ms±êÖ¾
+                      94     
+  0030                95     LED8            DATA    30H     ;   ÏÔÊ¾»º³å 30H ~ 37H
+  0038                96     display_index   DATA    38H     ;   ÏÔÊ¾Î»Ë÷Òý
+                      97     
+  0039                98     hour            DATA    39H     ;RTC±äÁ¿
+  003A                99     minute          DATA    3AH
+  003B               100     second          DATA    3BH     ;
+  003C               101     msecond_H       DATA    3CH     ;
+  003D               102     msecond_L       DATA    3DH     ;
+                     103     
+  003E               104     ADC_KeyState    DATA    3EH ; ADC¼ü×´Ì¬±äÁ¿
+  003F               105     ADC_KeyState1   DATA    3FH
+  0040               106     ADC_KeyState2   DATA    40H
+  0041               107     ADC_KeyState3   DATA    41H
+  0042               108     ADC_KeyHoldCnt  DATA    42H ; ADC¼ü°´ÏÂ¼ÆÊ±
+                     109     
+  0043               110     KeyCode         DATA    43H ; ¸øÓÃ»§Ê¹ÓÃµÄ¼üÂë, 1~16ÎªADC¼ü£¬ 17~32ÎªIO¼ü
+                     111     
+  0044               112     cnt10ms         DATA    44H;
+  0045               113     cnt50ms         DATA    45H;
+                     114     
+                     115     
+                     116     
+                     117     ;*******************************************************************
+                     118     ;*******************************************************************
+0000                 119             ORG     0000H               ;reset
+0000 020100          120             LJMP    F_Main
+                     121     
+                     122     
+A51 MACRO ASSEMBLER  ADC_KEYSCAN                                                          03/01/2021 13:24:59 PAGE     3
+
+000B                 123             ORG     000BH               ;1  Timer0 interrupt
+000B 020387          124             LJMP    F_Timer0_Interrupt
+                     125     
+                     126     ;*******************************************************************
+                     127     ;*******************************************************************
+                     128     
+                     129     
+                     130     ;******************** Ö÷³ÌÐò **************************/
+0100                 131             ORG     0100H       ;reset
+0100                 132     F_Main:
+0100 E4              133         CLR     A
+0101 F593            134         MOV     P0M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0103 F594            135         MOV     P0M0, A
+0105 F595            136         MOV     P2M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0107 F596            137         MOV     P2M0, A
+0109 F5B1            138         MOV     P3M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010B F5B2            139         MOV     P3M0, A
+010D F5B3            140         MOV     P4M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010F F5B4            141         MOV     P4M0, A
+0111 F5C9            142         MOV     P5M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0113 F5CA            143         MOV     P5M0, A
+0115 F5CB            144         MOV     P6M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0117 F5CC            145         MOV     P6M0, A
+0119 F5E1            146         MOV     P7M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+011B F5E2            147         MOV     P7M0, A
+                     148     
+011D F592            149         MOV     P1M0, A
+011F 759101          150         MOV     P1M1, #01H  ;ÉèÖÃ P1.0 Îª ADC ÊäÈë¿Ú
+                     151         
+0122 7581D0          152         MOV     SP, #STACK_POIRTER
+0125 75D000          153         MOV     PSW, #0     ;Ñ¡ÔñµÚ0×éR0~R7
+                     154         USING   0       ;Ñ¡ÔñµÚ0×éR0~R7
+                     155     
+                     156     ;================= ÓÃ»§³õÊ¼»¯³ÌÐò ====================================
+                     157     
+0128 753800          158         MOV     display_index, #0
+012B 7830            159         MOV     R0, #LED8
+012D 7A08            160         MOV     R2, #8
+012F                 161     L_ClearLoop:
+012F 7610            162         MOV     @R0, #DIS_BLACK     ;ÉÏµçÏûÒþ
+0131 08              163         INC     R0
+0132 DAFB            164         DJNZ    R2, L_ClearLoop
+                     165         
+0134 C28C            166         CLR     TR0
+0136 438E80          167         ORL     AUXR, #(1 SHL 7)    ; Timer0_1T();
+0139 5389FB          168         ANL     TMOD, #NOT 04H      ; Timer0_AsTimer();
+013C 5389FC          169         ANL     TMOD, #NOT 03H      ; Timer0_16bitAutoReload();
+013F 758CA2          170         MOV     TH0, #Timer0_Reload / 256   ;Timer0_Load(Timer0_Reload);
+0142 758A40          171         MOV     TL0, #Timer0_Reload MOD 256
+0145 D2A9            172         SETB    ET0         ; Timer0_InterruptEnable();
+0147 D28C            173         SETB    TR0         ; Timer0_Run();
+0149 D2AF            174         SETB    EA          ; ´ò¿ª×ÜÖÐ¶Ï
+                     175         
+014B 75390C          176         MOV     hour,   #12 ; ³õÊ¼»¯Ê±¼äÖµ
+014E 753A00          177         MOV     minute, #0
+0151 753B00          178         MOV     second, #0
+0154 120224          179         LCALL   F_DisplayRTC
+                     180         
+0157 75440A          181         MOV     cnt10ms, #10
+                     182     
+015A E4              183         CLR     A
+015B F53E            184         MOV     ADC_KeyState, A
+015D F53F            185         MOV     ADC_KeyState1, A
+015F F540            186         MOV     ADC_KeyState2, A
+0161 F541            187         MOV     ADC_KeyState3, A    ; ¼ü×´Ì¬
+0163 F542            188         MOV     ADC_KeyHoldCnt, A   ; ¼ü°´ÏÂ¼ÆÊ±
+A51 MACRO ASSEMBLER  ADC_KEYSCAN                                                          03/01/2021 13:24:59 PAGE     4
+
+0165 F543            189         MOV     KeyCode, A          ; ¸øÓÃ»§Ê¹ÓÃµÄ¼üÂë, 1~16ÓÐÐ§
+                     190     
+0167 43BA80          191         ORL     P_SW2, #080H        ; Ê¹ÄÜ·ÃÎÊXFR
+016A 743F            192         MOV     A,#03FH             ; ÉèÖÃ ADC ÄÚ²¿Ê±Ðò£¬ADC²ÉÑùÊ±¼ä½¨ÒéÉè×î´óÖµ
+016C 90FEA8          193         MOV     DPTR,#ADCTIM
+016F F0              194         MOVX    @DPTR,A
+0170 53BA7F          195         ANL     P_SW2, #NOT 080H    ; ½ûÖ¹·ÃÎÊXFR
+                     196     
+0173 75DE2F          197         MOV     ADCCFG, #02FH       ; ÉèÖÃ×ª»»½á¹ûÓÒ¶ÔÆëÄ£Ê½£¬ ADC Ê±ÖÓÎªÏµÍ³Ê±ÖÓ/2/16
+0176 75BC80          198         MOV     ADC_CONTR, #080H    ; Ê¹ÄÜ ADC Ä£¿é
+                     199     
+                     200     ;=====================================================
+                     201     
+                     202     ;=====================================================
+0179                 203     L_Main_Loop:
+0179 3000FD          204         JNB     B_1ms,  L_Main_Loop     ;1msÎ´µ½
+017C C200            205         CLR     B_1ms
+                     206         
+                     207     ;=================== ¼ì²â1000msÊÇ·ñµ½ ==================================
+017E 053D            208         INC     msecond_L       ;msecond + 1
+0180 E53D            209         MOV     A, msecond_L
+0182 7002            210         JNZ     L_Check1000ms
+0184 053C            211         INC     msecond_H
+0186                 212     L_Check1000ms:
+0186 C3              213         CLR     C
+0187 E53D            214         MOV     A, msecond_L    ;msecond - 1000
+0189 94E8            215         SUBB    A, #LOW 1000
+018B E53C            216         MOV     A, msecond_H
+018D 9403            217         SUBB    A, #HIGH 1000
+018F 400C            218         JC      L_Quit_Check_1000ms     ;if(msecond < 1000), jmp
+                     219         
+                     220     ;================= 1000msµ½£¬ ´¦ÀíÄ£ÄâµÄRTC ====================================
+0191 753D00          221         MOV     msecond_L, #0   ;if(msecond >= 1000)
+0194 753C00          222         MOV     msecond_H, #0
+                     223     
+0197 12024D          224         LCALL   F_RTC
+019A 120224          225         LCALL   F_DisplayRTC
+019D                 226     L_Quit_Check_1000ms:
+                     227     
+019D E53D            228         MOV     A, msecond_L            ;¼ì²âif(msecond == 500)
+019F B4F408          229         CJNE    A, #LOW 500, L_Quit_Display_Dot
+01A2 E53C            230         MOV     A, msecond_H
+01A4 B40103          231         CJNE    A, #HIGH 500, L_Quit_Display_Dot
+01A7 120224          232         LCALL   F_DisplayRTC    ;Ð¡Ê±ºóµÄÐ¡Êýµã×öÃëÉÁ
+01AA                 233     L_Quit_Display_Dot:
+                     234     ;=====================================================
+                     235     
+                     236     ;==================== 10ms¶ÁÒ»´ÎADC =================================
+01AA                 237     L_Read_ADC_Key:
+01AA D54410          238         DJNZ    cnt10ms, L_Quit_Read_ADC_Key    ; (cnt10ms - 1) != 0, jmp
+01AD 75440A          239         MOV     cnt10ms, #10    ;
+                     240         
+01B0 7400            241         MOV     A, #0
+01B2 120272          242         LCALL   F_Get_ADC12bitResult    ;ACC - Í¨µÀ0~7, ²éÑ¯·½Ê½×öÒ»´ÎADC, ·µ»ØÖµ(R6 R7)¾ÍÊÇADC
+                             ½á¹û, == 4096 Îª´íÎó
+01B5 EE              243         MOV     A, R6
+01B6 54F0            244         ANL     A, #0F0H
+01B8 7003            245         JNZ     L_Quit_Read_ADC_Key     ; adc >= 4096, ´íÎó
+01BA 120296          246         LCALL   F_CalculateAdcKey       ; ¼ÆËã°´¼ü, (R6 R7) == adc, ·µ»ØÖµÔÚR4 R5.
+                     247     
+01BD                 248     L_Quit_Read_ADC_Key:
+                     249     ;=====================================================
+                     250     
+                     251     ;=====================================================
+01BD                 252     L_KeyProcess:
+01BD E543            253         MOV     A, KeyCode
+A51 MACRO ASSEMBLER  ADC_KEYSCAN                                                          03/01/2021 13:24:59 PAGE     5
+
+01BF 6060            254         JZ      L_Quit_KeyProcess
+                     255                                 ;ÓÐ¼ü°´ÏÂ
+01C1 E543            256         MOV     A, KeyCode
+01C3 75F00A          257         MOV     B, #10
+01C6 84              258         DIV     AB
+01C7 F531            259         MOV     LED8+1, A       ; ÏÔÊ¾¼üÂë
+01C9 85F030          260         MOV     LED8+0, B
+                     261     
+01CC E543            262         MOV     A, KeyCode
+01CE B4010F          263         CJNE    A, #1, L_Quit_K1
+01D1 0539            264         INC     hour    ; hour + 1
+01D3 E539            265         MOV     A, hour
+01D5 C3              266         CLR     C
+01D6 9418            267         SUBB    A, #24
+01D8 4003            268         JC      L_K1_Display
+01DA 753900          269         MOV     hour, #0
+01DD                 270     L_K1_Display:
+01DD 120224          271         LCALL   F_DisplayRTC
+01E0                 272     L_Quit_K1:
+                     273     
+01E0 E543            274         MOV     A, KeyCode
+01E2 B4020D          275         CJNE    A, #2, L_Quit_K2
+01E5 1539            276         DEC     hour    ; hour - 1
+01E7 E539            277         MOV     A, hour
+01E9 B4FF03          278         CJNE    A, #255, L_K2_Display
+01EC 753917          279         MOV     hour, #23
+01EF                 280     L_K2_Display:
+01EF 120224          281         LCALL   F_DisplayRTC
+01F2                 282     L_Quit_K2:
+                     283     
+01F2 E543            284         MOV     A, KeyCode
+01F4 B40312          285         CJNE    A, #3, L_Quit_K3
+01F7 753B00          286         MOV     second, #0      ;µ÷Õû·ÖÖÓÊ±Çå³ýÃë
+01FA 053A            287         INC     minute  ; minute + 1
+01FC E53A            288         MOV     A, minute
+01FE C3              289         CLR     C
+01FF 943C            290         SUBB    A, #60
+0201 4003            291         JC      L_K3_Display
+0203 753A00          292         MOV     minute, #0
+0206                 293     L_K3_Display:
+0206 120224          294         LCALL   F_DisplayRTC
+0209                 295     L_Quit_K3:
+                     296     
+0209 E543            297         MOV     A, KeyCode
+020B B40410          298         CJNE    A, #4, L_Quit_K4
+020E 753B00          299         MOV     second, #0      ;µ÷Õû·ÖÖÓÊ±Çå³ýÃë
+0211 153A            300         DEC     minute  ; minute - 1
+0213 E53A            301         MOV     A, minute
+0215 B4FF03          302         CJNE    A, #255, L_K4_Display
+0218 753A3B          303         MOV     minute, #59
+021B                 304     L_K4_Display:
+021B 120224          305         LCALL   F_DisplayRTC
+021E                 306     L_Quit_K4:
+                     307     
+021E 754300          308         MOV     KeyCode, #0
+0221                 309     L_Quit_KeyProcess:
+                     310     
+0221 020179          311         LJMP    L_Main_Loop
+                     312     
+                     313     ;**********************************************/
+                     314     
+                     315     
+                     316     ;========================================================================
+                     317     ; º¯Êý: F_DisplayRTC
+                     318     ; ÃèÊö: ÏÔÊ¾Ê±ÖÓ×Ó³ÌÐò¡£
+                     319     ; ²ÎÊý: none.
+A51 MACRO ASSEMBLER  ADC_KEYSCAN                                                          03/01/2021 13:24:59 PAGE     6
+
+                     320     ; ·µ»Ø: none.
+                     321     ; °æ±¾: VER1.0
+                     322     ; ÈÕÆÚ: 2013-4-1
+                     323     ; ±¸×¢: ³ýÁËACCCºÍPSWÍâ, ËùÓÃµ½µÄÍ¨ÓÃ¼Ä´æÆ÷¶¼ÈëÕ»
+                     324     ;========================================================================
+0224                 325     F_DisplayRTC:
+0224 C0F0            326         PUSH    B       ;BÈëÕ»
+                     327         
+0226 E539            328         MOV     A, hour
+0228 75F00A          329         MOV     B, #10
+022B 84              330         DIV     AB
+022C F537            331         MOV     LED8+7, A
+022E 85F036          332         MOV     LED8+6, B
+                     333         
+0231 E53A            334         MOV     A, minute
+0233 75F00A          335         MOV     B, #10
+0236 84              336         DIV     AB
+0237 F535            337         MOV     LED8+5, A;
+0239 85F034          338         MOV     LED8+4, B;
+                     339     
+023C E53D            340         MOV     A, msecond_L    ;msecond - 500
+023E C3              341         CLR     C
+023F 94F4            342         SUBB    A, #LOW 500
+0241 E53C            343         MOV     A, msecond_H
+0243 9401            344         SUBB    A, #HIGH 500
+0245 4003            345         JC      L_QuitDisplayRTC    ;if(msecond < 500), jmp
+0247 433620          346         ORL     LED8+6, #DIS_DOT    ; Ð¡Ê±ºóµÄÐ¡Êýµã×öÃëÉÁ
+024A                 347     L_QuitDisplayRTC:
+024A D0F0            348         POP     B       ;B³öÕ»
+024C 22              349         RET
+                     350     
+                     351     ;========================================================================
+                     352     ; º¯Êý: F_RTC
+                     353     ; ÃèÊö: RTCÑÝÊ¾×Ó³ÌÐò¡£
+                     354     ; ²ÎÊý: none.
+                     355     ; ·µ»Ø: none.
+                     356     ; °æ±¾: VER1.0
+                     357     ; ÈÕÆÚ: 2013-4-1
+                     358     ; ±¸×¢: ³ýÁËACCCºÍPSWÍâ, ËùÓÃµ½µÄÍ¨ÓÃ¼Ä´æÆ÷¶¼ÈëÕ»
+                     359     ;========================================================================
+024D                 360     F_RTC:
+024D 053B            361         INC     second      ; second + 1
+024F E53B            362         MOV     A, second
+0251 C3              363         CLR     C
+0252 943C            364         SUBB    A,#60
+0254 401B            365         JC      L_QuitRTC   ; second >= 60?
+0256 753B00          366         MOV     second, #0;
+                     367     
+0259 053A            368         INC     minute      ; minute + 1
+025B E53A            369         MOV     A, minute
+025D C3              370         CLR     C
+025E 943C            371         SUBB    A,#60
+0260 400F            372         JC      L_QuitRTC   ; minute >= 60?
+0262 753A00          373         MOV     minute, #0
+                     374     
+0265 0539            375         INC     hour        ; hour + 1
+0267 E539            376         MOV     A, hour
+0269 C3              377         CLR     C
+026A 9418            378         SUBB    A,#24
+026C 4003            379         JC      L_QuitRTC   ; hour >= 24?
+026E 753900          380         MOV     hour, #0
+0271                 381     L_QuitRTC:
+0271 22              382         RET
+                     383     
+                     384     ;========================================================================
+                     385     ; º¯Êý: F_Get_ADC12bitResult
+A51 MACRO ASSEMBLER  ADC_KEYSCAN                                                          03/01/2021 13:24:59 PAGE     7
+
+                     386     ; ÃèÊö: ²éÑ¯·¨¶ÁÒ»´ÎADC½á¹û.
+                     387     ; ²ÎÊý: ACC: Ñ¡ÔñÒª×ª»»µÄADC.
+                     388     ; ·µ»Ø: (R6 R7) = 12Î»ADC½á¹û.
+                     389     ; °æ±¾: V1.0, 2020-11-09
+                     390     ;========================================================================
+0272                 391     F_Get_ADC12bitResult:   ;ACC - Í¨µÀ0~7, ²éÑ¯·½Ê½×öÒ»´ÎADC, ·µ»ØÖµ(R6 R7)¾ÍÊÇADC½á¹û, == 409
+                             6 Îª´íÎó
+0272 FF              392         MOV     R7, A            
+0273 75BD00          393         MOV     ADC_RES,  #0;
+0276 75BE00          394         MOV     ADC_RESL, #0;
+                     395     
+0279 E5BC            396         MOV     A, ADC_CONTR        ;ADC_CONTR = (ADC_CONTR & 0xd0) | ADC_START | channel; 
+027B 54D0            397         ANL     A, #0D0H
+027D 4440            398         ORL     A, #40H
+027F 4F              399         ORL     A, R7
+0280 F5BC            400         MOV     ADC_CONTR, A
+0282 00              401         NOP
+0283 00              402         NOP
+0284 00              403         NOP
+0285 00              404         NOP
+                     405     
+0286                 406     L_WaitAdcLoop:
+0286 E5BC            407         MOV     A, ADC_CONTR
+0288 30E5FB          408         JNB     ACC.5, L_WaitAdcLoop
+                     409     
+028B 53BCDF          410         ANL     ADC_CONTR, #NOT 020H    ;Çå³ýÍê³É±êÖ¾
+                     411     
+028E E5BD            412         MOV     A, ADC_RES      ;12Î»AD½á¹ûµÄ¸ß4Î»·ÅADC_RESµÄµÍ4Î»£¬µÍ8Î»ÔÚADC_RESL¡£
+0290 540F            413         ANL     A, #0FH
+0292 FE              414         MOV     R6, A
+0293 AFBE            415         MOV     R7, ADC_RESL
+                     416     
+0295                 417     L_QuitAdc:
+0295 22              418         RET
+                     419     
+                     420     
+                     421     ;/***************** ADC¼üÅÌ¼ÆËã¼üÂë *****************************
+                     422     ;µçÂ·ºÍÈí¼þËã·¨Éè¼Æ: Coody
+                     423     ;±¾ADC¼üÅÌ·½°¸ÔÚºÜ¶àÊµ¼Ê²úÆ·Éè¼ÆÖÐ, ÑéÖ¤ÁËÆäÎÈ¶¨¿É¿¿, ¼´Ê¹°´¼üÊ¹ÓÃµ¼µçÄ¤,¶¼ºÜ¿É¿¿.
+                     424     ;16¸ö¼ü,ÀíÂÛÉÏ¸÷¸ö¼ü¶ÔÓ¦µÄADCÖµÎª (4096 / 16) * k = 256 * k, k = 1 ~ 16, ÌØ±ðµÄ, k=16Ê±,¶ÔÓ
+                             ¦µÄADCÖµÊÇ4095.
+                     425     ;µ«ÊÇÊµ¼Ê»áÓÐÆ«²î,ÔòÅÐ¶ÏÊ±ÏÞÖÆÕâ¸öÆ«²î, ADC_OFFSETÎª+-Æ«²î, ÔòADCÖµÔÚ (256*k-ADC_OFFSET) Óë
+                              (256*k+ADC_OFFSET)Ö®¼äÎª¼üÓÐÐ§.
+                     426     ;¼ä¸ôÒ»¶¨µÄÊ±¼ä,¾Í²ÉÑùÒ»´ÎADC,±ÈÈç10ms.
+                     427     ;ÎªÁË±ÜÃâÅ¼È»µÄADCÖµÎóÅÐ, »òÕß±ÜÃâADCÔÚÉÏÉý»òÏÂ½µÊ±ÎóÅÐ, Ê¹ÓÃÁ¬Ðø3´ÎADCÖµ¾ùÔÚÆ«²î·¶Î§ÄÚÊ±, 
+                             ADCÖµ²ÅÈÏÎªÓÐÐ§.
+                     428     ;ÒÔÉÏËã·¨, ÄÜ±£Ö¤¶Á¼ü·Ç³£¿É¿¿.
+                     429     ;**********************************************/
+  0040               430     ADC_OFFSET  EQU 64
+0296                 431     F_CalculateAdcKey:       
+0296 C003            432         PUSH    03H     ;R3ÈëÕ»
+0298 C004            433         PUSH    04H     ;R4ÈëÕ»
+029A C005            434         PUSH    05H     ;R5ÈëÕ»
+029C C083            435         PUSH    DPH     ;DPHÈëÕ»
+029E C082            436         PUSH    DPL     ;DPLÈëÕ»
+                     437         
+02A0 C3              438         CLR     C           ;¼ÆËã(adc - (256-ADC_OFFSET)
+02A1 EF              439         MOV     A, R7
+02A2 94C0            440         SUBB    A, #(256 - ADC_OFFSET)
+02A4 EE              441         MOV     A, R6
+02A5 9400            442         SUBB    A, #0
+02A7 5006            443         JNC     L_ADC_MoreThanOffset
+02A9 753E00          444         MOV     ADC_KeyState, #0    ;   if(adc < (256-ADC_OFFSET)), ¼ü×´Ì¬¹é0
+02AC 754200          445         MOV     ADC_KeyHoldCnt, #0  ;
+                     446         
+02AF                 447     L_ADC_MoreThanOffset:
+A51 MACRO ASSEMBLER  ADC_KEYSCAN                                                          03/01/2021 13:24:59 PAGE     8
+
+                     448     
+02AF 7C00            449         MOV     R4, #0      ;j = 256 - ADC_OFFSET;
+02B1 7DC0            450         MOV     R5, #(256 - ADC_OFFSET)
+02B3 758301          451         MOV     DPH, #1     ;k = 256 + ADC_OFFSET;
+02B6 758240          452         MOV     DPL, #(ADC_OFFSET)
+02B9 7B01            453         MOV     R3, #1
+02BB                 454     L_CheckAdcKeyLoop1:
+02BB C3              455         CLR     C       ; adc - j
+02BC EF              456         MOV     A, R7
+02BD 9D              457         SUBB    A, R5
+02BE EE              458         MOV     A, R6
+02BF 9C              459         SUBB    A, R4
+02C0 400B            460         JC      L_CheckNextAdcKey       ; adc < j
+                     461     
+02C2 C3              462         CLR     C       ; adc - k
+02C3 EF              463         MOV     A, R7
+02C4 9582            464         SUBB    A, DPL
+02C6 EE              465         MOV     A, R6
+02C7 9583            466         SUBB    A, DPH
+02C9 5002            467         JNC     L_CheckNextAdcKey       ; adc > k
+02CB 800F            468         SJMP    L_CheckAdcKeyEnd    ;if((adc >= j) && (adc <= k)),  ÅÐ¶ÏÊÇ·ñÔÚÆ«²î·¶Î§ÄÚ
+                     469     
+02CD                 470     L_CheckNextAdcKey:
+                     471         ;MOV     A, R5       ; j = j + 256
+                     472         ;ADD     A, #0
+                     473         ;MOV     R5, A
+02CD EC              474         MOV     A, R4
+02CE 2401            475         ADD    A, #1
+02D0 FC              476         MOV     R4, A
+                     477     
+                     478         ;MOV     A, DPL      ; k = k + 256
+                     479         ;ADD     A, #0
+                     480         ;MOV     DPL, A
+02D1 E583            481         MOV     A, DPH
+02D3 2401            482         ADD    A, #1
+02D5 F583            483         MOV     DPH, A
+                     484         
+02D7 0B              485         INC     R3
+02D8 EB              486         MOV     A, R3
+02D9 B411DF          487         CJNE    A, #17, L_CheckAdcKeyLoop1
+                     488     
+02DC                 489     L_CheckAdcKeyEnd:
+02DC 854041          490         MOV     ADC_KeyState3, ADC_KeyState2
+02DF 853F40          491         MOV     ADC_KeyState2, ADC_KeyState1
+02E2 EB              492         MOV     A, R3
+02E3 C3              493         CLR     C
+02E4 9411            494         SUBB    A, #17
+02E6 4006            495         JC      L_AdcKeyIsOk
+02E8 753F00          496         MOV     ADC_KeyState1, #0   ;if(i > 16) KeyState1 = 0;  //¼üÎÞÐ§
+02EB 02031B          497         LJMP    L_QuitCheckAdcKey
+                     498     
+02EE                 499     L_AdcKeyIsOk:       ;¼üÓÐÐ§
+02EE 8B3F            500         MOV     ADC_KeyState1, R3
+02F0 E541            501         MOV     A, ADC_KeyState3
+02F2 B54026          502         CJNE    A, ADC_KeyState2, L_QuitCheckAdcKey     ;if (KeyState3 != KeyState2)
+02F5 B53F23          503         CJNE    A, ADC_KeyState1, L_QuitCheckAdcKey     ;if (KeyState3 != KeyState1)
+02F8 6021            504         JZ      L_QuitCheckAdcKey                   ;if (KeyState3 == 0)
+                     505     
+02FA E53E            506         MOV     A, ADC_KeyState
+02FC 7007            507         JNZ     L_NotFirstCheck ;²»ÊÇµÚÒ»´Î¼ì²âµ½, jmp
+02FE 8B43            508         MOV     KeyCode,  R3    ; ±£´æ¼üÂë
+0300 8B3E            509         MOV     ADC_KeyState, R3    ; ±£´æ¼ü×´Ì¬
+0302 754200          510         MOV     ADC_KeyHoldCnt, #0  ; Çå³ý¼ü°´×ÅµÄÊ±¼ä¼ÆÊý
+0305                 511     L_NotFirstCheck:
+                     512     
+0305 E53E            513         MOV     A, ADC_KeyState
+A51 MACRO ASSEMBLER  ADC_KEYSCAN                                                          03/01/2021 13:24:59 PAGE     9
+
+0307 6B              514         XRL     A, R3
+0308 700E            515         JNZ     L_NotCheckAdcKeySame
+                     516                     ;if(KeyState == i)  //Á¬Ðø¼ì²âµ½Í¬Ò»¼ü°´×Å
+030A 0542            517         INC     ADC_KeyHoldCnt
+030C E542            518         MOV     A, ADC_KeyHoldCnt
+030E B4640A          519         CJNE    A, #100, L_QuitCheckAdcKey  ;if(++KeyHoldCnt >= 100)    //°´ÏÂ1Ãëºó,ÒÔ10´ÎÃ¿Ãëµ
+                             ÄËÙ¶ÈRepeat Key
+0311 75425A          520         MOV     ADC_KeyHoldCnt, #90     ;°´ÏÂ1Ãëºó,ÒÔ10´ÎÃ¿ÃëµÄËÙ¶ÈRepeat Key
+0314 8B43            521         MOV     KeyCode, R3         ; ±£´æ¼üÂë
+0316 8003            522         SJMP    L_QuitCheckAdcKey
+0318                 523     L_NotCheckAdcKeySame:
+0318 754200          524         MOV     ADC_KeyHoldCnt, #0  ;   °´ÏÂÊ±¼ä¼ÆÊý¹é0
+                     525     
+031B                 526     L_QuitCheckAdcKey:
+031B D082            527         POP     DPL     ;DPL³öÕ»
+031D D083            528         POP     DPH     ;DPH³öÕ»
+031F D005            529         POP     05H     ;R5³öÕ»
+0321 D004            530         POP     04H     ;R4³öÕ»
+0323 D003            531         POP     03H     ;R3³öÕ»
+0325 22              532         RET
+                     533         
+                     534     ; *********************** ÏÔÊ¾Ïà¹Ø³ÌÐò ****************************************
+0326                 535     T_Display:                      ;±ê×¼×Ö¿â
+                     536     ;    0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+0326 3F065B4F        537     DB  03FH,006H,05BH,04FH,066H,06DH,07DH,007H,07FH,06FH,077H,07CH,039H,05EH,079H,071H
+032A 666D7D07                
+032E 7F6F777C                
+0332 395E7971                
+                     538     ;  black  -    H    J    K    L    N    o    P    U    t    G    Q    r    M    y
+0336 0040761E        539     DB  000H,040H,076H,01EH,070H,038H,037H,05CH,073H,03EH,078H,03dH,067H,050H,037H,06EH
+033A 7038375C                
+033E 733E783D                
+0342 6750376E                
+                     540     ;    0.   1.   2.   3.   4.   5.   6.   7.   8.   9.   -1
+0346 BF86DBCF        541     DB  0BFH,086H,0DBH,0CFH,0E6H,0EDH,0FDH,087H,0FFH,0EFH,046H
+034A E6EDFD87                
+034E FFEF46                  
+                     542     
+0351                 543     T_COM:
+0351 01020408        544     DB  001H,002H,004H,008H,010H,020H,040H,080H     ;   Î»Âë
+0355 10204080                
+                     545     
+                     546     
+                     547     ;//========================================================================
+                     548     ;// º¯Êý: F_DisplayScan
+                     549     ;// ÃèÊö: ÏÔÊ¾É¨Ãè×Ó³ÌÐò¡£
+                     550     ;// ²ÎÊý: none.
+                     551     ;// ·µ»Ø: none.
+                     552     ;// °æ±¾: VER1.0
+                     553     ;// ÈÕÆÚ: 2013-4-1
+                     554     ;// ±¸×¢: ³ýÁËACCCºÍPSWÍâ, ËùÓÃµ½µÄÍ¨ÓÃ¼Ä´æÆ÷¶¼ÈëÕ»
+                     555     ;//========================================================================
+0359                 556     F_DisplayScan:
+0359 C083            557         PUSH    DPH     ;DPHÈëÕ»
+035B C082            558         PUSH    DPL     ;DPLÈëÕ»
+035D C000            559         PUSH    00H     ;R0 ÈëÕ»
+                     560         
+035F 900351          561         MOV     DPTR, #T_COM
+0362 E538            562         MOV     A, display_index
+0364 93              563         MOVC    A, @A+DPTR
+0365 F4              564         CPL     A
+0366 F5F8            565         MOV     P7,A
+                     566         
+0368 900326          567         MOV     DPTR, #T_Display
+036B E538            568         MOV     A, display_index
+036D 2430            569         ADD     A, #LED8
+A51 MACRO ASSEMBLER  ADC_KEYSCAN                                                          03/01/2021 13:24:59 PAGE    10
+
+036F F8              570         MOV     R0, A
+0370 E6              571         MOV     A, @R0
+0371 93              572         MOVC    A, @A+DPTR
+0372 F4              573         CPL     A
+0373 F5E8            574         MOV     P6,A
+                     575     
+0375 0538            576         INC     display_index
+0377 E538            577         MOV     A, display_index
+0379 54F8            578         ANL     A, #0F8H            ; if(display_index >= 8)
+037B 6003            579         JZ      L_QuitDisplayScan
+037D 753800          580         MOV     display_index, #0;  ;8Î»½áÊø»Ø0
+0380                 581     L_QuitDisplayScan:
+0380 D000            582         POP     00H     ;R0 ³öÕ»
+0382 D082            583         POP     DPL     ;DPL³öÕ»
+0384 D083            584         POP     DPH     ;DPH³öÕ»
+0386 22              585         RET
+                     586     
+                     587     ;*******************************************************************
+                     588     ;**************** ÖÐ¶Ïº¯Êý ***************************************************
+                     589     
+0387                 590     F_Timer0_Interrupt: ;Timer0 1msÖÐ¶Ïº¯Êý
+0387 C0D0            591         PUSH    PSW     ;PSWÈëÕ»
+0389 C0E0            592         PUSH    ACC     ;ACCÈëÕ»
+                     593     
+038B 120359          594         LCALL   F_DisplayScan   ; 1msÉ¨ÃèÏÔÊ¾Ò»Î»
+038E D200            595         SETB    B_1ms           ; 1ms±êÖ¾
+                     596     
+0390 D0E0            597         POP     ACC     ;ACC³öÕ»
+0392 D0D0            598         POP     PSW     ;PSW³öÕ»
+0394 32              599         RETI
+                     600         
+                     601     
+                     602     
+                     603         END
+                             
+A51 MACRO ASSEMBLER  ADC_KEYSCAN                                                          03/01/2021 13:24:59 PAGE    11
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E               T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . . .  D ADDR   00E0H   A   
+ADCCFG . . . . . . .  D ADDR   00DEH   A   
+ADCTIM . . . . . . .  X ADDR   FEA8H   A   
+ADC_CONTR. . . . . .  D ADDR   00BCH   A   
+ADC_KEYHOLDCNT . . .  D ADDR   0042H   A   
+ADC_KEYSTATE . . . .  D ADDR   003EH   A   
+ADC_KEYSTATE1. . . .  D ADDR   003FH   A   
+ADC_KEYSTATE2. . . .  D ADDR   0040H   A   
+ADC_KEYSTATE3. . . .  D ADDR   0041H   A   
+ADC_OFFSET . . . . .  N NUMB   0040H   A   
+ADC_RES. . . . . . .  D ADDR   00BDH   A   
+ADC_RESL . . . . . .  D ADDR   00BEH   A   
+AUXR . . . . . . . .  D ADDR   008EH   A   
+B. . . . . . . . . .  D ADDR   00F0H   A   
+B_1MS. . . . . . . .  B ADDR   0020H.0 A   
+CNT10MS. . . . . . .  D ADDR   0044H   A   
+CNT50MS. . . . . . .  D ADDR   0045H   A   
+DISPLAY_INDEX. . . .  D ADDR   0038H   A   
+DIS_ . . . . . . . .  N NUMB   0011H   A   
+DIS_BLACK. . . . . .  N NUMB   0010H   A   
+DIS_DOT. . . . . . .  N NUMB   0020H   A   
+DPH. . . . . . . . .  D ADDR   0083H   A   
+DPL. . . . . . . . .  D ADDR   0082H   A   
+EA . . . . . . . . .  B ADDR   00A8H.7 A   
+ET0. . . . . . . . .  B ADDR   00A8H.1 A   
+FLAG0. . . . . . . .  D ADDR   0020H   A   
+FOSC_KHZ . . . . . .  N NUMB   5DC0H   A   
+F_CALCULATEADCKEY. .  C ADDR   0296H   A   
+F_DISPLAYRTC . . . .  C ADDR   0224H   A   
+F_DISPLAYSCAN. . . .  C ADDR   0359H   A   
+F_GET_ADC12BITRESULT  C ADDR   0272H   A   
+F_MAIN . . . . . . .  C ADDR   0100H   A   
+F_RTC. . . . . . . .  C ADDR   024DH   A   
+F_TIMER0_INTERRUPT .  C ADDR   0387H   A   
+HOUR . . . . . . . .  D ADDR   0039H   A   
+KEYCODE. . . . . . .  D ADDR   0043H   A   
+LED8 . . . . . . . .  D ADDR   0030H   A   
+L_ADCKEYISOK . . . .  C ADDR   02EEH   A   
+L_ADC_MORETHANOFFSET  C ADDR   02AFH   A   
+L_CHECK1000MS. . . .  C ADDR   0186H   A   
+L_CHECKADCKEYEND . .  C ADDR   02DCH   A   
+L_CHECKADCKEYLOOP1 .  C ADDR   02BBH   A   
+L_CHECKNEXTADCKEY. .  C ADDR   02CDH   A   
+L_CLEARLOOP. . . . .  C ADDR   012FH   A   
+L_K1_DISPLAY . . . .  C ADDR   01DDH   A   
+L_K2_DISPLAY . . . .  C ADDR   01EFH   A   
+L_K3_DISPLAY . . . .  C ADDR   0206H   A   
+L_K4_DISPLAY . . . .  C ADDR   021BH   A   
+L_KEYPROCESS . . . .  C ADDR   01BDH   A   
+L_MAIN_LOOP. . . . .  C ADDR   0179H   A   
+L_NOTCHECKADCKEYSAME  C ADDR   0318H   A   
+L_NOTFIRSTCHECK. . .  C ADDR   0305H   A   
+L_QUITADC. . . . . .  C ADDR   0295H   A   
+L_QUITCHECKADCKEY. .  C ADDR   031BH   A   
+L_QUITDISPLAYRTC . .  C ADDR   024AH   A   
+L_QUITDISPLAYSCAN. .  C ADDR   0380H   A   
+L_QUITRTC. . . . . .  C ADDR   0271H   A   
+L_QUIT_CHECK_1000MS.  C ADDR   019DH   A   
+L_QUIT_DISPLAY_DOT .  C ADDR   01AAH   A   
+L_QUIT_K1. . . . . .  C ADDR   01E0H   A   
+A51 MACRO ASSEMBLER  ADC_KEYSCAN                                                          03/01/2021 13:24:59 PAGE    12
+
+L_QUIT_K2. . . . . .  C ADDR   01F2H   A   
+L_QUIT_K3. . . . . .  C ADDR   0209H   A   
+L_QUIT_K4. . . . . .  C ADDR   021EH   A   
+L_QUIT_KEYPROCESS. .  C ADDR   0221H   A   
+L_QUIT_READ_ADC_KEY.  C ADDR   01BDH   A   
+L_READ_ADC_KEY . . .  C ADDR   01AAH   A   
+L_WAITADCLOOP. . . .  C ADDR   0286H   A   
+MINUTE . . . . . . .  D ADDR   003AH   A   
+MSECOND_H. . . . . .  D ADDR   003CH   A   
+MSECOND_L. . . . . .  D ADDR   003DH   A   
+P0M0 . . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . . .  D ADDR   0093H   A   
+P1M0 . . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . . .  D ADDR   0095H   A   
+P3M0 . . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . . .  D ADDR   00B1H   A   
+P4 . . . . . . . . .  D ADDR   00C0H   A   
+P4M0 . . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . . .  D ADDR   00B3H   A   
+P5 . . . . . . . . .  D ADDR   00C8H   A   
+P5M0 . . . . . . . .  D ADDR   00CAH   A   
+P5M1 . . . . . . . .  D ADDR   00C9H   A   
+P6 . . . . . . . . .  D ADDR   00E8H   A   
+P6M0 . . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . . .  D ADDR   00CBH   A   
+P7 . . . . . . . . .  D ADDR   00F8H   A   
+P7M0 . . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . . .  D ADDR   00E1H   A   
+PSW. . . . . . . . .  D ADDR   00D0H   A   
+P_SW2. . . . . . . .  D ADDR   00BAH   A   
+SECOND . . . . . . .  D ADDR   003BH   A   
+SP . . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER. . . .  N NUMB   00D0H   A   
+TH0. . . . . . . . .  D ADDR   008CH   A   
+TIMER0_RELOAD. . . .  N NUMB   A240H   A   
+TL0. . . . . . . . .  D ADDR   008AH   A   
+TMOD . . . . . . . .  D ADDR   0089H   A   
+TR0. . . . . . . . .  B ADDR   0088H.4 A   
+T_COM. . . . . . . .  C ADDR   0351H   A   
+T_DISPLAY. . . . . .  C ADDR   0326H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

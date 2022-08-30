@@ -1,0 +1,459 @@
+C51 COMPILER V9.59.0.0   SPI_M_S                                                           02/08/2021 11:44:30 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE SPI_M_S
+OBJECT MODULE PLACED IN SPI-M-S.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE SPI-M-S.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          /*---------------------------------------------------------------------*/
+   2          /* --- STC MCU Limited ------------------------------------------------*/
+   3          /* --- STC 1T Series MCU Demo Programme -------------------------------*/
+   4          /* --- Mobile: (86)13922805190 ----------------------------------------*/
+   5          /* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+   6          /* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+   7          /* --- Web: www.STCMCU.com --------------------------------------------*/
+   8          /* --- Web: www.STCMCUDATA.com  ---------------------------------------*/
+   9          /* --- QQ:  800003751 -------------------------------------------------*/
+  10          /* 如果要在程序中使用此代码,请在程序中注明使用了STC的资料及程序        */
+  11          /*---------------------------------------------------------------------*/
+  12          
+  13          /*************  功能说明    **************
+  14          
+  15          本例程基于STC8H8K64U为主控芯片的实验箱8进行编写测试，STC8G、STC8H系列芯片可通用参考.
+  16          
+  17          通过串口发送数据给MCU1，MCU1将接收到的数据由SPI发送给MCU2，MCU2再通过串口发送出去.
+  18          
+  19          设置方法 2：
+  20          两个设备初始化时都设置 SSIG 为 0，MSTR 设置为0，此时两个设备都是不忽略 SS 的从机模式。
+  21          当其中一个设备需要启动传输时，先检测 SS 管脚的电平，如果时候高电平，
+  22          就将自己设置成忽略 SS 的主模式，自己的 SS 脚输出低电平，拉低对方的 SS 脚，即可进行数据传输。
+  23          
+  24                   MCU1                          MCU2
+  25            |-----------------|           |-----------------|
+  26            |            MISO |-----------| MISO            |
+  27          --| TX         MOSI |-----------| MOSI         TX |--
+  28            |            SCLK |-----------| SCLK            |
+  29          --| RX           SS |-----------| SS           RX |--
+  30            |-----------------|           |-----------------|
+  31          
+  32          
+  33          下载时, 选择时钟 22.1184MHz (用户可自行修改频率).
+  34          
+  35          ******************************************/
+  36          
+  37          #include    "reg51.h"       //包含此头文件后，里面声明的寄存器不需要再手动输入，避免重复定义
+  38          #include    "intrins.h"
+  39          
+  40          #define     MAIN_Fosc       22118400L   //定义主时钟（精确计算115200波特率）
+  41          
+  42          typedef     unsigned char   u8;
+  43          typedef     unsigned int    u16;
+  44          typedef     unsigned long   u32;
+  45          
+  46          //手动输入声明"reg51.h"头文件里面没有定义的寄存器
+  47          sfr TH2  = 0xD6;
+  48          sfr TL2  = 0xD7;
+  49          sfr IE2   = 0xAF;
+  50          #define ESPI 0x02
+  51          
+  52          sfr INT_CLKO = 0x8F;
+  53          sfr AUXR = 0x8E;
+  54          sfr AUXR1 = 0xA2;
+  55          sfr P_SW1 = 0xA2;
+C51 COMPILER V9.59.0.0   SPI_M_S                                                           02/08/2021 11:44:30 PAGE 2   
+
+  56          sfr P_SW2 = 0xBA;
+  57          sfr S2CON = 0x9A;
+  58          sfr S2BUF = 0x9B;
+  59          
+  60          sfr SPSTAT = 0xCD;
+  61          sfr SPCTL  = 0xCE;
+  62          sfr SPDAT  = 0xCF;
+  63          #define SPIF    0x80        //SPI传输完成标志。写入1清0。
+  64          #define WCOL    0x40        //SPI写冲突标志。写入1清0。
+  65          
+  66          sfr P4   = 0xC0;
+  67          sfr P5   = 0xC8;
+  68          sfr P6   = 0xE8;
+  69          sfr P7   = 0xF8;
+  70          sfr P1M1 = 0x91;    //PxM1.n,PxM0.n     =00--->Standard,    01--->push-pull
+  71          sfr P1M0 = 0x92;    //                  =10--->pure input,  11--->open drain
+  72          sfr P0M1 = 0x93;
+  73          sfr P0M0 = 0x94;
+  74          sfr P2M1 = 0x95;
+  75          sfr P2M0 = 0x96;
+  76          sfr P3M1 = 0xB1;
+  77          sfr P3M0 = 0xB2;
+  78          sfr P4M1 = 0xB3;
+  79          sfr P4M0 = 0xB4;
+  80          sfr P5M1 = 0xC9;
+  81          sfr P5M0 = 0xCA;
+  82          sfr P6M1 = 0xCB;
+  83          sfr P6M0 = 0xCC;
+  84          sfr P7M1 = 0xE1;
+  85          sfr P7M0 = 0xE2;
+  86          
+  87          sbit P00 = P0^0;
+  88          sbit P01 = P0^1;
+  89          sbit P02 = P0^2;
+  90          sbit P03 = P0^3;
+  91          sbit P04 = P0^4;
+  92          sbit P05 = P0^5;
+  93          sbit P06 = P0^6;
+  94          sbit P07 = P0^7;
+  95          sbit P10 = P1^0;
+  96          sbit P11 = P1^1;
+  97          sbit P12 = P1^2;
+  98          sbit P13 = P1^3;
+  99          sbit P14 = P1^4;
+ 100          sbit P15 = P1^5;
+ 101          sbit P16 = P1^6;
+ 102          sbit P17 = P1^7;
+ 103          sbit P20 = P2^0;
+ 104          sbit P21 = P2^1;
+ 105          sbit P22 = P2^2;
+ 106          sbit P23 = P2^3;
+ 107          sbit P24 = P2^4;
+ 108          sbit P25 = P2^5;
+ 109          sbit P26 = P2^6;
+ 110          sbit P27 = P2^7;
+ 111          sbit P30 = P3^0;
+ 112          sbit P31 = P3^1;
+ 113          sbit P32 = P3^2;
+ 114          sbit P33 = P3^3;
+ 115          sbit P34 = P3^4;
+ 116          sbit P35 = P3^5;
+ 117          sbit P36 = P3^6;
+C51 COMPILER V9.59.0.0   SPI_M_S                                                           02/08/2021 11:44:30 PAGE 3   
+
+ 118          sbit P37 = P3^7;
+ 119          sbit P40 = P4^0;
+ 120          sbit P41 = P4^1;
+ 121          sbit P42 = P4^2;
+ 122          sbit P43 = P4^3;
+ 123          sbit P44 = P4^4;
+ 124          sbit P45 = P4^5;
+ 125          sbit P46 = P4^6;
+ 126          sbit P47 = P4^7;
+ 127          sbit P50 = P5^0;
+ 128          sbit P51 = P5^1;
+ 129          sbit P52 = P5^2;
+ 130          sbit P53 = P5^3;
+ 131          sbit P54 = P5^4;
+ 132          sbit P55 = P5^5;
+ 133          sbit P56 = P5^6;
+ 134          sbit P57 = P5^7;
+ 135          
+ 136          
+ 137          /*************  本地常量声明    **************/
+ 138          
+ 139          sbit    SPI_SS  = P2^2;
+ 140          sbit    SPI_SI  = P2^3;
+ 141          sbit    SPI_SO  = P2^4;
+ 142          sbit    SPI_SCK = P2^5;
+ 143          
+ 144          #define Baudrate1           115200L
+ 145          #define BUF_LENGTH          128
+ 146          
+ 147          #define UART1_BUF_LENGTH    (BUF_LENGTH)   //串口缓冲长度
+ 148          #define SPI_BUF_LENGTH      (BUF_LENGTH)   //SPI缓冲长度
+ 149          
+ 150          /*************  本地变量声明    **************/
+ 151          
+ 152          u8  RX1_TimeOut;
+ 153          u8  SPI_TimeOut;
+ 154          u8  SPI_Cnt;    //SPI计数
+ 155          u8  RX1_Cnt;    //UART计数
+ 156          bit B_TX1_Busy; //发送忙标志
+ 157          bit B_SPI_Busy; //发送忙标志
+ 158          bit B_SPI_Send; //发送标志
+ 159          
+ 160          u8  xdata   RX1_Buffer[UART1_BUF_LENGTH];   //接收缓冲
+ 161          u8  xdata   SPI_Buffer[SPI_BUF_LENGTH];     //接收缓冲
+ 162          
+ 163          
+ 164          void    delay_ms(u8 ms);
+ 165          void    UART1_config(u8 brt);   // 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer1做波特率.
+ 166          void    PrintString1(u8 *puts);
+ 167          void    UART1_TxByte(u8 dat);
+ 168          
+ 169          void    SPI_init(void);
+ 170          void    SPI_WriteByte(u8 out);
+ 171          
+ 172          /******************** 主函数 **************************/
+ 173          void main(void)
+ 174          {
+ 175   1          u8 i;
+ 176   1      
+ 177   1          P0M1 = 0;   P0M0 = 0;   //设置为准双向口
+ 178   1          P1M1 = 0;   P1M0 = 0;   //设置为准双向口
+ 179   1          P2M1 = 0;   P2M0 = 0;   //设置为准双向口
+C51 COMPILER V9.59.0.0   SPI_M_S                                                           02/08/2021 11:44:30 PAGE 4   
+
+ 180   1          P3M1 = 0;   P3M0 = 0;   //设置为准双向口
+ 181   1          P4M1 = 0;   P4M0 = 0;   //设置为准双向口
+ 182   1          P5M1 = 0;   P5M0 = 0;   //设置为准双向口
+ 183   1          P6M1 = 0;   P6M0 = 0;   //设置为准双向口
+ 184   1          P7M1 = 0;   P7M0 = 0;   //设置为准双向口
+ 185   1      
+ 186   1          UART1_config(1);    // 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer1做波特率.
+ 187   1          SPI_init();
+ 188   1          EA = 1;     //允许总中断
+ 189   1          
+ 190   1          PrintString1("UART1与SPI透传程序-SPI互为主从设置方法2.\r\n");
+ 191   1      
+ 192   1          while (1)
+ 193   1          {
+ 194   2              delay_ms(1);
+ 195   2      
+ 196   2              if(RX1_TimeOut > 0)
+ 197   2              {
+ 198   3                  if(--RX1_TimeOut == 0)  //超时,则串口接收结束
+ 199   3                  {
+ 200   4                      if(RX1_Cnt > 0)
+ 201   4                      {
+ 202   5                        B_SPI_Send = 1;
+ 203   5                      }
+ 204   4                  }
+ 205   3              }
+ 206   2              if((B_SPI_Send) && (SPI_SS))
+ 207   2              {
+ 208   3                  B_SPI_Send = 0;
+ 209   3                  SPI_SS = 0;     //拉低从机 SS 管脚
+ 210   3                  SPCTL = 0xd4;   //使能 SPI 主机模式，忽略SS引脚功能
+ 211   3                  for(i=0;i<RX1_Cnt;i++)
+ 212   3                  {
+ 213   4                      SPI_WriteByte(RX1_Buffer[i]); //发送串口数据
+ 214   4                  }
+ 215   3                  SPI_SS = 1;    //拉高从机的 SS 管脚
+ 216   3                  SPCTL = 0x44;  //重新设置为从机待机
+ 217   3                  RX1_Cnt = 0;
+ 218   3              }
+ 219   2              
+ 220   2              if(SPI_TimeOut > 0)
+ 221   2              {
+ 222   3                  if(--SPI_TimeOut == 0)  //超时,则SPI接收结束
+ 223   3                  {
+ 224   4                      if(SPI_Cnt > 0)
+ 225   4                      {
+ 226   5                          for(i=0;i<SPI_Cnt;i++)
+ 227   5                          {
+ 228   6                              UART1_TxByte(SPI_Buffer[i]); //发送SPI数据
+ 229   6                          }
+ 230   5                          SPI_Cnt = 0;
+ 231   5                      }
+ 232   4                  }
+ 233   3              }
+ 234   2          }
+ 235   1      }
+ 236          
+ 237          
+ 238          //========================================================================
+ 239          // 函数: void  delay_ms(unsigned char ms)
+ 240          // 描述: 延时函数。
+ 241          // 参数: ms,要延时的ms数, 这里只支持1~255ms. 自动适应主时钟.
+C51 COMPILER V9.59.0.0   SPI_M_S                                                           02/08/2021 11:44:30 PAGE 5   
+
+ 242          // 返回: none.
+ 243          // 版本: VER1.0
+ 244          // 日期: 2013-4-1
+ 245          // 备注: 
+ 246          //========================================================================
+ 247          void delay_ms(u8 ms)
+ 248          {
+ 249   1          u16 i;
+ 250   1          do{
+ 251   2              i = MAIN_Fosc / 13000;
+ 252   2              while(--i)    ;   //14T per loop
+ 253   2          }while(--ms);
+ 254   1      }
+ 255          
+ 256          
+ 257          //========================================================================
+ 258          // 函数: void UART1_TxByte(u8 dat)
+ 259          // 描述: 发送一个字节.
+ 260          // 参数: 无.
+ 261          // 返回: 无.
+ 262          // 版本: V1.0, 2014-6-30
+ 263          //========================================================================
+ 264          
+ 265          void UART1_TxByte(u8 dat)
+ 266          {
+ 267   1          SBUF = dat;
+ 268   1          B_TX1_Busy = 1;
+ 269   1          while(B_TX1_Busy);
+ 270   1      }
+ 271          
+ 272          //========================================================================
+ 273          // 函数: void PrintString1(u8 *puts)
+ 274          // 描述: 串口1发送字符串函数。
+ 275          // 参数: puts:  字符串指针.
+ 276          // 返回: none.
+ 277          // 版本: VER1.0
+ 278          // 日期: 2014-11-28
+ 279          // 备注: 
+ 280          //========================================================================
+ 281          void PrintString1(u8 *puts) //发送一个字符串
+ 282          {
+ 283   1          for (; *puts != 0;  puts++) UART1_TxByte(*puts);    //遇到停止符0结束
+ 284   1      }
+ 285          
+ 286          //========================================================================
+ 287          // 函数: SetTimer2Baudraye(u16 dat)
+ 288          // 描述: 设置Timer2做波特率发生器。
+ 289          // 参数: dat: Timer2的重装值.
+ 290          // 返回: none.
+ 291          // 版本: VER1.0
+ 292          // 日期: 2014-11-28
+ 293          // 备注: 
+ 294          //========================================================================
+ 295          void SetTimer2Baudraye(u16 dat)  // 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer1做波特率.
+ 296          {
+ 297   1          AUXR &= ~(1<<4);    //Timer stop
+ 298   1          AUXR &= ~(1<<3);    //Timer2 set As Timer
+ 299   1          AUXR |=  (1<<2);    //Timer2 set as 1T mode
+ 300   1          TH2 = dat / 256;
+ 301   1          TL2 = dat % 256;
+ 302   1          IE2  &= ~(1<<2);    //禁止中断
+ 303   1          AUXR |=  (1<<4);    //Timer run enable
+C51 COMPILER V9.59.0.0   SPI_M_S                                                           02/08/2021 11:44:30 PAGE 6   
+
+ 304   1      }
+ 305          
+ 306          //========================================================================
+ 307          // 函数: void UART1_config(u8 brt)
+ 308          // 描述: UART1初始化函数。
+ 309          // 参数: brt: 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer1做波特率.
+ 310          // 返回: none.
+ 311          // 版本: VER1.0
+ 312          // 日期: 2014-11-28
+ 313          // 备注: 
+ 314          //========================================================================
+ 315          void UART1_config(u8 brt)    // 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer1做波特率.
+ 316          {
+ 317   1          /*********** 波特率使用定时器2 *****************/
+ 318   1          if(brt == 2)
+ 319   1          {
+ 320   2              AUXR |= 0x01;       //S1 BRT Use Timer2;
+ 321   2              SetTimer2Baudraye(65536UL - (MAIN_Fosc / 4) / Baudrate1);
+ 322   2          }
+ 323   1      
+ 324   1          /*********** 波特率使用定时器1 *****************/
+ 325   1          else
+ 326   1          {
+ 327   2              TR1 = 0;
+ 328   2              AUXR &= ~0x01;      //S1 BRT Use Timer1;
+ 329   2              AUXR |=  (1<<6);    //Timer1 set as 1T mode
+ 330   2              TMOD &= ~(1<<6);    //Timer1 set As Timer
+ 331   2              TMOD &= ~0x30;      //Timer1_16bitAutoReload;
+ 332   2              TH1 = (u8)((65536UL - (MAIN_Fosc / 4) / Baudrate1) / 256);
+ 333   2              TL1 = (u8)((65536UL - (MAIN_Fosc / 4) / Baudrate1) % 256);
+ 334   2              ET1 = 0;    //禁止中断
+ 335   2              INT_CLKO &= ~0x02;  //不输出时钟
+ 336   2              TR1  = 1;
+ 337   2          }
+ 338   1          /*************************************************/
+ 339   1      
+ 340   1          SCON = (SCON & 0x3f) | 0x40;    //UART1模式, 0x00: 同步移位输出, 0x40: 8位数据,可变波特率, 0x80: 9位数
+             -据,固定波特率, 0xc0: 9位数据,可变波特率
+ 341   1      //  PS  = 1;    //高优先级中断
+ 342   1          ES  = 1;    //允许中断
+ 343   1          REN = 1;    //允许接收
+ 344   1          P_SW1 &= 0x3f;
+ 345   1          P_SW1 |= 0x00;      //UART1 switch to, 0x00: P3.0 P3.1, 0x40: P3.6 P3.7, 0x80: P1.6 P1.7, 0xC0: P4.3 P
+             -4.4
+ 346   1      
+ 347   1          RX1_TimeOut = 0;
+ 348   1          B_TX1_Busy = 0;
+ 349   1          RX1_Cnt = 0;
+ 350   1      }
+ 351          
+ 352          //========================================================================
+ 353          // 函数: void UART1_int (void) interrupt UART1_VECTOR
+ 354          // 描述: UART1中断函数。
+ 355          // 参数: nine.
+ 356          // 返回: none.
+ 357          // 版本: VER1.0
+ 358          // 日期: 2014-11-28
+ 359          // 备注: 
+ 360          //========================================================================
+ 361          void UART1_int (void) interrupt 4
+ 362          {
+ 363   1          if(RI)
+C51 COMPILER V9.59.0.0   SPI_M_S                                                           02/08/2021 11:44:30 PAGE 7   
+
+ 364   1          {
+ 365   2              RI = 0;
+ 366   2              if(RX1_Cnt >= UART1_BUF_LENGTH) RX1_Cnt = 0;
+ 367   2              RX1_Buffer[RX1_Cnt] = SBUF;
+ 368   2              RX1_Cnt++;
+ 369   2              RX1_TimeOut = 5;
+ 370   2          }
+ 371   1      
+ 372   1          if(TI)
+ 373   1          {
+ 374   2              TI = 0;
+ 375   2              B_TX1_Busy = 0;
+ 376   2          }
+ 377   1      }
+ 378          
+ 379          /************************************************************************/
+ 380          
+ 381          void SPI_Isr() interrupt 9 
+ 382          { 
+ 383   1          SPSTAT = 0xc0; //清中断标志
+ 384   1          if (SPCTL & 0x10) 
+ 385   1          { //主机模式
+ 386   2              B_SPI_Busy = 0;
+ 387   2          }
+ 388   1          else 
+ 389   1          { //从机模式
+ 390   2              if(SPI_Cnt >= SPI_BUF_LENGTH) SPI_Cnt = 0;
+ 391   2              SPI_Buffer[SPI_Cnt] = SPDAT;
+ 392   2              SPI_Cnt++;
+ 393   2              SPI_TimeOut = 10;
+ 394   2          }
+ 395   1      }
+ 396          
+ 397          /************************************************************************/
+ 398          void SPI_WriteByte(u8 out)
+ 399          {
+ 400   1          SPDAT = out;
+ 401   1          B_SPI_Busy = 1;
+ 402   1          while(B_SPI_Busy) ;
+ 403   1      }
+ 404          
+ 405          /************************************************************************/
+ 406          void SPI_init(void)
+ 407          {
+ 408   1          SPI_SS = 1;
+ 409   1          SPCTL = 0x44;         //使能 SPI 从机模式进行待机
+ 410   1          AUXR1 = (AUXR1 & ~(3<<2)) | (1<<2);  //IO口切换. 0: P1.2/P5.4 P1.3 P1.4 P1.5, 1: P2.2 P2.3 P2.4 P2.5, 
+             -2: P5.4 P4.0 P4.1 P4.3, 3: P3.5 P3.4 P3.3 P3.2
+ 411   1          IE2 |= ESPI; //使能 SPI 中断
+ 412   1          SPSTAT = SPIF + WCOL;   //清0 SPIF和WCOL标志
+ 413   1      
+ 414   1          SPI_TimeOut = 0;
+ 415   1          B_SPI_Busy = 0;
+ 416   1          B_SPI_Send = 0;
+ 417   1          SPI_Cnt = 0;
+ 418   1      }
+ 419          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    499    ----
+   CONSTANT SIZE    =     43    ----
+C51 COMPILER V9.59.0.0   SPI_M_S                                                           02/08/2021 11:44:30 PAGE 8   
+
+   XDATA SIZE       =    256    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      4       1
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

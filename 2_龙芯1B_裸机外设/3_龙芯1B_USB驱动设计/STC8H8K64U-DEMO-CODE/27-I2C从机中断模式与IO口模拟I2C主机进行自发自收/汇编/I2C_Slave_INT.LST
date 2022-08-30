@@ -1,0 +1,751 @@
+A51 MACRO ASSEMBLER  I2C_SLAVE_INT                                                        03/23/2021 13:52:12 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN I2C_Slave_INT.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE I2C_Slave_INT.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* »Áπ˚“™‘⁄≥Ã–Ú÷– π”√¥À¥˙¬Î,«Î‘⁄≥Ã–Ú÷–◊¢√˜ π”√¡ÀSTCµƒ◊ ¡œº∞≥Ã–Ú        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     
+                      14     ;/************* π¶ƒ‹Àµ√˜    **************
+                      15     
+                      16     ;±æ¿˝≥Ãª˘”⁄STC8H8K64UŒ™÷˜øÿ–æ∆¨µƒ µ—Èœ‰8Ω¯––±‡–¥≤‚ ‘£¨STC8G°¢STC8Hœµ¡––æ∆¨ø…Õ®”√≤Œøº.
+                      17     
+                      18     ;ƒ⁄≤øºØ≥…I2C¥Æ––◊‹œﬂøÿ÷∆∆˜◊ˆ¥”ª˙ƒ£ Ω£¨SCL->P3.2, SDA->P3.3;
+                      19     ;IOø⁄ƒ£ƒ‚I2C◊ˆ÷˜ª˙ƒ£ Ω£¨SCL->P0.0, SDA->P0.1;
+                      20     ;Õ®π˝Õ‚≤ø∑…œﬂ¡¨Ω” P0.0->P3.2, P0.1->P3.3£¨ µœ÷I2C◊‘∑¢◊‘ ’π¶ƒ‹°£
+                      21     
+                      22     ;”√STCµƒMCUµƒIO∑Ω Ω«˝∂Ø8Œª ˝¬Îπ‹°£
+                      23     ; π”√Timer0µƒ16Œª◊‘∂Ø÷ÿ◊∞¿¥≤˙…˙1msΩ⁄≈ƒ,≥Ã–Ú‘À––”⁄’‚∏ˆΩ⁄≈ƒœ¬,”√ªß–ﬁ∏ƒMCU÷˜ ±÷”∆µ¬  ±,◊‘∂Ø∂® 
+                             ±”⁄1ms.
+                      24     ;º∆ ˝∆˜√ø√Î÷”º”1, º∆ ˝∑∂ŒßŒ™0~9999.
+                      25     
+                      26     ;œ‘ æ–ßπ˚Œ™: …œµÁ∫Û÷˜ª˙√ø√Î÷”∑¢ÀÕ“ª¥Œº∆ ˝ ˝æ›£¨≤¢‘⁄◊Û±ﬂ4∏ˆ ˝¬Îπ‹…œœ‘ æ∑¢ÀÕƒ⁄»›£ª¥”ª˙Ω” ’µΩ 
+                             ˝æ›∫Û‘⁄”“±ﬂ4∏ˆ ˝¬Îπ‹œ‘ æ°£
+                      27     
+                      28     ;œ¬‘ÿ ±, —°‘Ò ±÷” 24MHZ (”√ªßø…◊‘–––ﬁ∏ƒ∆µ¬ ).
+                      29     
+                      30     ;******************************************/
+                      31     
+                      32     ;/****************************** ”√ªß∂®“Â∫Í ***********************************/
+                      33     
+  5DC0                34     Fosc_KHZ    EQU 24000   ;24000KHZ
+                      35     
+  00D0                36     STACK_POIRTER   EQU     0D0H    ;∂—’ªø™ ºµÿ÷∑
+                      37     
+  A240                38     Timer0_Reload   EQU     (65536 - Fosc_KHZ)  ; Timer 0 ÷–∂œ∆µ¬ , 1000¥Œ/√Î
+                      39     
+  0020                40     DIS_DOT         EQU     020H
+  0010                41     DIS_BLACK       EQU     010H
+  0011                42     DIS_            EQU     011H
+                      43     
+  005A                44     SLAW            EQU     05AH
+  005B                45     SLAR            EQU     05BH
+                      46     
+  0081                47     SDA             BIT     P0.1
+  0080                48     SCL             BIT     P0.0
+                      49     ;*******************************************************************
+                      50     ;*******************************************************************
+  00BA                51     P_SW2       DATA 0BAH
+  008E                52     AUXR        DATA 08EH
+  00C0                53     P4          DATA 0C0H
+  00C8                54     P5          DATA 0C8H
+  00E8                55     P6          DATA 0E8H
+  00F8                56     P7          DATA 0F8H
+A51 MACRO ASSEMBLER  I2C_SLAVE_INT                                                        03/23/2021 13:52:12 PAGE     2
+
+                      57     
+  008F                58     INT_CLKO    DATA    0x8F
+  00A2                59     P_SW1       DATA    0A2H
+  00AF                60     IE2         DATA    0AFH
+  00D6                61     T2H         DATA    0D6H
+  00D7                62     T2L         DATA    0D7H
+                      63     
+  0093                64     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094                65     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091                66     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092                67     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095                68     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+  0096                69     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+  00B1                70     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2                71     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3                72     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+  00B4                73     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9                74     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA                75     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB                76     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC                77     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1                78     P7M1    DATA    0xE1    ;
+  00E2                79     P7M0    DATA    0xE2    ;
+                      80     
+                      81     ;*******************************************************************
+                      82     
+  FE80                83     I2CCFG       XDATA   0FE80H
+  FE81                84     I2CMSCR      XDATA   0FE81H
+  FE82                85     I2CMSST      XDATA   0FE82H
+  FE83                86     I2CSLCR      XDATA   0FE83H
+  FE84                87     I2CSLST      XDATA   0FE84H
+  FE85                88     I2CSLADR     XDATA   0FE85H
+  FE86                89     I2CTXD       XDATA   0FE86H
+  FE87                90     I2CRXD       XDATA   0FE87H
+  FE88                91     I2CMSAUX     XDATA   0FE88H
+                      92     
+                      93     
+                      94     ;*************  IOø⁄∂®“Â    **************/
+                      95     
+                      96     
+                      97     ;*************  ±æµÿ±‰¡ø…˘√˜    **************/
+  0000                98     B_1ms           BIT     20H.0   ;   1ms±Í÷æ
+  0001                99     DisplayFlag     BIT     20H.1   ;   œ‘ æ±Í÷æ
+  0006               100     ISDA            BIT     20H.6
+  0007               101     ISMA            BIT     20H.7
+                     102     
+  0021               103     ADDR            DATA    21H
+                     104     
+  0030               105     LED8            DATA    30H     ;   œ‘ æª∫≥Â 30H ~ 37H
+  0038               106     display_index   DATA    38H     ;   œ‘ æŒªÀ˜“˝
+                     107     
+  0039               108     msecond_H       DATA    39H     ;
+  003A               109     msecond_L       DATA    3AH     ;
+  003B               110     Test_cnt_H      DATA    3BH     ;
+  003C               111     Test_cnt_L      DATA    3CH     ;
+                     112     
+                     113     
+                     114     ;*******************************************************************
+                     115     ;*******************************************************************
+0000                 116             ORG     0000H               ;reset
+0000 020100          117             LJMP    F_Main
+                     118     
+000B                 119             ORG     000BH               ;1  Timer0 interrupt
+000B 020287          120             LJMP    F_Timer0_Interrupt
+                     121     
+00C3                 122             ORG     00C3H               ;24  I2C interrupt
+A51 MACRO ASSEMBLER  I2C_SLAVE_INT                                                        03/23/2021 13:52:12 PAGE     3
+
+00C3 020295          123             LJMP    F_I2C_Interrupt
+                     124     
+                     125     
+                     126     ;******************** ÷˜≥Ã–Ú **************************/
+0100                 127             ORG     0100H       ;reset
+0100                 128     F_Main:
+0100 E4              129         CLR     A
+0101 F593            130         MOV     P0M1, A     ;…Ë÷√Œ™◊ºÀ´œÚø⁄
+0103 F594            131         MOV     P0M0, A
+0105 F591            132         MOV     P1M1, A     ;…Ë÷√Œ™◊ºÀ´œÚø⁄
+0107 F592            133         MOV     P1M0, A
+0109 F595            134         MOV     P2M1, A     ;…Ë÷√Œ™◊ºÀ´œÚø⁄
+010B F596            135         MOV     P2M0, A
+010D F5B3            136         MOV     P4M1, A     ;…Ë÷√Œ™◊ºÀ´œÚø⁄
+010F F5B4            137         MOV     P4M0, A
+0111 F5C9            138         MOV     P5M1, A     ;…Ë÷√Œ™◊ºÀ´œÚø⁄
+0113 F5CA            139         MOV     P5M0, A
+0115 F5CB            140         MOV     P6M1, A     ;…Ë÷√Œ™◊ºÀ´œÚø⁄
+0117 F5CC            141         MOV     P6M0, A
+0119 F5E1            142         MOV     P7M1, A     ;…Ë÷√Œ™◊ºÀ´œÚø⁄
+011B F5E2            143         MOV     P7M0, A
+                     144     
+011D F5B2            145         MOV     P3M0, A
+011F 7404            146         MOV     A, #04H
+0121 F5B1            147         MOV     P3M1, A     ;SCL…Ë÷√Œ™ ‰»Îø⁄£¨SDA…Ë÷√Œ™◊ºÀ´œÚø⁄
+                     148         
+0123 7581D0          149         MOV     SP, #STACK_POIRTER
+0126 75D000          150         MOV     PSW, #0
+                     151         USING   0       ;—°‘Òµ⁄0◊ÈR0~R7
+                     152     
+                     153     ;================= ”√ªß≥ı ºªØ≥Ã–Ú ====================================
+                     154     
+0129 753800          155         MOV     display_index, #0
+012C C201            156         CLR     DisplayFlag
+012E 7830            157         MOV     R0, #LED8
+0130 7A08            158         MOV     R2, #8
+0132                 159     L_ClearLoop:
+0132 7611            160         MOV     @R0, #DIS_          ;…œµÁ»´≤øœ‘ æ-
+0134 08              161         INC     R0
+0135 DAFB            162         DJNZ    R2, L_ClearLoop
+                     163         
+0137 C28C            164         CLR     TR0
+0139 438E80          165         ORL     AUXR, #(1 SHL 7)    ; Timer0_1T();
+013C 5389FB          166         ANL     TMOD, #NOT 04H      ; Timer0_AsTimer();
+013F 5389FC          167         ANL     TMOD, #NOT 03H      ; Timer0_16bitAutoReload();
+0142 758CA2          168         MOV     TH0, #Timer0_Reload / 256   ;Timer0_Load(Timer0_Reload);
+0145 758A40          169         MOV     TL0, #Timer0_Reload MOD 256
+0148 D2A9            170         SETB    ET0         ; Timer0_InterruptEnable();
+014A D28C            171         SETB    TR0         ; Timer0_Run();
+                     172     
+014C 1201D9          173         LCALL   F_I2C_Init
+014F D2AF            174         SETB    EA          ; ¥Úø™◊‹÷–∂œ
+                     175     
+                     176     ;=================== ÷˜—≠ª∑ ==================================
+0151                 177     L_Main_Loop:
+0151 300113          178         JNB     DisplayFlag, L_Is1ms    ; ’µΩ ˝æ›
+0154 C201            179         CLR     DisplayFlag
+                     180         
+0156 E4              181         CLR     A
+0157 F8              182         MOV     R0,A
+0158 E2              183         MOVX    A,@R0
+0159 F530            184         MOV     LED8+0, A
+015B 08              185         INC     R0
+015C E2              186         MOVX    A,@R0
+015D F531            187         MOV     LED8+1, A
+015F 08              188         INC     R0
+A51 MACRO ASSEMBLER  I2C_SLAVE_INT                                                        03/23/2021 13:52:12 PAGE     4
+
+0160 E2              189         MOVX    A,@R0
+0161 F532            190         MOV     LED8+2, A
+0163 08              191         INC     R0
+0164 E2              192         MOVX    A,@R0
+0165 F533            193         MOV     LED8+3, A
+                     194             
+0167                 195     L_Is1ms:
+0167 3000E7          196         JNB     B_1ms, L_Main_Loop     ;1msŒ¥µΩ
+016A C200            197         CLR     B_1ms
+                     198         
+                     199     ;=================== ºÏ≤‚1s «∑ÒµΩ ==================================
+016C 053A            200         INC     msecond_L       ;msecond + 1
+016E E53A            201         MOV     A, msecond_L
+0170 7002            202         JNZ     $+4
+0172 0539            203         INC     msecond_H
+                     204         
+0174 C3              205         CLR     C
+0175 E53A            206         MOV     A, msecond_L    ;msecond - 1000
+0177 94E8            207         SUBB    A, #LOW 1000
+0179 E539            208         MOV     A, msecond_H
+017B 9403            209         SUBB    A, #HIGH 1000
+017D 5003            210         JNC     L_1sIsGood
+017F 020151          211         LJMP    L_Main_Loop
+0182                 212     L_1sIsGood:
+                     213     
+                     214     ;================= 1sµΩ ====================================
+0182 753A00          215         MOV     msecond_L, #0   ;if(msecond >= 1000)
+0185 753900          216         MOV     msecond_H, #0
+                     217     
+                     218     ;=================== ºÏ≤‚ «∑Ò>= 10000 ==============================
+0188 053C            219         INC     Test_cnt_L       ;Test_cnt + 1
+018A E53C            220         MOV     A, Test_cnt_L
+018C 7002            221         JNZ     $+4
+018E 053B            222         INC     Test_cnt_H
+                     223         
+0190 C3              224         CLR     C
+0191 E53C            225         MOV     A, Test_cnt_L    ;Test_cnt - 10000
+0193 9410            226         SUBB    A, #LOW 10000
+0195 E53B            227         MOV     A, Test_cnt_H
+0197 9427            228         SUBB    A, #HIGH 10000
+0199 4006            229         JC      L_LessThen10000
+019B 753C00          230         MOV     Test_cnt_L, #0   ;if(Test_cnt >= 10000)
+019E 753B00          231         MOV     Test_cnt_H, #0
+01A1                 232     L_LessThen10000:
+01A1 AE3B            233         MOV     R6, Test_cnt_H
+01A3 AF3C            234         MOV     R7, Test_cnt_L
+01A5 120208          235         LCALL   F_HEX2_DEC      ;(R6 R7) HEX Change to DEC ---> (R3 R4 R5), use (R2~R7)
+                     236         
+01A8 EC              237         MOV     A, R4           ;œ‘ æ
+01A9 C4              238         SWAP    A
+01AA 540F            239         ANL     A, #0x0F
+01AC F537            240         MOV     LED8+7, A
+01AE EC              241         MOV     A, R4
+01AF 540F            242         ANL     A, #0x0F
+01B1 F536            243         MOV     LED8+6, A
+01B3 ED              244         MOV     A, R5
+01B4 C4              245         SWAP    A
+01B5 540F            246         ANL     A, #0x0F
+01B7 F535            247         MOV     LED8+5, A
+01B9 ED              248         MOV     A, R5
+01BA 540F            249         ANL     A, #0x0F
+01BC F534            250         MOV     LED8+4, A
+                     251     
+01BE E537            252         MOV     A, LED8+7           ;œ‘ æœ˚Œﬁ–ß0
+01C0 7011            253         JNZ     L_QuitProcessADC
+01C2 753710          254         MOV     LED8+7, #DIS_BLACK
+A51 MACRO ASSEMBLER  I2C_SLAVE_INT                                                        03/23/2021 13:52:12 PAGE     5
+
+01C5 E536            255         MOV     A, LED8+6
+01C7 700A            256         JNZ     L_QuitProcessADC
+01C9 753610          257         MOV     LED8+6, #DIS_BLACK
+01CC E535            258         MOV     A, LED8+5
+01CE 7003            259         JNZ     L_QuitProcessADC
+01D0 753510          260         MOV     LED8+5, #DIS_BLACK
+01D3                 261     L_QuitProcessADC:
+01D3 12038A          262         LCALL   WriteNbyte
+01D6 020151          263         LJMP    L_Main_Loop
+                     264     
+                     265     ;========================================================================
+                     266     ; ∫Ø ˝: F_I2C_Init
+                     267     ; √Ë ˆ: I2C≥ı ºªØ≥Ã–Ú.
+                     268     ; ≤Œ ˝: none
+                     269     ; ∑µªÿ: none.
+                     270     ; ∞Ê±æ: V1.0, 2021-3-4
+                     271     ;========================================================================
+01D9                 272     F_I2C_Init:
+01D9 43BA80          273         ORL     P_SW2, #080H        ; πƒ‹∑√Œ XFR
+                     274     
+01DC 43BA30          275         ORL     P_SW2, #030H        ;I2Cπ¶ƒ‹Ω≈—°‘Ò£¨00:P1.5,P1.4; 01:P2.5,P2.4; 11:P3.2,P3.3
+                     276     
+01DF D206            277         SETB    ISDA
+01E1 D207            278         SETB    ISMA
+01E3 E4              279         CLR     A
+01E4 F521            280         MOV     ADDR, A
+01E6 F8              281         MOV     R0,A
+01E7 E2              282         MOVX    A,@R0
+01E8 90FE86          283         MOV     DPTR,#I2CTXD
+01EB F0              284         MOVX    @DPTR,A
+                     285     
+01EC 7480            286         MOV     A,#080H
+01EE 90FE80          287         MOV     DPTR,#I2CCFG        ; πƒ‹I2C¥”ª˙ƒ£ Ω
+01F1 F0              288         MOVX    @DPTR,A
+                     289     
+01F2 745A            290         MOV     A,#05AH
+01F4 90FE85          291         MOV     DPTR,#I2CSLADR      ;…Ë÷√¥”ª˙…Ë±∏µÿ÷∑Œ™5A
+01F7 F0              292         MOVX    @DPTR,A
+                     293     
+01F8 7400            294         MOV     A,#00H
+01FA 90FE84          295         MOV     DPTR,#I2CSLST       ;
+01FD F0              296         MOVX    @DPTR,A
+                     297     
+01FE 7478            298         MOV     A,#078H
+0200 90FE83          299         MOV     DPTR,#I2CSLCR       ; πƒ‹¥”ª˙ƒ£ Ω÷–∂œ
+0203 F0              300         MOVX    @DPTR,A
+                     301     
+0204 53BA7F          302         ANL     P_SW2, #NOT 080H    ;Ω˚÷π∑√Œ XFR
+0207 22              303         RET
+                     304     
+                     305     ;//========================================================================
+                     306     ;// ∫Ø ˝: F_HEX2_DEC
+                     307     ;// √Ë ˆ: ∞—À´◊÷Ω⁄ Æ¡˘Ω¯÷∆ ˝◊™≥… ÆΩ¯÷∆BCD ˝.
+                     308     ;// ≤Œ ˝: (R6 R7): “™◊™ªªµƒÀ´◊÷Ω⁄ Æ¡˘Ω¯÷∆ ˝.
+                     309     ;// ∑µªÿ: (R3 R4 R5) = BCD¬Î.
+                     310     ;// ∞Ê±æ: V1.0, 2013-10-22
+                     311     ;//========================================================================
+0208                 312     F_HEX2_DEC:         ;(R6 R7) HEX Change to DEC ---> (R3 R4 R5), use (R2~R7)
+0208 7A10            313             MOV     R2,#16
+020A 7B00            314             MOV     R3,#0
+020C 7C00            315             MOV     R4,#0
+020E 7D00            316             MOV     R5,#0
+                     317     
+0210                 318     L_HEX2_DEC:
+0210 C3              319             CLR     C   
+0211 EF              320             MOV     A,R7
+A51 MACRO ASSEMBLER  I2C_SLAVE_INT                                                        03/23/2021 13:52:12 PAGE     6
+
+0212 33              321             RLC     A   
+0213 FF              322             MOV     R7,A
+0214 EE              323             MOV     A,R6
+0215 33              324             RLC     A   
+0216 FE              325             MOV     R6,A
+                     326     
+0217 ED              327             MOV     A,R5
+0218 3D              328             ADDC    A,R5
+0219 D4              329             DA      A   
+021A FD              330             MOV     R5,A
+                     331     
+021B EC              332             MOV     A,R4
+021C 3C              333             ADDC    A,R4
+021D D4              334             DA      A   
+021E FC              335             MOV     R4,A
+                     336     
+021F EB              337             MOV     A,R3
+0220 3B              338             ADDC    A,R3
+0221 D4              339             DA      A   
+0222 FB              340             MOV     R3,A
+                     341     
+0223 DAEB            342             DJNZ    R2,L_HEX2_DEC
+0225 22              343             RET
+                     344     
+                     345     ; *********************** œ‘ æœ‡πÿ≥Ã–Ú ****************************************
+0226                 346     T_Display:                      ;±Í◊º◊÷ø‚
+                     347     ;    0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+0226 3F065B4F        348     DB  03FH,006H,05BH,04FH,066H,06DH,07DH,007H,07FH,06FH,077H,07CH,039H,05EH,079H,071H
+022A 666D7D07                
+022E 7F6F777C                
+0232 395E7971                
+                     349     ;  black  -    H    J    K    L    N    o    P    U    t    G    Q    r    M    y
+0236 0040761E        350     DB  000H,040H,076H,01EH,070H,038H,037H,05CH,073H,03EH,078H,03dH,067H,050H,037H,06EH
+023A 7038375C                
+023E 733E783D                
+0242 6750376E                
+                     351     ;    0.   1.   2.   3.   4.   5.   6.   7.   8.   9.   -1
+0246 BF86DBCF        352     DB  0BFH,086H,0DBH,0CFH,0E6H,0EDH,0FDH,087H,0FFH,0EFH,046H
+024A E6EDFD87                
+024E FFEF46                  
+                     353     
+0251                 354     T_COM:
+0251 01020408        355     DB  001H,002H,004H,008H,010H,020H,040H,080H     ;   Œª¬Î
+0255 10204080                
+                     356     
+                     357     
+                     358     ;//========================================================================
+                     359     ;// ∫Ø ˝: F_DisplayScan
+                     360     ;// √Ë ˆ: œ‘ æ…®√Ë◊”≥Ã–Ú°£
+                     361     ;// ≤Œ ˝: none.
+                     362     ;// ∑µªÿ: none.
+                     363     ;// ∞Ê±æ: VER1.0
+                     364     ;// »’∆⁄: 2013-4-1
+                     365     ;// ±∏◊¢: ≥˝¡ÀACCC∫ÕPSWÕ‚, À˘”√µΩµƒÕ®”√ºƒ¥Ê∆˜∂º»Î’ª
+                     366     ;//========================================================================
+0259                 367     F_DisplayScan:
+0259 C083            368         PUSH    DPH     ;DPH»Î’ª
+025B C082            369         PUSH    DPL     ;DPL»Î’ª
+025D C000            370         PUSH    00H     ;R0 »Î’ª
+                     371         
+025F 900251          372         MOV     DPTR, #T_COM
+0262 E538            373         MOV     A, display_index
+0264 93              374         MOVC    A, @A+DPTR
+0265 F4              375         CPL     A
+0266 F5F8            376         MOV     P7,A
+                     377         
+A51 MACRO ASSEMBLER  I2C_SLAVE_INT                                                        03/23/2021 13:52:12 PAGE     7
+
+0268 900226          378         MOV     DPTR, #T_Display
+026B E538            379         MOV     A, display_index
+026D 2430            380         ADD     A, #LED8
+026F F8              381         MOV     R0, A
+0270 E6              382         MOV     A, @R0
+0271 93              383         MOVC    A, @A+DPTR
+0272 F4              384         CPL     A
+0273 F5E8            385         MOV     P6,A
+                     386     
+0275 0538            387         INC     display_index
+0277 E538            388         MOV     A, display_index
+0279 54F8            389         ANL     A, #0F8H            ; if(display_index >= 8)
+027B 6003            390         JZ      L_QuitDisplayScan
+027D 753800          391         MOV     display_index, #0;  ;8ŒªΩ· ¯ªÿ0
+0280                 392     L_QuitDisplayScan:
+0280 D000            393         POP     00H     ;R0 ≥ˆ’ª
+0282 D082            394         POP     DPL     ;DPL≥ˆ’ª
+0284 D083            395         POP     DPH     ;DPH≥ˆ’ª
+0286 22              396         RET
+                     397     
+                     398     ;**************** ÷–∂œ∫Ø ˝ ***************************************************
+                     399     
+0287                 400     F_Timer0_Interrupt: ;Timer0 1ms÷–∂œ∫Ø ˝
+0287 C0D0            401         PUSH    PSW     ;PSW»Î’ª
+0289 C0E0            402         PUSH    ACC     ;ACC»Î’ª
+                     403     
+028B 120259          404         LCALL   F_DisplayScan   ; 1ms…®√Ëœ‘ æ“ªŒª
+028E D200            405         SETB    B_1ms           ; 1ms±Í÷æ
+                     406         
+0290 D0E0            407         POP     ACC     ;ACC≥ˆ’ª
+0292 D0D0            408         POP     PSW     ;PSW≥ˆ’ª
+0294 32              409         RETI
+                     410     
+                     411     ;*******************************************************************
+0295                 412     F_I2C_Interrupt:
+0295 C0E0            413         PUSH    ACC
+0297 C0D0            414         PUSH    PSW
+0299 C082            415         PUSH    DPL
+029B C083            416         PUSH    DPH
+029D C0BA            417         PUSH    P_SW2
+029F 43BA80          418         ORL     P_SW2, #080H  ; πƒ‹∑√Œ XFR
+                     419     
+02A2 90FE84          420         MOV     DPTR,#I2CSLST ;ºÏ≤‚¥”ª˙◊¥Ã¨
+02A5 E0              421         MOVX    A,@DPTR
+02A6 20E614          422         JB      ACC.6,STARTIF
+02A9 20E516          423         JB      ACC.5,RXIF
+02AC 20E433          424         JB      ACC.4,TXIF
+02AF 20E349          425         JB      ACC.3,STOPIF
+02B2                 426     F_I2C_EXIT:
+02B2 D0BA            427         POP     P_SW2
+02B4 D083            428         POP     DPH
+02B6 D082            429         POP     DPL
+02B8 D0D0            430         POP     PSW
+02BA D0E0            431         POP     ACC
+02BC 32              432         RETI
+                     433     
+02BD                 434     STARTIF:
+02BD 54BF            435         ANL     A,#NOT 40H  ;¥¶¿Ì START  ¬º˛
+02BF F0              436         MOVX    @DPTR,A
+02C0 80F0            437         JMP     F_I2C_EXIT
+02C2                 438     RXIF:
+02C2 54DF            439         ANL     A,#NOT 20H  ;¥¶¿Ì RECV  ¬º˛
+02C4 F0              440         MOVX    @DPTR,A
+02C5 90FE87          441         MOV     DPTR,#I2CRXD
+02C8 E0              442         MOVX    A,@DPTR
+02C9 10060A          443         JBC     ISDA,RXDA
+A51 MACRO ASSEMBLER  I2C_SLAVE_INT                                                        03/23/2021 13:52:12 PAGE     8
+
+02CC 100709          444         JBC     ISMA,RXMA
+02CF A821            445         MOV     R0,ADDR     ;¥¶¿Ì RECV  ¬º˛£®RECV DATA£©
+02D1 F2              446         MOVX    @R0,A
+02D2 0521            447         INC     ADDR
+02D4 80DC            448         JMP     F_I2C_EXIT
+02D6                 449     RXDA:
+02D6 80DA            450         JMP     F_I2C_EXIT  ;¥¶¿Ì RECV  ¬º˛£®RECV DEVICE ADDR£©
+02D8                 451     RXMA:
+02D8 F521            452         MOV     ADDR,A      ;¥¶¿Ì RECV  ¬º˛£®RECV MEMORY ADDR£©
+02DA F8              453         MOV     R0,A
+02DB E2              454         MOVX    A,@R0
+02DC 90FE86          455         MOV     DPTR,#I2CTXD
+02DF F0              456         MOVX    @DPTR,A
+02E0 80D0            457         JMP     F_I2C_EXIT
+02E2                 458     TXIF:
+02E2 54EF            459         ANL     A,#NOT 10H  ;¥¶¿Ì SEND  ¬º˛
+02E4 F0              460         MOVX    @DPTR,A
+02E5 20E10B          461         JB      ACC.1,RXNAK
+02E8 0521            462         INC     ADDR
+02EA A821            463         MOV     R0,ADDR
+02EC E2              464         MOVX    A,@R0
+02ED 90FE86          465         MOV     DPTR,#I2CTXD
+02F0 F0              466         MOVX    @DPTR,A
+02F1 80BF            467         JMP     F_I2C_EXIT
+02F3                 468     RXNAK:
+02F3 74FF            469         MOV     A,#0FFH
+02F5 90FE86          470         MOV     DPTR,#I2CTXD
+02F8 F0              471         MOVX    @DPTR,A
+02F9 80B7            472         JMP     F_I2C_EXIT
+02FB                 473     STOPIF:
+02FB 54F7            474         ANL     A,#NOT 08H  ;¥¶¿Ì STOP  ¬º˛
+02FD F0              475         MOVX    @DPTR,A
+02FE D206            476         SETB    ISDA
+0300 D207            477         SETB    ISMA
+0302 D201            478         SETB    DisplayFlag
+0304 80AC            479         JMP     F_I2C_EXIT
+                     480     
+                     481     ;========================================================================
+                     482     ; »Ìº˛ƒ£ƒ‚I2C∫Ø ˝
+                     483     ;========================================================================
+0306                 484     I2C_Delay:
+0306 C000            485         PUSH    0
+0308 780C            486         MOV     R0,#0CH
+030A D8FE            487         DJNZ    R0,$
+030C D000            488         POP     0
+030E 22              489         RET
+                     490     
+030F                 491     I2C_Start:
+030F D281            492         SETB    SDA
+0311 120306          493         LCALL   I2C_Delay
+0314 D280            494         SETB    SCL
+0316 120306          495         LCALL   I2C_Delay
+0319 C281            496         CLR     SDA
+031B 120306          497         LCALL   I2C_Delay
+031E C280            498         CLR     SCL
+0320 120306          499         LCALL   I2C_Delay
+0323 22              500         RET
+                     501     
+0324                 502     I2C_Stop:
+0324 C281            503         CLR     SDA
+0326 120306          504         LCALL   I2C_Delay
+0329 D280            505         SETB    SCL
+032B 120306          506         LCALL   I2C_Delay
+032E D281            507         SETB    SDA
+0330 120306          508         LCALL   I2C_Delay
+0333 22              509         RET
+A51 MACRO ASSEMBLER  I2C_SLAVE_INT                                                        03/23/2021 13:52:12 PAGE     9
+
+                     510     
+0334                 511     S_ACK:
+0334 C281            512         CLR     SDA
+0336 120306          513         LCALL   I2C_Delay
+0339 D280            514         SETB    SCL
+033B 120306          515         LCALL   I2C_Delay
+033E C280            516         CLR     SCL
+0340 120306          517         LCALL   I2C_Delay
+0343 22              518         RET
+                     519     
+0344                 520     S_NoACK:
+0344 D281            521         SETB    SDA
+0346 120306          522         LCALL   I2C_Delay
+0349 D280            523         SETB    SCL
+034B 120306          524         LCALL   I2C_Delay
+034E C280            525         CLR     SCL
+0350 120306          526         LCALL   I2C_Delay
+0353 22              527         RET
+                     528     
+0354                 529     I2C_Check_ACK:
+0354 D281            530         SETB    SDA
+0356 120306          531         LCALL   I2C_Delay
+0359 D280            532         SETB    SCL
+035B 120306          533         LCALL   I2C_Delay
+035E A281            534             MOV     C, SDA
+0360 C280            535         CLR     SCL
+0362 120306          536         LCALL   I2C_Delay
+0365 22              537         RET
+                     538     
+0366                 539     I2C_WriteAbyte:
+0366 7F08            540         MOV     R7, #08H
+0368                 541     TXNEXT:
+0368 33              542         RLC     A          ;“∆≥ˆ ˝æ›Œª
+0369 9281            543         MOV     SDA, C     ; ˝æ›ÀÕ ˝æ›ø⁄
+036B D280            544         SETB    SCL        ; ±÷”->∏ﬂ
+036D 120306          545         LCALL   I2C_Delay  ;—” ±
+0370 C280            546         CLR     SCL        ; ±÷”->µÕ
+0372 120306          547         LCALL   I2C_Delay  ;—” ±
+0375 DFF1            548         DJNZ    R7, TXNEXT ;ÀÕœ¬“ªŒª
+0377 22              549         RET
+                     550     
+0378                 551     I2C_ReadAbyte:
+0378 7F08            552         MOV     R7, #08H
+037A                 553     RXNEXT:
+037A D280            554         SETB    SCL        ; ±÷”->∏ﬂ
+037C 120306          555         LCALL   I2C_Delay  ;—” ±
+037F A281            556         MOV     C, SDA
+0381 33              557         RLC     A
+0382 C280            558         CLR     SCL        ; ±÷”->µÕ
+0384 120306          559         LCALL   I2C_Delay  ;—” ±
+0387 DFF1            560         DJNZ    R7, RXNEXT ; ’œ¬“ªŒª
+0389 22              561         RET
+                     562     
+038A                 563     WriteNbyte:
+038A 12030F          564         LCALL   I2C_Start
+038D 745A            565         MOV     A, #SLAW
+038F 120366          566         LCALL   I2C_WriteAbyte
+0392 120354          567         LCALL   I2C_Check_ACK
+0395 401A            568         JC      Write_Exit
+0397 E4              569         CLR     A
+0398 120366          570         LCALL   I2C_WriteAbyte ;addr
+039B 120354          571         LCALL   I2C_Check_ACK
+039E 4011            572         JC      Write_Exit
+                     573     
+03A0 7E04            574         MOV     R6, #04H
+03A2 7434            575         MOV     A, #LED8+4  ;∑¢ÀÕ LED8[4]~LED8[7]  ˝æ›
+A51 MACRO ASSEMBLER  I2C_SLAVE_INT                                                        03/23/2021 13:52:12 PAGE    10
+
+03A4 F8              576         MOV     R0,A
+03A5                 577     Write_Loop:
+03A5 E6              578         MOV     A,@R0
+03A6 120366          579         LCALL   I2C_WriteAbyte
+03A9 120354          580         LCALL   I2C_Check_ACK
+03AC 4003            581         JC      Write_Exit
+03AE 08              582         INC     R0
+03AF DEF4            583         DJNZ    R6, Write_Loop
+                     584     
+03B1                 585     Write_Exit:
+03B1 120324          586         LCALL   I2C_Stop
+03B4 22              587         RET
+                     588     
+                     589     
+                     590         END
+                             
+A51 MACRO ASSEMBLER  I2C_SLAVE_INT                                                        03/23/2021 13:52:12 PAGE    11
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . .  D ADDR   00E0H   A   
+ADDR . . . . . . .  D ADDR   0021H   A   
+AUXR . . . . . . .  D ADDR   008EH   A   
+B_1MS. . . . . . .  B ADDR   0020H.0 A   
+DISPLAYFLAG. . . .  B ADDR   0020H.1 A   
+DISPLAY_INDEX. . .  D ADDR   0038H   A   
+DIS_ . . . . . . .  N NUMB   0011H   A   
+DIS_BLACK. . . . .  N NUMB   0010H   A   
+DIS_DOT. . . . . .  N NUMB   0020H   A   
+DPH. . . . . . . .  D ADDR   0083H   A   
+DPL. . . . . . . .  D ADDR   0082H   A   
+EA . . . . . . . .  B ADDR   00A8H.7 A   
+ET0. . . . . . . .  B ADDR   00A8H.1 A   
+FOSC_KHZ . . . . .  N NUMB   5DC0H   A   
+F_DISPLAYSCAN. . .  C ADDR   0259H   A   
+F_HEX2_DEC . . . .  C ADDR   0208H   A   
+F_I2C_EXIT . . . .  C ADDR   02B2H   A   
+F_I2C_INIT . . . .  C ADDR   01D9H   A   
+F_I2C_INTERRUPT. .  C ADDR   0295H   A   
+F_MAIN . . . . . .  C ADDR   0100H   A   
+F_TIMER0_INTERRUPT  C ADDR   0287H   A   
+I2CCFG . . . . . .  X ADDR   FE80H   A   
+I2CMSAUX . . . . .  X ADDR   FE88H   A   
+I2CMSCR. . . . . .  X ADDR   FE81H   A   
+I2CMSST. . . . . .  X ADDR   FE82H   A   
+I2CRXD . . . . . .  X ADDR   FE87H   A   
+I2CSLADR . . . . .  X ADDR   FE85H   A   
+I2CSLCR. . . . . .  X ADDR   FE83H   A   
+I2CSLST. . . . . .  X ADDR   FE84H   A   
+I2CTXD . . . . . .  X ADDR   FE86H   A   
+I2C_CHECK_ACK. . .  C ADDR   0354H   A   
+I2C_DELAY. . . . .  C ADDR   0306H   A   
+I2C_READABYTE. . .  C ADDR   0378H   A   
+I2C_START. . . . .  C ADDR   030FH   A   
+I2C_STOP . . . . .  C ADDR   0324H   A   
+I2C_WRITEABYTE . .  C ADDR   0366H   A   
+IE2. . . . . . . .  D ADDR   00AFH   A   
+INT_CLKO . . . . .  D ADDR   008FH   A   
+ISDA . . . . . . .  B ADDR   0020H.6 A   
+ISMA . . . . . . .  B ADDR   0020H.7 A   
+LED8 . . . . . . .  D ADDR   0030H   A   
+L_1SISGOOD . . . .  C ADDR   0182H   A   
+L_CLEARLOOP. . . .  C ADDR   0132H   A   
+L_HEX2_DEC . . . .  C ADDR   0210H   A   
+L_IS1MS. . . . . .  C ADDR   0167H   A   
+L_LESSTHEN10000. .  C ADDR   01A1H   A   
+L_MAIN_LOOP. . . .  C ADDR   0151H   A   
+L_QUITDISPLAYSCAN.  C ADDR   0280H   A   
+L_QUITPROCESSADC .  C ADDR   01D3H   A   
+MSECOND_H. . . . .  D ADDR   0039H   A   
+MSECOND_L. . . . .  D ADDR   003AH   A   
+P0 . . . . . . . .  D ADDR   0080H   A   
+P0M0 . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . .  D ADDR   0093H   A   
+P1M0 . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . .  D ADDR   0095H   A   
+P3M0 . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . .  D ADDR   00B1H   A   
+A51 MACRO ASSEMBLER  I2C_SLAVE_INT                                                        03/23/2021 13:52:12 PAGE    12
+
+P4 . . . . . . . .  D ADDR   00C0H   A   
+P4M0 . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . .  D ADDR   00B3H   A   
+P5 . . . . . . . .  D ADDR   00C8H   A   
+P5M0 . . . . . . .  D ADDR   00CAH   A   
+P5M1 . . . . . . .  D ADDR   00C9H   A   
+P6 . . . . . . . .  D ADDR   00E8H   A   
+P6M0 . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . .  D ADDR   00CBH   A   
+P7 . . . . . . . .  D ADDR   00F8H   A   
+P7M0 . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . .  D ADDR   00E1H   A   
+PSW. . . . . . . .  D ADDR   00D0H   A   
+P_SW1. . . . . . .  D ADDR   00A2H   A   
+P_SW2. . . . . . .  D ADDR   00BAH   A   
+RXDA . . . . . . .  C ADDR   02D6H   A   
+RXIF . . . . . . .  C ADDR   02C2H   A   
+RXMA . . . . . . .  C ADDR   02D8H   A   
+RXNAK. . . . . . .  C ADDR   02F3H   A   
+RXNEXT . . . . . .  C ADDR   037AH   A   
+SCL. . . . . . . .  B ADDR   0080H.0 A   
+SDA. . . . . . . .  B ADDR   0080H.1 A   
+SLAR . . . . . . .  N NUMB   005BH   A   
+SLAW . . . . . . .  N NUMB   005AH   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER. . .  N NUMB   00D0H   A   
+STARTIF. . . . . .  C ADDR   02BDH   A   
+STOPIF . . . . . .  C ADDR   02FBH   A   
+S_ACK. . . . . . .  C ADDR   0334H   A   
+S_NOACK. . . . . .  C ADDR   0344H   A   
+T2H. . . . . . . .  D ADDR   00D6H   A   
+T2L. . . . . . . .  D ADDR   00D7H   A   
+TEST_CNT_H . . . .  D ADDR   003BH   A   
+TEST_CNT_L . . . .  D ADDR   003CH   A   
+TH0. . . . . . . .  D ADDR   008CH   A   
+TIMER0_RELOAD. . .  N NUMB   A240H   A   
+TL0. . . . . . . .  D ADDR   008AH   A   
+TMOD . . . . . . .  D ADDR   0089H   A   
+TR0. . . . . . . .  B ADDR   0088H.4 A   
+TXIF . . . . . . .  C ADDR   02E2H   A   
+TXNEXT . . . . . .  C ADDR   0368H   A   
+T_COM. . . . . . .  C ADDR   0251H   A   
+T_DISPLAY. . . . .  C ADDR   0226H   A   
+WRITENBYTE . . . .  C ADDR   038AH   A   
+WRITE_EXIT . . . .  C ADDR   03B1H   A   
+WRITE_LOOP . . . .  C ADDR   03A5H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

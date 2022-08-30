@@ -1,0 +1,631 @@
+C51 COMPILER V9.59.0.0   TOUCH                                                             02/08/2021 11:44:59 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE TOUCH
+OBJECT MODULE PLACED IN .\Out_File\touch.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\Device\touch.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Device;..\Lib
+                    -raries) DEBUG OBJECTEXTEND PRINT(.\touch.lst) TABS(2) OBJECT(.\Out_File\touch.obj)
+
+line level    source
+
+   1          
+   2          /*************  技术支持与购买说明    **************
+   3          产品主页：http://tw51.haohaodada.com
+   4          淘宝搜索：天问51，可购买。目前基础版99元，带彩屏标准备版149元
+   5          技术支持QQ群一：1138055784
+   6          ******************************************/
+   7          
+   8          #include "touch.h"
+   9          #include "sys.h"
+  10          #include "adc.h"
+  11          #include <math.h>
+  12          #include "delay.h"
+  13          #include "tftlcd.h"
+  14          #include "eeprom.h"
+  15          
+  16          //========================================================================
+  17          // 描述: 读取X坐标.
+  18          // 参数: none.
+  19          // 返回: 读到的坐标.
+  20          //========================================================================
+  21          uint16 touch_read_raw_x()
+  22          {
+  23   1        uint16 i, j;
+  24   1        uint16 buf[TOUCH_READ_TIMES];
+  25   1        uint16 sum=0;
+  26   1        uint16 temp;
+  27   1        if(lcddev.id == 0x9341)
+  28   1        {
+  29   2          LCD9341_SET_XM_OUT;
+  30   2          LCD9341_SET_XP_OUT;
+  31   2          LCD9341_SET_YP_IN;   
+  32   2          LCD9341_SET_YM_IN;
+  33   2          LCD9341_TOUCH_XP_PIN = 1;
+  34   2          LCD9341_TOUCH_YP_PIN = 0;
+  35   2          LCD9341_TOUCH_YM_PIN = 0;
+  36   2          LCD9341_TOUCH_XM_PIN = 0;
+  37   2          adc_init(LCD9341_YP_ADC_PIN, ADC_SYSclk_DIV_2, ADC_12BIT);
+  38   2          for(i=0;i<TOUCH_READ_TIMES;i++)buf[i]=adc_read(LCD9341_YP_ADC_PIN);         
+  39   2          for(i=0;i<TOUCH_READ_TIMES-1; i++)//排序
+  40   2          {
+  41   3            for(j=i+1;j<TOUCH_READ_TIMES;j++)
+  42   3            {
+  43   4              if(buf[i]>buf[j])//升序排列
+  44   4              {
+  45   5                temp=buf[i];
+  46   5                buf[i]=buf[j];
+  47   5                buf[j]=temp;
+  48   5              }
+  49   4            }
+  50   3          }  
+  51   2          sum=0;
+  52   2          for(i=TOUCH_LOST_VAL;i<TOUCH_READ_TIMES-TOUCH_LOST_VAL;i++)sum+=buf[i];
+  53   2          temp=sum/(TOUCH_READ_TIMES-2*TOUCH_LOST_VAL);
+  54   2          LCD9341_SET_YP_OUT;
+C51 COMPILER V9.59.0.0   TOUCH                                                             02/08/2021 11:44:59 PAGE 2   
+
+  55   2          LCD9341_SET_YM_OUT;
+  56   2          return temp;
+  57   2        }
+  58   1        else
+  59   1        {
+  60   2          SM245_SET_XM_OUT;
+  61   2          SM245_SET_XP_OUT;
+  62   2          SM245_SET_YP_IN;   
+  63   2          SM245_SET_YM_IN;
+  64   2          SM245_TOUCH_XP_PIN = 1;
+  65   2          SM245_TOUCH_YP_PIN = 0;
+  66   2          SM245_TOUCH_YM_PIN = 0;
+  67   2          SM245_TOUCH_XM_PIN = 0;
+  68   2          adc_init(SM245_YP_ADC_PIN, ADC_SYSclk_DIV_2, ADC_12BIT);
+  69   2          for(i=0;i<TOUCH_READ_TIMES;i++)buf[i]=adc_read(SM245_YP_ADC_PIN);         
+  70   2          for(i=0;i<TOUCH_READ_TIMES-1; i++)//排序
+  71   2          {
+  72   3            for(j=i+1;j<TOUCH_READ_TIMES;j++)
+  73   3            {
+  74   4              if(buf[i]>buf[j])//升序排列
+  75   4              {
+  76   5                temp=buf[i];
+  77   5                buf[i]=buf[j];
+  78   5                buf[j]=temp;
+  79   5              }
+  80   4            }
+  81   3          }  
+  82   2          sum=0;
+  83   2          for(i=TOUCH_LOST_VAL;i<TOUCH_READ_TIMES-TOUCH_LOST_VAL;i++)sum+=buf[i];
+  84   2          temp=sum/(TOUCH_READ_TIMES-2*TOUCH_LOST_VAL);
+  85   2          SM245_SET_YP_OUT;
+  86   2          SM245_SET_YM_OUT;
+  87   2          return temp;
+  88   2        }
+  89   1      }
+  90          
+  91          //========================================================================
+  92          // 描述: 读取Y坐标.
+  93          // 参数: none.
+  94          // 返回: 读到的坐标.
+  95          //========================================================================
+  96          uint16 touch_read_raw_y()
+  97          {
+  98   1        uint16 i, j;
+  99   1        uint16 buf[TOUCH_READ_TIMES];
+ 100   1        uint16 sum=0;
+ 101   1        uint16 temp;
+ 102   1        if(lcddev.id == 0x9341)
+ 103   1        {
+ 104   2          LCD9341_SET_YP_OUT;
+ 105   2          LCD9341_SET_YM_OUT;
+ 106   2          LCD9341_SET_XP_IN;   
+ 107   2          LCD9341_SET_XM_IN;
+ 108   2          LCD9341_TOUCH_YP_PIN = 1;
+ 109   2          LCD9341_TOUCH_YM_PIN = 0;
+ 110   2          LCD9341_TOUCH_XP_PIN = 0;
+ 111   2          LCD9341_TOUCH_XM_PIN = 0;
+ 112   2        
+ 113   2          adc_init(LCD9341_XM_ADC_PIN, ADC_SYSclk_DIV_2, ADC_12BIT);
+ 114   2      
+ 115   2          for(i=0;i<TOUCH_READ_TIMES;i++)buf[i]=adc_read(LCD9341_XM_ADC_PIN);         
+ 116   2          for(i=0;i<TOUCH_READ_TIMES-1; i++)//排序
+C51 COMPILER V9.59.0.0   TOUCH                                                             02/08/2021 11:44:59 PAGE 3   
+
+ 117   2          {
+ 118   3            for(j=i+1;j<TOUCH_READ_TIMES;j++)
+ 119   3            {
+ 120   4              if(buf[i]>buf[j])//升序排列
+ 121   4              {
+ 122   5                temp=buf[i];
+ 123   5                buf[i]=buf[j];
+ 124   5                buf[j]=temp;
+ 125   5              }
+ 126   4            }
+ 127   3          }  
+ 128   2          sum=0;
+ 129   2          for(i=TOUCH_LOST_VAL;i<TOUCH_READ_TIMES-TOUCH_LOST_VAL;i++)sum+=buf[i];
+ 130   2          temp=sum/(TOUCH_READ_TIMES-2*TOUCH_LOST_VAL);
+ 131   2          LCD9341_SET_XM_OUT;
+ 132   2          LCD9341_SET_XP_OUT;
+ 133   2          return temp;
+ 134   2        }
+ 135   1        else
+ 136   1        {
+ 137   2          SM245_SET_YP_OUT;
+ 138   2          SM245_SET_YM_OUT;
+ 139   2          SM245_SET_XP_IN;   
+ 140   2          SM245_SET_XM_IN;
+ 141   2          SM245_TOUCH_YP_PIN = 1;
+ 142   2          SM245_TOUCH_YM_PIN = 0;
+ 143   2          SM245_TOUCH_XP_PIN = 0;
+ 144   2          SM245_TOUCH_XM_PIN = 0;
+ 145   2        
+ 146   2          adc_init(SM245_XM_ADC_PIN, ADC_SYSclk_DIV_2, ADC_12BIT);
+ 147   2      
+ 148   2          for(i=0;i<TOUCH_READ_TIMES;i++)buf[i]=adc_read(SM245_XM_ADC_PIN);         
+ 149   2          for(i=0;i<TOUCH_READ_TIMES-1; i++)//排序
+ 150   2          {
+ 151   3            for(j=i+1;j<TOUCH_READ_TIMES;j++)
+ 152   3            {
+ 153   4              if(buf[i]>buf[j])//升序排列
+ 154   4              {
+ 155   5                temp=buf[i];
+ 156   5                buf[i]=buf[j];
+ 157   5                buf[j]=temp;
+ 158   5              }
+ 159   4            }
+ 160   3          }  
+ 161   2          sum=0;
+ 162   2          for(i=TOUCH_LOST_VAL;i<TOUCH_READ_TIMES-TOUCH_LOST_VAL;i++)sum+=buf[i];
+ 163   2          temp=sum/(TOUCH_READ_TIMES-2*TOUCH_LOST_VAL);
+ 164   2          SM245_SET_XM_OUT;
+ 165   2          SM245_SET_XP_OUT;
+ 166   2          return temp;
+ 167   2        }
+ 168   1      }
+ 169          
+ 170          //========================================================================
+ 171          // 描述: 读取触摸的压力值.
+ 172          // 参数: none.
+ 173          // 返回: 读到的压力值.
+ 174          //========================================================================
+ 175          uint16 touch_read_pressure()
+ 176          {
+ 177   1          int z1,z2;
+ 178   1        if(lcddev.id == 0x9341)
+C51 COMPILER V9.59.0.0   TOUCH                                                             02/08/2021 11:44:59 PAGE 4   
+
+ 179   1        {
+ 180   2          LCD9341_SET_XP_OUT;
+ 181   2          LCD9341_SET_YM_OUT;
+ 182   2          LCD9341_SET_XM_IN;
+ 183   2          LCD9341_SET_YP_IN;
+ 184   2          LCD9341_TOUCH_XP_PIN = 0;
+ 185   2          LCD9341_TOUCH_YM_PIN = 1; 
+ 186   2          LCD9341_TOUCH_XM_PIN = 0;
+ 187   2          LCD9341_TOUCH_YP_PIN = 0;
+ 188   2      
+ 189   2          adc_init(LCD9341_XM_ADC_PIN, ADC_SYSclk_DIV_2, ADC_12BIT);
+ 190   2          adc_init(LCD9341_YP_ADC_PIN, ADC_SYSclk_DIV_2, ADC_12BIT);
+ 191   2      
+ 192   2          z1 = adc_read(LCD9341_XM_ADC_PIN); 
+ 193   2          z2 = adc_read(LCD9341_YP_ADC_PIN);
+ 194   2      
+ 195   2          LCD9341_SET_XM_OUT;
+ 196   2          LCD9341_SET_YP_OUT;
+ 197   2          LCD9341_TOUCH_YP_PIN = 1;
+ 198   2          LCD9341_TOUCH_XM_PIN = 1;
+ 199   2          return (4095 - (z2-z1));
+ 200   2        }
+ 201   1        else
+ 202   1        {
+ 203   2          SM245_SET_XP_OUT;
+ 204   2          SM245_SET_YM_OUT;
+ 205   2          SM245_SET_XM_IN;
+ 206   2          SM245_SET_YP_IN;
+ 207   2          SM245_TOUCH_XP_PIN = 0;
+ 208   2          SM245_TOUCH_YM_PIN = 1; 
+ 209   2          SM245_TOUCH_XM_PIN = 0;
+ 210   2          SM245_TOUCH_YP_PIN = 0;
+ 211   2      
+ 212   2          adc_init(SM245_XM_ADC_PIN, ADC_SYSclk_DIV_2, ADC_12BIT);
+ 213   2          adc_init(SM245_YP_ADC_PIN, ADC_SYSclk_DIV_2, ADC_12BIT);
+ 214   2      
+ 215   2          z1 = adc_read(SM245_XM_ADC_PIN); 
+ 216   2          z2 = adc_read(SM245_YP_ADC_PIN);
+ 217   2      
+ 218   2          SM245_SET_XM_OUT;
+ 219   2          SM245_SET_YP_OUT;
+ 220   2          SM245_TOUCH_YP_PIN = 1;
+ 221   2          SM245_TOUCH_XM_PIN = 1;
+ 222   2          return (4095 - (z2-z1));
+ 223   2        }
+ 224   1      }
+ 225          
+ 226          //========================================================================
+ 227          // 描述: 通过2次采样误差得到更准确的坐标值.
+ 228          // 参数: x,y:采样得到的物理坐标.
+ 229          // 返回: 误差在50以内返回1，否则返回0.
+ 230          //========================================================================
+ 231          #define ERR_RANGE   50      //误差范围 
+ 232          uint8 tp_read_xy2(uint16 *x,uint16 *y) 
+ 233          {
+ 234   1        uint16 x1,y1;
+ 235   1        uint16 x2,y2;
+ 236   1      
+ 237   1        x1 = touch_read_raw_x();
+ 238   1        y1 = touch_read_raw_y();
+ 239   1        x2 = touch_read_raw_x();
+ 240   1        y2 = touch_read_raw_y();
+C51 COMPILER V9.59.0.0   TOUCH                                                             02/08/2021 11:44:59 PAGE 5   
+
+ 241   1      
+ 242   1          if(((x2<=x1&&x1<x2+ERR_RANGE)||(x1<=x2&&x2<x1+ERR_RANGE))//前后2次采样误差在50以内
+ 243   1          &&((y2<=y1&&y1<y2+ERR_RANGE)||(y1<=y2&&y2<y1+ERR_RANGE)))
+ 244   1          {
+ 245   2              *x=(x1+x2)/2;
+ 246   2              *y=(y1+y2)/2;
+ 247   2              return 1;
+ 248   2          }else return 0;   
+ 249   1      } 
+ 250          
+ 251          //========================================================================
+ 252          // 描述: 画一个触摸点.
+ 253          // 参数: x,y:坐标; color:颜色值.
+ 254          // 返回: none.
+ 255          //========================================================================
+ 256          void tp_drow_touch_point(uint16 x,uint16 y,uint16 color)
+ 257          {
+ 258   1        _tft_lcd_point_color = color;
+ 259   1        tft_lcd_draw_line(x-12,y,x+13,y,color);    //横线
+ 260   1        tft_lcd_draw_line(x,y-12,x,y+13,color);    //竖线
+ 261   1        tft_lcd_draw_point(x+1,y+1);
+ 262   1        tft_lcd_draw_point(x-1,y+1);
+ 263   1        tft_lcd_draw_point(x+1,y-1);
+ 264   1        tft_lcd_draw_point(x-1,y-1);
+ 265   1        tft_lcd_draw_circle(x,y,6,color,0);         //画中心圈
+ 266   1      }
+ 267          
+ 268          //触摸屏控制器
+ 269          typedef struct
+ 270          {   
+ 271            uint16 x;       
+ 272            uint16 y;   
+ 273            uint8  sta;                   
+ 274              /////////////////////触摸屏校准参数//////////////////////                
+ 275            float xfac;         
+ 276            float yfac;
+ 277            int xoff;
+ 278            int yoff;    
+ 279          
+ 280            uint8 touchtype;  //屏幕方向
+ 281          }_m_tp_dev;
+ 282          
+ 283          _m_tp_dev tp_dev=
+ 284          {
+ 285            0,
+ 286            0, 
+ 287            0,
+ 288            0,
+ 289            0,
+ 290            0,          
+ 291            0,
+ 292            0         
+ 293          };
+ 294          
+ 295          //========================================================================
+ 296          // 描述: 触摸校准程序.
+ 297          // 参数: none.
+ 298          // 返回: none.
+ 299          //========================================================================
+ 300          void touch_adjust()
+ 301          {
+ 302   1        uint16 pos_temp[4][2];//坐标缓冲值
+C51 COMPILER V9.59.0.0   TOUCH                                                             02/08/2021 11:44:59 PAGE 6   
+
+ 303   1        uint8  cnt=0; 
+ 304   1        uint16 d1,d2;
+ 305   1        uint32 tem1,tem2;
+ 306   1        float fac;  
+ 307   1        uint16 outtime=0;
+ 308   1        cnt=0;        
+ 309   1        _tft_lcd_point_color=TFT_LCD_BLUE;
+ 310   1        _tft_lcd_back_color =TFT_LCD_WHITE;
+ 311   1        tft_lcd_clear(TFT_LCD_WHITE);   //清屏 
+ 312   1        _tft_lcd_point_color=TFT_LCD_RED;    //红色
+ 313   1        tft_lcd_clear(TFT_LCD_WHITE);   //清屏   
+ 314   1        _tft_lcd_point_color=TFT_LCD_BLACK;
+ 315   1        tft_lcd_show_string(70,40,"touch adjust",TFT_LCD_RED,TFT_LCD_WHITE,16,1);//显示提示信息
+ 316   1        tp_drow_touch_point(20,20,TFT_LCD_RED);     //画点1
+ 317   1        tp_dev.sta=0;       //消除触发信号 
+ 318   1        tp_dev.xfac=0;      //xfac清除校准标志  
+ 319   1          while(1)            //如果连续10s没有按下，则自动退出
+ 320   1          {
+ 321   2              if( tp_read_xy2(&tp_dev.x,&tp_dev.y) && touch_read_pressure() > 1000)     //代表有按键按下
+ 322   2              {
+ 323   3                  outtime = 0;
+ 324   3                  tp_dev.sta=1;       //标记按键已经被处理过了
+ 325   3      
+ 326   3            if(lcddev.id == 0x9341)
+ 327   3            {
+ 328   4              pos_temp[cnt][0] = tp_dev.y;
+ 329   4              pos_temp[cnt][1] = tp_dev.x;    
+ 330   4            }
+ 331   3            else if(lcddev.id == 0x9340)
+ 332   3            {
+ 333   4              pos_temp[cnt][0] = tp_dev.y;
+ 334   4              pos_temp[cnt][1] = tp_dev.x; 
+ 335   4            }
+ 336   3            else if(tp_dev.touchtype == 0)
+ 337   3            {
+ 338   4              pos_temp[cnt][0] = 4095 - tp_dev.y;
+ 339   4              pos_temp[cnt][1] = 4095 - tp_dev.x; 
+ 340   4            }
+ 341   3            else if(tp_dev.touchtype == 1)
+ 342   3            {
+ 343   4              pos_temp[cnt][0] = tp_dev.y;
+ 344   4              pos_temp[cnt][1] = tp_dev.x; 
+ 345   4            }
+ 346   3                  cnt++;
+ 347   3                  switch(cnt)
+ 348   3            {        
+ 349   4              case 1:            
+ 350   4                tp_drow_touch_point(20,20,TFT_LCD_WHITE);       //清除点1
+ 351   4                tp_drow_touch_point(lcddev.width-20,20,TFT_LCD_RED);  //画点2
+ 352   4                break;
+ 353   4              case 2:
+ 354   4                tp_drow_touch_point(lcddev.width-20,20,TFT_LCD_WHITE);  //清除点2
+ 355   4                tp_drow_touch_point(20,lcddev.height-20,TFT_LCD_RED); //画点3
+ 356   4                break;
+ 357   4              case 3:
+ 358   4                tp_drow_touch_point(20,lcddev.height-20,TFT_LCD_WHITE);     //清除点3
+ 359   4                tp_drow_touch_point(lcddev.width-20,lcddev.height-20,TFT_LCD_RED);  //画点4
+ 360   4                break;
+ 361   4              case 4:  //全部4个点已经得到
+ 362   4                    //对边相等
+ 363   4                tem1=fabs(pos_temp[0][0]-pos_temp[1][0]);//x1-x2
+ 364   4                tem2=fabs(pos_temp[0][1]-pos_temp[1][1]);//y1-y2
+C51 COMPILER V9.59.0.0   TOUCH                                                             02/08/2021 11:44:59 PAGE 7   
+
+ 365   4                tem1*=tem1;
+ 366   4                tem2*=tem2;
+ 367   4                d1=sqrt(tem1+tem2);     //得到1，2的距离
+ 368   4                
+ 369   4                tem1=fabs(pos_temp[2][0]-pos_temp[3][0]);//x3-x4
+ 370   4                tem2=fabs(pos_temp[2][1]-pos_temp[3][1]);//y3-y4
+ 371   4                tem1*=tem1;
+ 372   4                tem2*=tem2;
+ 373   4                d2=sqrt(tem1+tem2);//得到3，4的距离
+ 374   4                fac=(float)d1/d2;
+ 375   4                if(fac<0.95||fac>1.05||d1==0||d2==0)//不合格
+ 376   4                {
+ 377   5                  cnt=0;
+ 378   5                    tp_drow_touch_point(lcddev.width-20,lcddev.height-20,TFT_LCD_WHITE);  //清除点4
+ 379   5                    tp_drow_touch_point(20,20,TFT_LCD_RED);               //画点一 
+ 380   5                  continue;
+ 381   5                }
+ 382   4                tem1=fabs(pos_temp[0][0]-pos_temp[2][0]);    //x1-x3
+ 383   4                tem2=fabs(pos_temp[0][1]-pos_temp[2][1]);    //y1-y3
+ 384   4                tem1*=tem1;
+ 385   4                tem2*=tem2;
+ 386   4                d1=sqrt(tem1+tem2);//得到1，3的距离
+ 387   4                
+ 388   4                tem1=fabs(pos_temp[1][0]-pos_temp[3][0]);//x2-x4
+ 389   4                tem2=fabs(pos_temp[1][1]-pos_temp[3][1]);//y2-y4
+ 390   4                tem1*=tem1;
+ 391   4                tem2*=tem2;
+ 392   4                d2=sqrt(tem1+tem2);//得到2，4的距离
+ 393   4                fac=(float)d1/d2;
+ 394   4                if(fac<0.95||fac>1.05)//不合格
+ 395   4                {
+ 396   5                  cnt=0;
+ 397   5                    tp_drow_touch_point(lcddev.width-20,lcddev.height-20,TFT_LCD_WHITE);  //清除点4
+ 398   5                    tp_drow_touch_point(20,20,TFT_LCD_RED);               //画点1
+ 399   5                  continue;
+ 400   5                }//正确了
+ 401   4                         
+ 402   4                //对角线相等
+ 403   4                tem1=fabs(pos_temp[1][0]-pos_temp[2][0]);//x1-x3
+ 404   4                tem2=fabs(pos_temp[1][1]-pos_temp[2][1]);//y1-y3
+ 405   4                tem1*=tem1;
+ 406   4                tem2*=tem2;
+ 407   4                d1=sqrt(tem1+tem2);    //得到1，4的距离
+ 408   4        
+ 409   4                tem1=fabs(pos_temp[0][0]-pos_temp[3][0]);//x2-x4
+ 410   4                tem2=fabs(pos_temp[0][1]-pos_temp[3][1]);//y2-y4
+ 411   4                tem1*=tem1;
+ 412   4                tem2*=tem2;
+ 413   4                d2=sqrt(tem1+tem2);//得到2，3的距离
+ 414   4                fac=(float)d1/d2;
+ 415   4                if(fac<0.95||fac>1.05)//不合格
+ 416   4                {
+ 417   5                  cnt=0;
+ 418   5                    tp_drow_touch_point(lcddev.width-20,lcddev.height-20,TFT_LCD_WHITE);  //清除点4
+ 419   5                    tp_drow_touch_point(20,20,TFT_LCD_RED);               //画点1
+ 420   5                  continue;
+ 421   5                }//正确了
+ 422   4                //计算结果
+ 423   4                tp_dev.xfac=(float)(lcddev.width-40)/(pos_temp[1][0]-pos_temp[0][0]);//得到xfac    
+ 424   4                tp_dev.xoff=(lcddev.width-tp_dev.xfac*(pos_temp[1][0]+pos_temp[0][0]))/2;//得到xoff
+ 425   4                    
+ 426   4                tp_dev.yfac=(float)(lcddev.height-40)/(pos_temp[2][1]-pos_temp[0][1]);//得到yfac
+C51 COMPILER V9.59.0.0   TOUCH                                                             02/08/2021 11:44:59 PAGE 8   
+
+ 427   4                tp_dev.yoff=(lcddev.height-tp_dev.yfac*(pos_temp[2][1]+pos_temp[0][1]))/2;//得到yoff  
+ 428   4                if(fabs(tp_dev.xfac)>2||fabs(tp_dev.yfac)>2)//触屏和预设的相反了
+ 429   4                {
+ 430   5                  cnt=0;
+ 431   5                    tp_drow_touch_point(lcddev.width-20,lcddev.height-20,TFT_LCD_WHITE);  //清除点4
+ 432   5                    tp_drow_touch_point(20,20,TFT_LCD_RED);               //画点1
+ 433   5                  tft_lcd_show_string(40,26,"TP Need readjust!",TFT_LCD_RED,TFT_LCD_WHITE,16,1);
+ 434   5                  if(lcddev.id == 0x9340)
+ 435   5                  {
+ 436   6                    lcddev.id = 0;
+ 437   6                    tp_dev.touchtype = 0;
+ 438   6                  }
+ 439   5                  //tp_dev.touchtype=!tp_dev.touchtype;//修改触屏类型       
+ 440   5                  continue;
+ 441   5                }   
+ 442   4                _tft_lcd_point_color=TFT_LCD_BLUE;
+ 443   4                tft_lcd_clear(TFT_LCD_WHITE);//清屏
+ 444   4                tft_lcd_show_string(35,110,"Touch Screen Adjust OK!",TFT_LCD_RED,TFT_LCD_WHITE,16,1);//校正完成
+ 445   4                delay(200);
+ 446   4                //把校准数据写入触摸屏
+ 447   4                          eeprom_sector_erase(TOUCH_EEPROM_ADDR);
+ 448   4                  eeprom_write_float(TOUCH_EEPROM_ADDR,tp_dev.xfac);
+ 449   4                eeprom_write_float(TOUCH_EEPROM_ADDR+sizeof(float),tp_dev.yfac);
+ 450   4                eeprom_write_int(TOUCH_EEPROM_ADDR+2*sizeof(float),tp_dev.xoff);
+ 451   4                eeprom_write_int(TOUCH_EEPROM_ADDR+2*sizeof(float)+sizeof(int),tp_dev.yoff);
+ 452   4      
+ 453   4                tft_lcd_clear(TFT_LCD_WHITE);//清屏  
+ 454   4                return;//校正完成        
+ 455   4            }
+ 456   3                  while(touch_read_pressure() > 1000);
+ 457   3          }
+ 458   2          delay(10);
+ 459   2          outtime++;
+ 460   2          if(outtime>1000)
+ 461   2          {
+ 462   3                  tft_lcd_clear(TFT_LCD_WHITE);
+ 463   3            //从存储器中得到校准数据
+ 464   3                  tp_dev.xfac = eeprom_read_float(TOUCH_EEPROM_ADDR);
+ 465   3            tp_dev.yfac = eeprom_read_float(TOUCH_EEPROM_ADDR+sizeof(float));
+ 466   3            tp_dev.xoff = eeprom_read_int(TOUCH_EEPROM_ADDR+2*sizeof(float));
+ 467   3            tp_dev.yoff = eeprom_read_int(TOUCH_EEPROM_ADDR+2*sizeof(float)+sizeof(int));
+ 468   3            return;
+ 469   3          } 
+ 470   2        }            
+ 471   1      }
+ 472          
+ 473          //========================================================================
+ 474          // 描述: 触摸的初始化函数.
+ 475          // 参数: t:0,不进入校准程序;其他值:进入校准程序.
+ 476          // 返回: none.
+ 477          //========================================================================
+ 478          void touch_init(uint8 t)
+ 479          {
+ 480   1        if(t == 0)  //直接从eeprom中获取校准数据
+ 481   1        {
+ 482   2          tp_dev.xfac = eeprom_read_float(TOUCH_EEPROM_ADDR);
+ 483   2          tp_dev.yfac = eeprom_read_float(TOUCH_EEPROM_ADDR+sizeof(float));
+ 484   2          tp_dev.xoff = eeprom_read_int(TOUCH_EEPROM_ADDR+2*sizeof(float));
+ 485   2          tp_dev.yoff = eeprom_read_int(TOUCH_EEPROM_ADDR+2*sizeof(float)+sizeof(int));   
+ 486   2        }else{
+ 487   2          touch_adjust(); //进入校准程序
+ 488   2        }
+C51 COMPILER V9.59.0.0   TOUCH                                                             02/08/2021 11:44:59 PAGE 9   
+
+ 489   1      }
+ 490          
+ 491          //========================================================================
+ 492          // 描述: 读取触摸的坐标以及压力值.
+ 493          // 参数: none.
+ 494          // 返回: 读到的坐标.
+ 495          //========================================================================
+ 496          uint16* touch_get_point()
+ 497          {
+ 498   1          uint16 tspoint[3];
+ 499   1        uint16 x,y;
+ 500   1        tp_read_xy2(&x,&y);
+ 501   1        if(lcddev.id == 0x9341)
+ 502   1        {
+ 503   2          //读取X坐标
+ 504   2          tspoint[0] = tp_dev.xfac*(y)+tp_dev.xoff; 
+ 505   2          //读取Y坐标
+ 506   2          tspoint[1] = tp_dev.yfac*(x)+tp_dev.yoff; 
+ 507   2        }
+ 508   1        else if(lcddev.id == 0x9340)
+ 509   1        {
+ 510   2          //读取X坐标
+ 511   2          tspoint[0] = tp_dev.xfac*(y)+tp_dev.xoff; 
+ 512   2          //读取Y坐标
+ 513   2          tspoint[1] = tp_dev.yfac*(x)+tp_dev.yoff; 
+ 514   2        }
+ 515   1      
+ 516   1        else if(tp_dev.touchtype == 0)
+ 517   1        {
+ 518   2          //读取X坐标
+ 519   2          tspoint[0] = tp_dev.xfac*(4095 - y)+tp_dev.xoff;  
+ 520   2          //读取Y坐标
+ 521   2          tspoint[1] = tp_dev.yfac*(4095 - x)+tp_dev.yoff;
+ 522   2        }
+ 523   1        else if(tp_dev.touchtype == 1)
+ 524   1        {
+ 525   2          //读取X坐标
+ 526   2          tspoint[0] = tp_dev.xfac*(4095 - x)+tp_dev.xoff;  
+ 527   2          //读取Y坐标
+ 528   2          tspoint[1] = tp_dev.yfac*(4095 - y)+tp_dev.yoff;  
+ 529   2        }
+ 530   1      
+ 531   1          //读取压力
+ 532   1          tspoint[2] = touch_read_pressure();
+ 533   1      
+ 534   1          return tspoint;
+ 535   1      }
+ 536          
+ 537          //========================================================================
+ 538          // 描述: 读取触摸的x坐标.
+ 539          // 参数: none.
+ 540          // 返回: 读到的坐标.
+ 541          //========================================================================
+ 542          uint16 touch_read_x() //读取X的坐标
+ 543          {
+ 544   1        uint16 x,y;
+ 545   1        tp_read_xy2(&x,&y);
+ 546   1        if(lcddev.id == 0x9341)
+ 547   1        {
+ 548   2          //读取X坐标
+ 549   2          return (tp_dev.xfac*(y)+tp_dev.xoff); 
+ 550   2        }
+C51 COMPILER V9.59.0.0   TOUCH                                                             02/08/2021 11:44:59 PAGE 10  
+
+ 551   1        else if(tp_dev.touchtype == 0)
+ 552   1        {
+ 553   2          //读取X坐标
+ 554   2          return (tp_dev.xfac*(4095 - y)+tp_dev.xoff);  
+ 555   2        }
+ 556   1        else if(tp_dev.touchtype == 1)
+ 557   1        {
+ 558   2          //读取X坐标
+ 559   2          return (tp_dev.xfac*(4095 - x)+tp_dev.xoff);    
+ 560   2        }
+ 561   1        return 0;
+ 562   1      }
+ 563          
+ 564          //========================================================================
+ 565          // 描述: 读取触摸的y坐标.
+ 566          // 参数: none.
+ 567          // 返回: 读到的坐标.
+ 568          //========================================================================
+ 569          uint16 touch_read_y() //读取Y的坐标
+ 570          {
+ 571   1        uint16 x,y;
+ 572   1        tp_read_xy2(&x,&y);
+ 573   1        if(lcddev.id == 0x9341)
+ 574   1        {
+ 575   2          //读取Y坐标
+ 576   2          return (tp_dev.yfac*(x)+tp_dev.yoff); 
+ 577   2        }
+ 578   1        else if(tp_dev.touchtype == 0)
+ 579   1        { 
+ 580   2          //读取Y坐标
+ 581   2          return (tp_dev.yfac*(4095 - x)+tp_dev.yoff);
+ 582   2        }
+ 583   1        else if(tp_dev.touchtype == 1)
+ 584   1        {
+ 585   2          //读取Y坐标
+ 586   2          return (tp_dev.yfac*(4095 - y)+tp_dev.yoff);    
+ 587   2        }
+ 588   1        return 0;
+ 589   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   6372    ----
+   CONSTANT SIZE    =     55    ----
+   XDATA SIZE       =     18     113
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

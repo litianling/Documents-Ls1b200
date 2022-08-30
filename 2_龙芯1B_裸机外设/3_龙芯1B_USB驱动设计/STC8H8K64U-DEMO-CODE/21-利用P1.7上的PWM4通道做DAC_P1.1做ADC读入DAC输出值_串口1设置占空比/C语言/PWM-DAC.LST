@@ -1,0 +1,547 @@
+C51 COMPILER V9.59.0.0   PWM_DAC                                                           02/08/2021 10:34:48 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE PWM_DAC
+OBJECT MODULE PLACED IN PWM-DAC.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE PWM-DAC.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          /*---------------------------------------------------------------------*/
+   2          /* --- STC MCU Limited ------------------------------------------------*/
+   3          /* --- STC 1T Series MCU Demo Programme -------------------------------*/
+   4          /* --- Mobile: (86)13922805190 ----------------------------------------*/
+   5          /* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+   6          /* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+   7          /* --- Web: www.STCMCU.com --------------------------------------------*/
+   8          /* --- Web: www.STCMCUDATA.com  ---------------------------------------*/
+   9          /* --- QQ:  800003751 -------------------------------------------------*/
+  10          /* 如果要在程序中使用此代码,请在程序中注明使用了STC的资料及程序        */
+  11          /*---------------------------------------------------------------------*/
+  12          
+  13          
+  14          /*************  功能说明    **************
+  15          
+  16          本例程基于STC8H8K64U为主控芯片的实验箱8进行编写测试，STC8H系列芯片可通用参考.
+  17          
+  18          从P1.7(PWM4N)输出16位的PWM, 输出的PWM经过RC滤波成直流电压送P1.1做ADC并用数码管显示出来.
+  19          
+  20          串口1配置为115200bps, 8,n, 1, 切换到P3.0 P3.1, 下载后就可以直接测试. 通过串口1设置占空比.
+  21          
+  22          串口命令使用ASCII码的数字，比如： 10，就是设置占空比为10/256， 100： 就是设置占空比为100/256。
+  23          
+  24          可以设置的值为0~256, 0为连续低电平, 256为连续高电平.
+  25          
+  26          左边4位数码管显示PWM的占空比值，右边4位数码管显示ADC值。
+  27          
+  28          下载时, 选择时钟 22.1184MHz (用户可自行修改频率).
+  29          
+  30          ******************************************/
+  31          
+  32          #include    "reg51.h"       //包含此头文件后，里面声明的寄存器不需要再手动输入，避免重复定义
+  33          #include    "intrins.h"
+  34          
+  35          #define     MAIN_Fosc       22118400L   //定义主时钟（精确计算115200波特率）
+  36          
+  37          typedef     unsigned char   u8;
+  38          typedef     unsigned int    u16;
+  39          typedef     unsigned long   u32;
+  40          
+  41          //手动输入声明"reg51.h"头文件里面没有定义的寄存器
+  42          sfr TH2  = 0xD6;
+  43          sfr TL2  = 0xD7;
+  44          sfr IE2   = 0xAF;
+  45          sfr INT_CLKO = 0x8F;
+  46          sfr AUXR = 0x8E;
+  47          sfr P_SW1 = 0xA2;
+  48          sfr P_SW2 = 0xBA;
+  49          
+  50          sfr ADC_CONTR = 0xBC;   //带AD系列
+  51          sfr ADC_RES   = 0xBD;   //带AD系列
+  52          sfr ADC_RESL  = 0xBE;   //带AD系列
+  53          sfr ADCCFG = 0xDE;
+  54          
+  55          sfr P4   = 0xC0;
+C51 COMPILER V9.59.0.0   PWM_DAC                                                           02/08/2021 10:34:48 PAGE 2   
+
+  56          sfr P5   = 0xC8;
+  57          sfr P6   = 0xE8;
+  58          sfr P7   = 0xF8;
+  59          sfr P1M1 = 0x91;    //PxM1.n,PxM0.n     =00--->Standard,    01--->push-pull
+  60          sfr P1M0 = 0x92;    //                  =10--->pure input,  11--->open drain
+  61          sfr P0M1 = 0x93;
+  62          sfr P0M0 = 0x94;
+  63          sfr P2M1 = 0x95;
+  64          sfr P2M0 = 0x96;
+  65          sfr P3M1 = 0xB1;
+  66          sfr P3M0 = 0xB2;
+  67          sfr P4M1 = 0xB3;
+  68          sfr P4M0 = 0xB4;
+  69          sfr P5M1 = 0xC9;
+  70          sfr P5M0 = 0xCA;
+  71          sfr P6M1 = 0xCB;
+  72          sfr P6M0 = 0xCC;
+  73          sfr P7M1 = 0xE1;
+  74          sfr P7M0 = 0xE2;
+  75          
+  76          sbit P00 = P0^0;
+  77          sbit P01 = P0^1;
+  78          sbit P02 = P0^2;
+  79          sbit P03 = P0^3;
+  80          sbit P04 = P0^4;
+  81          sbit P05 = P0^5;
+  82          sbit P06 = P0^6;
+  83          sbit P07 = P0^7;
+  84          sbit P10 = P1^0;
+  85          sbit P11 = P1^1;
+  86          sbit P12 = P1^2;
+  87          sbit P13 = P1^3;
+  88          sbit P14 = P1^4;
+  89          sbit P15 = P1^5;
+  90          sbit P16 = P1^6;
+  91          sbit P17 = P1^7;
+  92          sbit P20 = P2^0;
+  93          sbit P21 = P2^1;
+  94          sbit P22 = P2^2;
+  95          sbit P23 = P2^3;
+  96          sbit P24 = P2^4;
+  97          sbit P25 = P2^5;
+  98          sbit P26 = P2^6;
+  99          sbit P27 = P2^7;
+ 100          sbit P30 = P3^0;
+ 101          sbit P31 = P3^1;
+ 102          sbit P32 = P3^2;
+ 103          sbit P33 = P3^3;
+ 104          sbit P34 = P3^4;
+ 105          sbit P35 = P3^5;
+ 106          sbit P36 = P3^6;
+ 107          sbit P37 = P3^7;
+ 108          sbit P40 = P4^0;
+ 109          sbit P41 = P4^1;
+ 110          sbit P42 = P4^2;
+ 111          sbit P43 = P4^3;
+ 112          sbit P44 = P4^4;
+ 113          sbit P45 = P4^5;
+ 114          sbit P46 = P4^6;
+ 115          sbit P47 = P4^7;
+ 116          sbit P50 = P5^0;
+ 117          sbit P51 = P5^1;
+C51 COMPILER V9.59.0.0   PWM_DAC                                                           02/08/2021 10:34:48 PAGE 3   
+
+ 118          sbit P52 = P5^2;
+ 119          sbit P53 = P5^3;
+ 120          sbit P54 = P5^4;
+ 121          sbit P55 = P5^5;
+ 122          sbit P56 = P5^6;
+ 123          sbit P57 = P5^7;
+ 124          
+ 125          /****************************** 用户定义宏 ***********************************/
+ 126          
+ 127          #define Timer0_Reload   (65536UL -(MAIN_Fosc / 1000))       //Timer 0 中断频率, 1000次/秒
+ 128          #define ADCTIM (*(unsigned char volatile xdata *)0xfea8)
+ 129          
+ 130          #define PWMA_ENO     (*(unsigned char  volatile xdata *)  0xFEB1)
+ 131          #define PWMA_PS      (*(unsigned char  volatile xdata *)  0xFEB2)
+ 132          
+ 133          #define PWMA_CR1     (*(unsigned char  volatile xdata *)  0xFEC0)
+ 134          #define PWMA_CR2     (*(unsigned char  volatile xdata *)  0xFEC1)
+ 135          #define PWMA_SMCR    (*(unsigned char  volatile xdata *)  0xFEC2) 
+ 136          #define PWMA_ETR     (*(unsigned char  volatile xdata *)  0xFEC3) 
+ 137          #define PWMA_IER     (*(unsigned char  volatile xdata *)  0xFEC4) 
+ 138          #define PWMA_SR1     (*(unsigned char  volatile xdata *)  0xFEC5) 
+ 139          #define PWMA_SR2     (*(unsigned char  volatile xdata *)  0xFEC6) 
+ 140          #define PWMA_EGR     (*(unsigned char  volatile xdata *)  0xFEC7) 
+ 141          #define PWMA_CCMR1   (*(unsigned char  volatile xdata *)  0xFEC8) 
+ 142          #define PWMA_CCMR2   (*(unsigned char  volatile xdata *)  0xFEC9)
+ 143          #define PWMA_CCMR3   (*(unsigned char  volatile xdata *)  0xFECA)
+ 144          #define PWMA_CCMR4   (*(unsigned char  volatile xdata *)  0xFECB)
+ 145          #define PWMA_CCER1   (*(unsigned char  volatile xdata *)  0xFECC)
+ 146          #define PWMA_CCER2   (*(unsigned char  volatile xdata *)  0xFECD)
+ 147          #define PWMA_CNTRH   (*(unsigned char  volatile xdata *)  0xFECE)
+ 148          #define PWMA_CNTRL   (*(unsigned char  volatile xdata *)  0xFECF)
+ 149          #define PWMA_PSCRH   (*(unsigned char  volatile xdata *)  0xFED0)
+ 150          #define PWMA_PSCRL   (*(unsigned char  volatile xdata *)  0xFED1)
+ 151          #define PWMA_ARRH    (*(unsigned char  volatile xdata *)  0xFED2)
+ 152          #define PWMA_ARRL    (*(unsigned char  volatile xdata *)  0xFED3)
+ 153          #define PWMA_RCR     (*(unsigned char  volatile xdata *)  0xFED4)
+ 154          #define PWMA_CCR1H   (*(unsigned char  volatile xdata *)  0xFED5)
+ 155          #define PWMA_CCR1L   (*(unsigned char  volatile xdata *)  0xFED6)
+ 156          #define PWMA_CCR2H   (*(unsigned char  volatile xdata *)  0xFED7)
+ 157          #define PWMA_CCR2L   (*(unsigned char  volatile xdata *)  0xFED8)
+ 158          #define PWMA_CCR3H   (*(unsigned char  volatile xdata *)  0xFED9)
+ 159          #define PWMA_CCR3L   (*(unsigned char  volatile xdata *)  0xFEDA)
+ 160          #define PWMA_CCR4H   (*(unsigned char  volatile xdata *)  0xFEDB)
+ 161          #define PWMA_CCR4L   (*(unsigned char  volatile xdata *)  0xFEDC)
+ 162          #define PWMA_BKR     (*(unsigned char  volatile xdata *)  0xFEDD)
+ 163          #define PWMA_DTR     (*(unsigned char  volatile xdata *)  0xFEDE)
+ 164          #define PWMA_OISR    (*(unsigned char  volatile xdata *)  0xFEDF)
+ 165          
+ 166          /*****************************************************************************/
+ 167          
+ 168          #define DIS_DOT     0x20
+ 169          #define DIS_BLACK   0x10
+ 170          #define DIS_        0x11
+ 171          
+ 172          /*************  本地常量声明    **************/
+ 173          u8 code t_display[]={                       //标准字库
+ 174          //   0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+ 175              0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F,0x77,0x7C,0x39,0x5E,0x79,0x71,
+ 176          //black  -     H    J    K    L    N    o   P    U     t    G    Q    r   M    y
+ 177              0x00,0x40,0x76,0x1E,0x70,0x38,0x37,0x5C,0x73,0x3E,0x78,0x3d,0x67,0x50,0x37,0x6e,
+ 178              0xBF,0x86,0xDB,0xCF,0xE6,0xED,0xFD,0x87,0xFF,0xEF,0x46};    //0. 1. 2. 3. 4. 5. 6. 7. 8. 9. -1
+ 179          
+C51 COMPILER V9.59.0.0   PWM_DAC                                                           02/08/2021 10:34:48 PAGE 4   
+
+ 180          u8 code T_COM[]={0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};      //位码
+ 181          
+ 182          /*************  本地变量声明    **************/
+ 183          
+ 184          u8  LED8[8];        //显示缓冲
+ 185          u8  display_index;  //显示位索引
+ 186          bit B_1ms;          //1ms标志
+ 187          u8  cnt200ms;
+ 188          
+ 189          #define     Baudrate1           115200L
+ 190          #define     UART1_BUF_LENGTH    128     //串口缓冲长度
+ 191          
+ 192          u8  RX1_TimeOut;
+ 193          u8  TX1_Cnt;    //发送计数
+ 194          u8  RX1_Cnt;    //接收计数
+ 195          bit B_TX1_Busy; //发送忙标志
+ 196          u16 adc;
+ 197          
+ 198          u8  xdata   RX1_Buffer[UART1_BUF_LENGTH];   //接收缓冲
+ 199          
+ 200          void    UART1_config(u8 brt);   // 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer1做波特率.
+ 201          void    PrintString1(u8 *puts);
+ 202          void    UART1_TxByte(u8 dat);
+ 203          void    UpdatePwm(u16 pwm_value);
+ 204          u16     Get_ADC12bitResult(u8 channel); //channel = 0~15
+ 205          
+ 206          /******************** 主函数 **************************/
+ 207          void main(void)
+ 208          {
+ 209   1          u8  i;
+ 210   1          u16 j;
+ 211   1          
+ 212   1          P0M1 = 0;   P0M0 = 0;   //设置为准双向口
+ 213   1          P2M1 = 0;   P2M0 = 0;   //设置为准双向口
+ 214   1          P3M1 = 0;   P3M0 = 0;   //设置为准双向口
+ 215   1          P4M1 = 0;   P4M0 = 0;   //设置为准双向口
+ 216   1          P5M1 = 0;   P5M0 = 0;   //设置为准双向口
+ 217   1          P6M1 = 0;   P6M0 = 0;   //设置为准双向口
+ 218   1          P7M1 = 0;   P7M0 = 0;   //设置为准双向口
+ 219   1          P1M1 = 0x02;   P1M0 = 0x00;   //设置 P1.1 为 ADC 口
+ 220   1      
+ 221   1          display_index = 0;
+ 222   1      
+ 223   1          //  Timer0初始化
+ 224   1          AUXR = 0x80;    //Timer0 set as 1T, 16 bits timer auto-reload, 
+ 225   1          TH0 = (u8)(Timer0_Reload / 256);
+ 226   1          TL0 = (u8)(Timer0_Reload % 256);
+ 227   1          ET0 = 1;    //Timer0 interrupt enable
+ 228   1          TR0 = 1;    //Tiner0 run
+ 229   1      
+ 230   1          //  ADC初始化
+ 231   1          P_SW2 |= 0x80;
+ 232   1          ADCTIM = 0x3f;    //设置 ADC 内部时序，ADC采样时间建议设最大值
+ 233   1          P_SW2 &= 0x7f;
+ 234   1          ADCCFG = 0x2f;    //设置 ADC 转换结果右对齐,时钟为系统时钟/2/16
+ 235   1          ADC_CONTR = 0x81; //使能 ADC 模块
+ 236   1      
+ 237   1          P_SW2 |= 0x80;
+ 238   1          
+ 239   1          PWMA_CCER2 = 0x00; //写 CCMRx 前必须先清零 CCxE 关闭通道
+ 240   1          PWMA_CCMR4 = 0x60; //设置 PWM4 模式1 输出
+ 241   1          PWMA_CCER2 = 0x50; //使能 CC4E 通道
+C51 COMPILER V9.59.0.0   PWM_DAC                                                           02/08/2021 10:34:48 PAGE 5   
+
+ 242   1      
+ 243   1          PWMA_ARRH = 2; //设置周期时间
+ 244   1          PWMA_ARRL = 0;
+ 245   1          PWMA_CCR4H = 0;
+ 246   1          PWMA_CCR4L = 128; //设置占空比时间
+ 247   1      
+ 248   1          PWMA_ENO = 0x80; //使能 PWM4N 输出
+ 249   1      //  PWMA_ENO = 0x40; //使能 PWM4P 输出
+ 250   1          PWMA_PS = 0x00;  //高级 PWM 通道 4N 输出脚选择位, 0x00:P1.7, 0x40:P2.7, 0x80:P6.7, 0xC0:P3.3
+ 251   1      //  PWMA_PS = 0x00;  //高级 PWM 通道 4P 输出脚选择位, 0x00:P1.6, 0x40:P2.6, 0x80:P6.6, 0xC0:P3.4
+ 252   1          PWMA_BKR = 0x80; //使能主输出
+ 253   1          PWMA_CR1 |= 0x01; //开始计时
+ 254   1          P_SW2 &= 0x7f;
+ 255   1      
+ 256   1          UpdatePwm(128);
+ 257   1      
+ 258   1          UART1_config(1);    // 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer1做波特率.
+ 259   1          EA = 1;     //打开总中断
+ 260   1      
+ 261   1          for(i=0; i<8; i++)  LED8[i] = DIS_; //上电全部显示-
+ 262   1          
+ 263   1          LED8[0] = 1;    //显示PWM默认值
+ 264   1          LED8[1] = 2;
+ 265   1          LED8[2] = 8;
+ 266   1          LED8[3] = DIS_BLACK;    //这位不显示
+ 267   1      
+ 268   1          PrintString1("PWM和ADC测试程序, 输入占空比为 0~256!\r\n");  //UART1发送一个字符串
+ 269   1          
+ 270   1          while (1)
+ 271   1          {
+ 272   2              if(B_1ms)   //1ms到
+ 273   2              {
+ 274   3                  B_1ms = 0;
+ 275   3                  if(++cnt200ms >= 200)   //200ms读一次ADC
+ 276   3                  {
+ 277   4                      cnt200ms = 0;
+ 278   4                      j = Get_ADC12bitResult(1);  //参数0~15,查询方式做一次ADC, 返回值就是结果, == 4096 为错误
+ 279   4                      if(j >= 1000)   LED8[4] = j / 1000;     //显示ADC值
+ 280   4                      else            LED8[4] = DIS_BLACK;
+ 281   4                      LED8[5] = (j % 1000) / 100;
+ 282   4                      LED8[6] = (j % 100) / 10;
+ 283   4                      LED8[7] = j % 10;
+ 284   4                  }
+ 285   3      
+ 286   3                  if(RX1_TimeOut > 0)     //超时计数
+ 287   3                  {
+ 288   4                      if(--RX1_TimeOut == 0)
+ 289   4                      {
+ 290   5                          if((RX1_Cnt > 0) && (RX1_Cnt <= 3)) //限制为3位数字
+ 291   5                          {
+ 292   6                              F0 = 0; //错误标志
+ 293   6                              j = 0;
+ 294   6                              for(i=0; i<RX1_Cnt; i++)
+ 295   6                              {
+ 296   7                                  if((RX1_Buffer[i] >= '0') && (RX1_Buffer[i] <= '9'))    //限定为数字
+ 297   7                                  {
+ 298   8                                      j = j * 10 + RX1_Buffer[i] - '0';
+ 299   8                                  }
+ 300   7                                  else
+ 301   7                                  {
+ 302   8                                      F0 = 1; //接收到非数字字符, 错误
+ 303   8                                      PrintString1("错误! 接收到非数字字符! 占空比为0~256!\r\n");
+C51 COMPILER V9.59.0.0   PWM_DAC                                                           02/08/2021 10:34:48 PAGE 6   
+
+ 304   8                                      break;
+ 305   8                                  }
+ 306   7                              }
+ 307   6                              if(!F0)
+ 308   6                              {
+ 309   7                                  if(j > 256) PrintString1("错误! 输入占空比过大, 请不要大于256!\r\n");
+ 310   7                                  else
+ 311   7                                  {
+ 312   8                                      UpdatePwm(j);
+ 313   8                                      if(j >= 100)    LED8[0] = j / 100,  j %= 100;   //显示PWM默认值
+ 314   8                                      else            LED8[0] = DIS_BLACK;
+ 315   8                                      LED8[1] = j % 100 / 10;
+ 316   8                                      LED8[2] = j % 10;
+ 317   8                                      PrintString1("已更新占空比!\r\n");
+ 318   8                                  }
+ 319   7                              }
+ 320   6                          }
+ 321   5                          else  PrintString1("错误! 输入字符过多! 输入占空比为0~256!\r\n");
+ 322   5                          RX1_Cnt = 0;
+ 323   5                      }
+ 324   4                  }
+ 325   3              }
+ 326   2          }
+ 327   1      }
+ 328          
+ 329          //========================================================================
+ 330          // 函数: void UART1_TxByte(u8 dat)
+ 331          // 描述: 发送一个字节.
+ 332          // 参数: 无.
+ 333          // 返回: 无.
+ 334          // 版本: V1.0, 2014-6-30
+ 335          //========================================================================
+ 336          void UART1_TxByte(u8 dat)
+ 337          {
+ 338   1          SBUF = dat;
+ 339   1          B_TX1_Busy = 1;
+ 340   1          while(B_TX1_Busy);
+ 341   1      }
+ 342          
+ 343          //========================================================================
+ 344          // 函数: void PrintString1(u8 *puts)
+ 345          // 描述: 串口1发送字符串函数。
+ 346          // 参数: puts:  字符串指针.
+ 347          // 返回: none.
+ 348          // 版本: VER1.0
+ 349          // 日期: 2014-11-28
+ 350          // 备注: 
+ 351          //========================================================================
+ 352          void PrintString1(u8 *puts) //发送一个字符串
+ 353          {
+ 354   1          for (; *puts != 0;  puts++)   UART1_TxByte(*puts);  //遇到停止符0结束
+ 355   1      }
+ 356          
+ 357          //========================================================================
+ 358          // 函数: void SetTimer2Baudraye(u16 dat)
+ 359          // 描述: 设置Timer2做波特率发生器。
+ 360          // 参数: dat: Timer2的重装值.
+ 361          // 返回: none.
+ 362          // 版本: VER1.0
+ 363          // 日期: 2014-11-28
+ 364          // 备注: 
+ 365          //========================================================================
+C51 COMPILER V9.59.0.0   PWM_DAC                                                           02/08/2021 10:34:48 PAGE 7   
+
+ 366          void SetTimer2Baudraye(u16 dat)  // 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer1做波特率.
+ 367          {
+ 368   1          AUXR &= ~(1<<4);    //Timer stop
+ 369   1          AUXR &= ~(1<<3);    //Timer2 set As Timer
+ 370   1          AUXR |=  (1<<2);    //Timer2 set as 1T mode
+ 371   1          TH2 = dat / 256;
+ 372   1          TL2 = dat % 256;
+ 373   1          IE2  &= ~(1<<2);    //禁止中断
+ 374   1          AUXR |=  (1<<4);    //Timer run enable
+ 375   1      }
+ 376          
+ 377          //========================================================================
+ 378          // 函数: void UART1_config(u8 brt)
+ 379          // 描述: UART1初始化函数。
+ 380          // 参数: brt: 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer1做波特率.
+ 381          // 返回: none.
+ 382          // 版本: VER1.0
+ 383          // 日期: 2014-11-28
+ 384          // 备注: 
+ 385          //========================================================================
+ 386          void UART1_config(u8 brt)    // 选择波特率, 2: 使用Timer2做波特率, 其它值: 使用Timer1做波特率.
+ 387          {
+ 388   1          /*********** 波特率使用定时器2 *****************/
+ 389   1          if(brt == 2)
+ 390   1          {
+ 391   2              AUXR |= 0x01;       //S1 BRT Use Timer2;
+ 392   2              SetTimer2Baudraye(65536UL - (MAIN_Fosc / 4) / Baudrate1);
+ 393   2          }
+ 394   1      
+ 395   1          /*********** 波特率使用定时器1 *****************/
+ 396   1          else
+ 397   1          {
+ 398   2              TR1 = 0;
+ 399   2              AUXR &= ~0x01;      //S1 BRT Use Timer1;
+ 400   2              AUXR |=  (1<<6);    //Timer1 set as 1T mode
+ 401   2              TMOD &= ~(1<<6);    //Timer1 set As Timer
+ 402   2              TMOD &= ~0x30;      //Timer1_16bitAutoReload;
+ 403   2              TH1 = (u8)((65536UL - (MAIN_Fosc / 4) / Baudrate1) / 256);
+ 404   2              TL1 = (u8)((65536UL - (MAIN_Fosc / 4) / Baudrate1) % 256);
+ 405   2              ET1 = 0;    //禁止中断
+ 406   2              INT_CLKO &= ~0x02;  //不输出时钟
+ 407   2              TR1  = 1;
+ 408   2          }
+ 409   1          /*************************************************/
+ 410   1      
+ 411   1          SCON = (SCON & 0x3f) | 0x40;    //UART1模式, 0x00: 同步移位输出, 0x40: 8位数据,可变波特率, 0x80: 9位数
+             -据,固定波特率, 0xc0: 9位数据,可变波特率
+ 412   1      //  PS  = 1;    //高优先级中断
+ 413   1          ES  = 1;    //允许中断
+ 414   1          REN = 1;    //允许接收
+ 415   1          P_SW1 &= 0x3f;
+ 416   1      //    P_SW1 |= 0x00;      //UART1 switch to, 0x00: P3.0 P3.1, 0x40: P3.6 P3.7, 0x80: P1.6 P1.7 , 0xC0: P4.
+             -3 P4.4
+ 417   1      //  PCON2 |=  (1<<4);   //内部短路RXD与TXD, 做中继, ENABLE,DISABLE
+ 418   1      
+ 419   1          B_TX1_Busy = 0;
+ 420   1          TX1_Cnt = 0;
+ 421   1          RX1_Cnt = 0;
+ 422   1      }
+ 423          
+ 424          
+ 425          //========================================================================
+C51 COMPILER V9.59.0.0   PWM_DAC                                                           02/08/2021 10:34:48 PAGE 8   
+
+ 426          // 函数: void UART1_int (void) interrupt UART1_VECTOR
+ 427          // 描述: UART1中断函数。
+ 428          // 参数: nine.
+ 429          // 返回: none.
+ 430          // 版本: VER1.0
+ 431          // 日期: 2014-11-28
+ 432          // 备注: 
+ 433          //========================================================================
+ 434          void UART1_int (void) interrupt 4
+ 435          {
+ 436   1          if(RI)
+ 437   1          {
+ 438   2              RI = 0;
+ 439   2              if(RX1_Cnt >= UART1_BUF_LENGTH) RX1_Cnt = 0;
+ 440   2              RX1_Buffer[RX1_Cnt] = SBUF;
+ 441   2              RX1_Cnt++;
+ 442   2              RX1_TimeOut = 5;
+ 443   2          }
+ 444   1      
+ 445   1          if(TI)
+ 446   1          {
+ 447   2              TI = 0;
+ 448   2              B_TX1_Busy = 0;
+ 449   2          }
+ 450   1      }
+ 451          
+ 452          /********************** 显示扫描函数 ************************/
+ 453          void DisplayScan(void)
+ 454          {   
+ 455   1          P7 = ~T_COM[7-display_index];
+ 456   1          P6 = ~t_display[LED8[display_index]];
+ 457   1          if(++display_index >= 8)    display_index = 0;  //8位结束回0
+ 458   1      }
+ 459          
+ 460          
+ 461          /********************** Timer0 1ms中断函数 ************************/
+ 462          void timer0(void) interrupt 1
+ 463          {
+ 464   1          DisplayScan();  //1ms扫描显示一位
+ 465   1          B_1ms = 1;      //1ms标志
+ 466   1      }
+ 467          
+ 468          
+ 469          //========================================================================
+ 470          // 函数: u16 Get_ADC12bitResult(u8 channel)
+ 471          // 描述: 查询法读一次ADC结果.
+ 472          // 参数: channel: 选择要转换的ADC.
+ 473          // 返回: 12位ADC结果.
+ 474          // 版本: V1.0, 2012-10-22
+ 475          //========================================================================
+ 476          u16 Get_ADC12bitResult(u8 channel)  //channel = 0~15
+ 477          {
+ 478   1          ADC_RES = 0;
+ 479   1          ADC_RESL = 0;
+ 480   1      
+ 481   1          ADC_CONTR = (ADC_CONTR & 0xF0) | 0x40 | channel;    //启动 AD 转换
+ 482   1          _nop_();
+ 483   1          _nop_();
+ 484   1          _nop_();
+ 485   1          _nop_();
+ 486   1      
+ 487   1          while((ADC_CONTR & 0x20) == 0)  ;   //wait for ADC finish
+C51 COMPILER V9.59.0.0   PWM_DAC                                                           02/08/2021 10:34:48 PAGE 9   
+
+ 488   1          ADC_CONTR &= ~0x20;     //清除ADC结束标志
+ 489   1          return  (((u16)ADC_RES << 8) | ADC_RESL);
+ 490   1      }
+ 491          
+ 492          //========================================================================
+ 493          // 函数: UpdatePwm(u16 pwm_value)
+ 494          // 描述: 更新PWM值. 
+ 495          // 参数: pwm_value: pwm值, 这个值是输出高电平的时间.
+ 496          // 返回: none.
+ 497          // 版本: V1.0, 2012-11-22
+ 498          //========================================================================
+ 499          void UpdatePwm(u16 pwm_value)
+ 500          {
+ 501   1          P_SW2 |= 0x80;
+ 502   1          PWMA_CCR4H = (u8)(pwm_value >> 8); //设置占空比时间
+ 503   1          PWMA_CCR4L = (u8)(pwm_value);
+ 504   1          P_SW2 &= 0x7f;
+ 505   1      }
+ 506          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    922    ----
+   CONSTANT SIZE    =    228    ----
+   XDATA SIZE       =    128    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     15       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,67 @@
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                    03/15/2021  15:05:43  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22.2.0, INVOKED BY:
+C:\KEIL_V5\C51\BIN\BL51.EXE IO_Mode.obj TO IO_Mode RAMSIZE (256)
+
+
+INPUT MODULES INCLUDED:
+  IO_Mode.obj (IO_MODE)
+
+
+LINK MAP OF MODULE:  IO_Mode (IO_MODE)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     011DH     ABSOLUTE     
+
+
+
+SYMBOL TABLE OF MODULE:  IO_Mode (IO_MODE)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        IO_MODE
+  C:0100H         SYMBOL        MAIN
+  D:0094H         SYMBOL        P0M0
+  D:0093H         SYMBOL        P0M1
+  D:0092H         SYMBOL        P1M0
+  D:0091H         SYMBOL        P1M1
+  D:0096H         SYMBOL        P2M0
+  D:0095H         SYMBOL        P2M1
+  D:00B2H         SYMBOL        P3M0
+  D:00B1H         SYMBOL        P3M1
+  D:00B4H         SYMBOL        P4M0
+  D:00B3H         SYMBOL        P4M1
+  D:00CAH         SYMBOL        P5M0
+  D:00C9H         SYMBOL        P5M1
+  D:00CCH         SYMBOL        P6M0
+  D:00CBH         SYMBOL        P6M1
+  D:00E2H         SYMBOL        P7M0
+  D:00E1H         SYMBOL        P7M1
+  D:0081H         SYMBOL        SP
+  C:0000H         LINE#         37
+  C:0100H         LINE#         41
+  C:0103H         LINE#         43
+  C:0106H         LINE#         44
+  C:0109H         LINE#         46
+  C:010CH         LINE#         47
+  C:010FH         LINE#         49
+  C:0112H         LINE#         50
+  C:0115H         LINE#         52
+  C:0118H         LINE#         53
+  C:011BH         LINE#         55
+  -------         ENDMOD        IO_MODE
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  03/15/2021  15:05:43  PAGE 2
+
+
+
+Program Size: data=8.0 xdata=0 code=285
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

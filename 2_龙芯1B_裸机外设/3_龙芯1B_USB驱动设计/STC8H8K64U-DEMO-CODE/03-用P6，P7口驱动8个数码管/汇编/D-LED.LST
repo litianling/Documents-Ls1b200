@@ -1,0 +1,420 @@
+A51 MACRO ASSEMBLER  D_LED                                                                03/01/2021 13:57:47 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN D-LED.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE D-LED.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* 如果要在程序中使用此代码,请在程序中注明使用了STC的资料及程序        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     
+                      14     ;*************  功能说明    **************
+                      15     
+                      16     ;本例程基于STC8H8K64U为主控芯片的实验箱8进行编写测试，STC8G、STC8H系列芯片可通用参考.
+                      17     
+                      18     ;用STC的MCU的IO方式驱动8位数码管。
+                      19     
+                      20     ;显示效果为: 数码时钟.
+                      21     
+                      22     ;使用Timer0的16位自动重装来产生1ms节拍,程序运行于这个节拍下, 用户修改MCU主时钟频率时,自动定
+                             时于1ms.
+                      23     
+                      24     ;下载时, 选择时钟 24MHZ (用户可自行修改频率).
+                      25     
+                      26     ;******************************************/
+                      27     
+                      28     ;/****************************** 用户定义宏 ***********************************/
+                      29     
+  5DC0                30     Fosc_KHZ    EQU 24000   ;24000KHZ
+                      31     
+  00D0                32     STACK_POIRTER   EQU     0D0H    ;堆栈开始地址
+                      33     
+  A240                34     Timer0_Reload   EQU     (65536 - Fosc_KHZ)  ; Timer 0 中断频率, 1000次/秒
+                      35     
+  0020                36     DIS_DOT         EQU     020H
+  0010                37     DIS_BLACK       EQU     010H
+  0011                38     DIS_            EQU     011H
+                      39     
+                      40     ;*******************************************************************
+                      41     ;*******************************************************************
+  0093                42     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094                43     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091                44     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092                45     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095                46     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+  0096                47     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+  00B1                48     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2                49     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3                50     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+  00B4                51     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9                52     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA                53     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB                54     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC                55     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1                56     P7M1    DATA    0xE1    ;
+  00E2                57     P7M0    DATA    0xE2    ;
+A51 MACRO ASSEMBLER  D_LED                                                                03/01/2021 13:57:47 PAGE     2
+
+                      58     
+  008E                59     AUXR    DATA    08EH
+  00C0                60     P4      DATA    0C0H
+  00C8                61     P5      DATA    0C8H
+  00E8                62     P6      DATA    0E8H
+  00F8                63     P7      DATA    0F8H
+                      64     
+                      65     
+                      66     ;*************  IO口定义    **************/
+                      67     
+                      68     
+                      69     ;*************  本地变量声明    **************/
+  0020                70     Flag0           DATA    20H
+  0000                71     B_1ms           BIT     Flag0.0 ;   1ms标志
+                      72     
+  0030                73     LED8            DATA    30H     ;   显示缓冲 30H ~ 37H
+  0038                74     display_index   DATA    38H     ;   显示位索引
+                      75     
+  0039                76     hour            DATA    39H     ;
+  003A                77     minute          DATA    3AH
+  003B                78     second          DATA    3BH     ;
+  003C                79     msecond_H       DATA    3CH     ;
+  003D                80     msecond_L       DATA    3DH     ;
+                      81     
+                      82     
+                      83     ;*******************************************************************
+                      84     ;*******************************************************************
+0000                  85             ORG     0000H               ;reset
+0000 020100           86             LJMP    F_Main
+                      87     
+000B                  88             ORG     000BH               ;1  Timer0 interrupt
+000B 02022F           89             LJMP    F_Timer0_Interrupt
+                      90     
+                      91     ;*******************************************************************
+                      92     ;*******************************************************************
+                      93     
+                      94     
+                      95     ;******************** 主程序 **************************/
+0100                  96             ORG     0100H       ;reset
+0100                  97     F_Main:
+0100 E4               98         CLR     A
+0101 F593             99         MOV     P0M1, A     ;设置为准双向口
+0103 F594            100         MOV     P0M0, A
+0105 F591            101         MOV     P1M1, A     ;设置为准双向口
+0107 F592            102         MOV     P1M0, A
+0109 F595            103         MOV     P2M1, A     ;设置为准双向口
+010B F596            104         MOV     P2M0, A
+010D F5B1            105         MOV     P3M1, A     ;设置为准双向口
+010F F5B2            106         MOV     P3M0, A
+0111 F5B3            107         MOV     P4M1, A     ;设置为准双向口
+0113 F5B4            108         MOV     P4M0, A
+0115 F5C9            109         MOV     P5M1, A     ;设置为准双向口
+0117 F5CA            110         MOV     P5M0, A
+0119 F5CB            111         MOV     P6M1, A     ;设置为准双向口
+011B F5CC            112         MOV     P6M0, A
+011D F5E1            113         MOV     P7M1, A     ;设置为准双向口
+011F F5E2            114         MOV     P7M0, A
+                     115     
+                     116         
+0121 7581D0          117         MOV     SP, #STACK_POIRTER
+0124 75D000          118         MOV     PSW, #0
+                     119         USING   0       ;选择第0组R0~R7
+                     120     
+                     121     ;================= 用户初始化程序 ====================================
+                     122     
+0127 753800          123         MOV     display_index, #0
+A51 MACRO ASSEMBLER  D_LED                                                                03/01/2021 13:57:47 PAGE     3
+
+012A 7830            124         MOV     R0, #LED8
+012C 7A08            125         MOV     R2, #8
+012E                 126     L_ClearLoop:
+012E 7610            127         MOV     @R0, #DIS_BLACK     ;上电消隐
+0130 08              128         INC     R0
+0131 DAFB            129         DJNZ    R2, L_ClearLoop
+                     130         
+0133 C28C            131         CLR     TR0
+0135 438E80          132         ORL     AUXR, #(1 SHL 7)    ; Timer0_1T();
+0138 5389FB          133         ANL     TMOD, #NOT 04H      ; Timer0_AsTimer();
+013B 5389FC          134         ANL     TMOD, #NOT 03H      ; Timer0_16bitAutoReload();
+013E 758CA2          135         MOV     TH0, #Timer0_Reload / 256   ;Timer0_Load(Timer0_Reload);
+0141 758A40          136         MOV     TL0, #Timer0_Reload MOD 256
+0144 D2A9            137         SETB    ET0         ; Timer0_InterruptEnable();
+0146 D28C            138         SETB    TR0         ; Timer0_Run();
+0148 D2AF            139         SETB    EA          ; 打开总中断
+                     140         
+014A 75390C          141         MOV     hour,   #12 ; 初始化时间值
+014D 753A00          142         MOV     minute, #0
+0150 753B00          143         MOV     second, #0
+0153 12017D          144         LCALL   F_DisplayRTC
+                     145         
+                     146     ;=================== 主循环 ==================================
+0156                 147     L_Main_Loop:
+0156 3000FD          148         JNB     B_1ms,  L_Main_Loop     ;1ms未到
+0159 C200            149         CLR     B_1ms
+                     150         
+015B 053D            151         INC     msecond_L       ;msecond + 1
+015D E53D            152         MOV     A, msecond_L
+015F 7002            153         JNZ     L_Check1000ms
+0161 053C            154         INC     msecond_H
+0163                 155     L_Check1000ms:  
+0163 E53D            156         MOV     A, msecond_L    ;msecond - 1000
+0165 C3              157         CLR     C
+0166 94E8            158         SUBB    A, #LOW 1000
+0168 E53C            159         MOV     A, msecond_H
+016A 9403            160         SUBB    A, #HIGH 1000
+016C 40E8            161         JC      L_Main_Loop     ;if(msecond < 1000), jmp
+                     162         
+016E 753D00          163         MOV     msecond_L, #0   ;if(msecond >= 1000)
+0171 753C00          164         MOV     msecond_H, #0
+                     165     
+0174 1201A9          166         LCALL   F_RTC
+0177 12017D          167         LCALL   F_DisplayRTC
+                     168     
+017A 020156          169         LJMP    L_Main_Loop
+                     170     
+                     171     ;**********************************************/
+                     172     
+                     173     
+                     174     
+                     175     ;========================================================================
+                     176     ; 函数: F_DisplayRTC
+                     177     ; 描述: 显示时钟子程序。
+                     178     ; 参数: none.
+                     179     ; 返回: none.
+                     180     ; 版本: VER1.0
+                     181     ; 日期: 2013-4-1
+                     182     ; 备注: 除了ACCC和PSW外, 所用到的通用寄存器都入栈
+                     183     ;========================================================================
+017D                 184     F_DisplayRTC:
+017D C0F0            185         PUSH    B       ;B入栈
+                     186         
+017F E539            187         MOV     A, hour
+0181 75F00A          188         MOV     B, #10
+0184 84              189         DIV     AB
+A51 MACRO ASSEMBLER  D_LED                                                                03/01/2021 13:57:47 PAGE     4
+
+0185 F537            190         MOV     LED8+7, A
+0187 85F036          191         MOV     LED8+6, B
+018A 753511          192         MOV     LED8+5, #DIS_;
+                     193         
+018D E53A            194         MOV     A, minute
+018F 75F00A          195         MOV     B, #10
+0192 84              196         DIV     AB
+0193 F534            197         MOV     LED8+4, A;
+0195 85F033          198         MOV     LED8+3, B;
+0198 753211          199         MOV     LED8+2, #DIS_;
+                     200     
+019B E53B            201         MOV     A, second
+019D 75F00A          202         MOV     B, #10
+01A0 84              203         DIV     AB
+01A1 F531            204         MOV     LED8+1, A;
+01A3 85F030          205         MOV     LED8, B;
+                     206         
+01A6 D0F0            207         POP     B       ;B出栈
+01A8 22              208         RET
+                     209     
+                     210     ;========================================================================
+                     211     ; 函数: F_RTC
+                     212     ; 描述: RTC演示子程序。
+                     213     ; 参数: none.
+                     214     ; 返回: none.
+                     215     ; 版本: VER1.0
+                     216     ; 日期: 2013-4-1
+                     217     ; 备注: 除了ACCC和PSW外, 所用到的通用寄存器都入栈
+                     218     ;========================================================================
+01A9                 219     F_RTC:
+01A9 053B            220         INC     second      ; second + 1
+01AB E53B            221         MOV     A, second
+01AD C3              222         CLR     C
+01AE 943C            223         SUBB    A,#60
+01B0 401B            224         JC      L_QuitRTC   ; second >= 60?
+01B2 753B00          225         MOV     second, #0;
+                     226     
+01B5 053A            227         INC     minute      ; minute + 1
+01B7 E53A            228         MOV     A, minute
+01B9 C3              229         CLR     C
+01BA 943C            230         SUBB    A,#60
+01BC 400F            231         JC      L_QuitRTC   ; minute >= 60?
+01BE 753A00          232         MOV     minute, #0
+                     233     
+01C1 0539            234         INC     hour        ; hour + 1
+01C3 E539            235         MOV     A, hour
+01C5 C3              236         CLR     C
+01C6 9418            237         SUBB    A,#24
+01C8 4003            238         JC      L_QuitRTC   ; hour >= 24?
+01CA 753900          239         MOV     hour, #0
+01CD                 240     L_QuitRTC:
+01CD 22              241         RET
+                     242     
+                     243     
+                     244     ; *********************** 显示相关程序 ****************************************
+01CE                 245     T_Display:                      ;标准字库
+                     246     ;    0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+01CE 3F065B4F        247     DB  03FH,006H,05BH,04FH,066H,06DH,07DH,007H,07FH,06FH,077H,07CH,039H,05EH,079H,071H
+01D2 666D7D07                
+01D6 7F6F777C                
+01DA 395E7971                
+                     248     ;  black  -    H    J    K    L    N    o    P    U    t    G    Q    r    M    y
+01DE 0040761E        249     DB  000H,040H,076H,01EH,070H,038H,037H,05CH,073H,03EH,078H,03dH,067H,050H,037H,06EH
+01E2 7038375C                
+01E6 733E783D                
+01EA 6750376E                
+A51 MACRO ASSEMBLER  D_LED                                                                03/01/2021 13:57:47 PAGE     5
+
+                     250     ;    0.   1.   2.   3.   4.   5.   6.   7.   8.   9.   -1
+01EE BF86DBCF        251     DB  0BFH,086H,0DBH,0CFH,0E6H,0EDH,0FDH,087H,0FFH,0EFH,046H
+01F2 E6EDFD87                
+01F6 FFEF46                  
+                     252     
+01F9                 253     T_COM:
+01F9 01020408        254     DB  001H,002H,004H,008H,010H,020H,040H,080H     ;   位码
+01FD 10204080                
+                     255     
+                     256     
+                     257     ;========================================================================
+                     258     ; 函数: F_DisplayScan
+                     259     ; 描述: 显示扫描子程序。
+                     260     ; 参数: none.
+                     261     ; 返回: none.
+                     262     ; 版本: VER1.0
+                     263     ; 日期: 2013-4-1
+                     264     ; 备注: 除了ACCC和PSW外, 所用到的通用寄存器都入栈
+                     265     ;========================================================================
+0201                 266     F_DisplayScan:
+0201 C083            267         PUSH    DPH     ;DPH入栈
+0203 C082            268         PUSH    DPL     ;DPL入栈
+0205 C000            269         PUSH    00H     ;R0 入栈
+                     270         
+0207 9001F9          271         MOV     DPTR, #T_COM
+020A E538            272         MOV     A, display_index
+020C 93              273         MOVC    A, @A+DPTR
+020D F4              274         CPL     A
+020E F5F8            275             MOV     P7,A
+                     276         
+0210 9001CE          277         MOV     DPTR, #T_Display
+0213 E538            278         MOV     A, display_index
+0215 2430            279         ADD     A, #LED8
+0217 F8              280         MOV     R0, A
+0218 E6              281         MOV     A, @R0
+0219 93              282         MOVC    A, @A+DPTR
+021A F4              283         CPL     A
+021B F5E8            284             MOV     P6,A
+                     285     
+021D 0538            286         INC     display_index
+021F E538            287         MOV     A, display_index
+0221 54F8            288         ANL     A, #0F8H            ; if(display_index >= 8)
+0223 6003            289         JZ      L_QuitDisplayScan
+0225 753800          290         MOV     display_index, #0;  ;8位结束回0
+0228                 291     L_QuitDisplayScan:
+0228 D000            292         POP     00H     ;R0 出栈
+022A D082            293         POP     DPL     ;DPL出栈
+022C D083            294         POP     DPH     ;DPH出栈
+022E 22              295         RET
+                     296     
+                     297     
+                     298     ;*******************************************************************
+                     299     ;**************** 中断函数 ***************************************************
+                     300     
+022F                 301     F_Timer0_Interrupt: ;Timer0 1ms中断函数
+022F C0D0            302         PUSH    PSW     ;PSW入栈
+0231 C0E0            303         PUSH    ACC     ;ACC入栈
+                     304     
+0233 120201          305         LCALL   F_DisplayScan   ; 1ms扫描显示一位
+0236 D200            306         SETB    B_1ms           ; 1ms标志
+                     307     
+0238 D0E0            308         POP     ACC     ;ACC出栈
+023A D0D0            309         POP     PSW     ;PSW出栈
+023C 32              310         RETI
+                     311         
+                     312     
+A51 MACRO ASSEMBLER  D_LED                                                                03/01/2021 13:57:47 PAGE     6
+
+                     313     
+                     314         END
+                             
+A51 MACRO ASSEMBLER  D_LED                                                                03/01/2021 13:57:47 PAGE     7
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . .  D ADDR   00E0H   A   
+AUXR . . . . . . .  D ADDR   008EH   A   
+B. . . . . . . . .  D ADDR   00F0H   A   
+B_1MS. . . . . . .  B ADDR   0020H.0 A   
+DISPLAY_INDEX. . .  D ADDR   0038H   A   
+DIS_ . . . . . . .  N NUMB   0011H   A   
+DIS_BLACK. . . . .  N NUMB   0010H   A   
+DIS_DOT. . . . . .  N NUMB   0020H   A   
+DPH. . . . . . . .  D ADDR   0083H   A   
+DPL. . . . . . . .  D ADDR   0082H   A   
+EA . . . . . . . .  B ADDR   00A8H.7 A   
+ET0. . . . . . . .  B ADDR   00A8H.1 A   
+FLAG0. . . . . . .  D ADDR   0020H   A   
+FOSC_KHZ . . . . .  N NUMB   5DC0H   A   
+F_DISPLAYRTC . . .  C ADDR   017DH   A   
+F_DISPLAYSCAN. . .  C ADDR   0201H   A   
+F_MAIN . . . . . .  C ADDR   0100H   A   
+F_RTC. . . . . . .  C ADDR   01A9H   A   
+F_TIMER0_INTERRUPT  C ADDR   022FH   A   
+HOUR . . . . . . .  D ADDR   0039H   A   
+LED8 . . . . . . .  D ADDR   0030H   A   
+L_CHECK1000MS. . .  C ADDR   0163H   A   
+L_CLEARLOOP. . . .  C ADDR   012EH   A   
+L_MAIN_LOOP. . . .  C ADDR   0156H   A   
+L_QUITDISPLAYSCAN.  C ADDR   0228H   A   
+L_QUITRTC. . . . .  C ADDR   01CDH   A   
+MINUTE . . . . . .  D ADDR   003AH   A   
+MSECOND_H. . . . .  D ADDR   003CH   A   
+MSECOND_L. . . . .  D ADDR   003DH   A   
+P0M0 . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . .  D ADDR   0093H   A   
+P1M0 . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . .  D ADDR   0095H   A   
+P3M0 . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . .  D ADDR   00B1H   A   
+P4 . . . . . . . .  D ADDR   00C0H   A   
+P4M0 . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . .  D ADDR   00B3H   A   
+P5 . . . . . . . .  D ADDR   00C8H   A   
+P5M0 . . . . . . .  D ADDR   00CAH   A   
+P5M1 . . . . . . .  D ADDR   00C9H   A   
+P6 . . . . . . . .  D ADDR   00E8H   A   
+P6M0 . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . .  D ADDR   00CBH   A   
+P7 . . . . . . . .  D ADDR   00F8H   A   
+P7M0 . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . .  D ADDR   00E1H   A   
+PSW. . . . . . . .  D ADDR   00D0H   A   
+SECOND . . . . . .  D ADDR   003BH   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER. . .  N NUMB   00D0H   A   
+TH0. . . . . . . .  D ADDR   008CH   A   
+TIMER0_RELOAD. . .  N NUMB   A240H   A   
+TL0. . . . . . . .  D ADDR   008AH   A   
+TMOD . . . . . . .  D ADDR   0089H   A   
+TR0. . . . . . . .  B ADDR   0088H.4 A   
+T_COM. . . . . . .  C ADDR   01F9H   A   
+T_DISPLAY. . . . .  C ADDR   01CEH   A   
+A51 MACRO ASSEMBLER  D_LED                                                                03/01/2021 13:57:47 PAGE     8
+
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

@@ -1,0 +1,1090 @@
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN PWM-DAC.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE PWM-DAC.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;/*---------------------------------------------------------------------*/
+                       2     ;/* --- STC MCU Limited ------------------------------------------------*/
+                       3     ;/* --- STC 1T Series MCU Demo Programme -------------------------------*/
+                       4     ;/* --- Mobile: (86)13922805190 ----------------------------------------*/
+                       5     ;/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+                       6     ;/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+                       7     ;/* --- Web: www.STCMCU.com --------------------------------------------*/
+                       8     ;/* --- Web: www.STCMCUDATA.com ----------------------------------------*/
+                       9     ;/* --- QQ:  800003751 -------------------------------------------------*/
+                      10     ;/* Èç¹ûÒªÔÚ³ÌÐòÖÐÊ¹ÓÃ´Ë´úÂë,ÇëÔÚ³ÌÐòÖÐ×¢Ã÷Ê¹ÓÃÁËSTCµÄ×ÊÁÏ¼°³ÌÐò        */
+                      11     ;/*---------------------------------------------------------------------*/
+                      12     
+                      13     ;/************* ¹¦ÄÜËµÃ÷    **************
+                      14     
+                      15     ;±¾Àý³Ì»ùÓÚSTC8H8K64UÎªÖ÷¿ØÐ¾Æ¬µÄÊµÑéÏä8½øÐÐ±àÐ´²âÊÔ£¬STC8HÏµÁÐÐ¾Æ¬¿ÉÍ¨ÓÃ²Î¿¼.
+                      16     
+                      17     ;´ÓP1.7(PWM4N)Êä³ö16Î»µÄPWM, Êä³öµÄPWM¾­¹ýRCÂË²¨³ÉÖ±Á÷µçÑ¹ËÍP1.1×öADC²¢ÓÃÊýÂë¹ÜÏÔÊ¾³öÀ´.
+                      18     
+                      19     ;´®¿Ú1ÅäÖÃÎª115200bps, 8,n, 1, ÇÐ»»µ½P3.0 P3.1, ÏÂÔØºó¾Í¿ÉÒÔÖ±½Ó²âÊÔ. Í¨¹ý´®¿Ú1ÉèÖÃÕ¼¿Õ±È.
+                      20     
+                      21     ;´®¿ÚÃüÁîÊ¹ÓÃASCIIÂëµÄÊý×Ö£¬±ÈÈç£º 10£¬¾ÍÊÇÉèÖÃÕ¼¿Õ±ÈÎª10/256£¬ 100£º ¾ÍÊÇÉèÖÃÕ¼¿Õ±ÈÎª100/2
+                             56¡£
+                      22     
+                      23     ;¿ÉÒÔÉèÖÃµÄÖµÎª0~256, 0ÎªÁ¬ÐøµÍµçÆ½, 256ÎªÁ¬Ðø¸ßµçÆ½.
+                      24     
+                      25     ;×ó±ß4Î»ÊýÂë¹ÜÏÔÊ¾PWMµÄÕ¼¿Õ±ÈÖµ£¬ÓÒ±ß4Î»ÊýÂë¹ÜÏÔÊ¾ADCÖµ¡£
+                      26     
+                      27     ;ÏÂÔØÊ±, Ñ¡ÔñÊ±ÖÓ 22.1184MHz (ÓÃ»§¿É×ÔÐÐÐÞ¸ÄÆµÂÊ).
+                      28     
+                      29     ;******************************************/
+                      30     
+                      31     ;/****************************** ÓÃ»§¶¨Òåºê ***********************************/
+                      32     
+  5666                33     Fosc_KHZ    EQU 22118   ;22118KHZ
+                      34     
+  00D0                35     STACK_POIRTER   EQU     0D0H    ;¶ÑÕ»¿ªÊ¼µØÖ·
+                      36     
+  A99A                37     Timer0_Reload   EQU     (65536 - Fosc_KHZ)  ; Timer 0 ÖÐ¶ÏÆµÂÊ, 1000´Î/Ãë
+                      38     
+  0020                39     DIS_DOT         EQU     020H
+  0010                40     DIS_BLACK       EQU     010H
+  0011                41     DIS_            EQU     011H
+                      42     
+                      43     ;UART1_Baudrate EQU     (-4608) ;   600bps @ 11.0592MHz
+                      44     ;UART1_Baudrate EQU     (-2304) ;  1200bps @ 11.0592MHz UART1_Baudrate = (MAIN_Fosc / Baudr
+                             ate)
+                      45     ;UART1_Baudrate EQU     (-1152) ;  2400bps @ 11.0592MHz
+                      46     ;UART1_Baudrate EQU     (-576)  ;  4800bps @ 11.0592MHz
+                      47     ;UART1_Baudrate EQU     (-288)  ;  9600bps @ 11.0592MHz
+                      48     ;UART1_Baudrate EQU     (-144)  ; 19200bps @ 11.0592MHz
+                      49     ;UART1_Baudrate EQU     (-72)   ; 38400bps @ 11.0592MHz
+                      50     ;UART1_Baudrate EQU     (-48)   ; 57600bps @ 11.0592MHz
+                      51     ;UART1_Baudrate EQU     (-24)   ;115200bps @ 11.0592MHz
+                      52     
+                      53     ;UART1_Baudrate EQU     (-7680) ;   600bps @ 18.432MHz
+                      54     ;UART1_Baudrate EQU     (-3840) ;  1200bps @ 18.432MHz
+                      55     ;UART1_Baudrate EQU     (-1920) ;  2400bps @ 18.432MHz
+                      56     ;UART1_Baudrate EQU     (-960)  ;  4800bps @ 18.432MHz
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE     2
+
+                      57     ;UART1_Baudrate EQU     (-480)  ;  9600bps @ 18.432MHz
+                      58     ;UART1_Baudrate EQU     (-240)  ; 19200bps @ 18.432MHz
+                      59     ;UART1_Baudrate EQU     (-120)  ; 38400bps @ 18.432MHz
+                      60     ;UART1_Baudrate EQU     (-80)   ; 57600bps @ 18.432MHz
+                      61     ;UART1_Baudrate EQU     (-40)   ;115200bps @ 18.432MHz
+                      62     
+                      63     ;UART1_Baudrate EQU     (-9216) ;   600bps @ 22.1184MHz
+                      64     ;UART1_Baudrate EQU     (-4608) ;  1200bps @ 22.1184MHz
+                      65     ;UART1_Baudrate EQU     (-2304) ;  2400bps @ 22.1184MHz
+                      66     ;UART1_Baudrate EQU     (-1152) ;  4800bps @ 22.1184MHz
+                      67     ;UART1_Baudrate EQU     (-576)  ;  9600bps @ 22.1184MHz
+                      68     ;UART1_Baudrate EQU     (-288)  ; 19200bps @ 22.1184MHz
+                      69     ;UART1_Baudrate EQU     (-144)  ; 38400bps @ 22.1184MHz
+                      70     ;UART1_Baudrate EQU     (-96)   ; 57600bps @ 22.1184MHz
+  FFD0                71     UART1_Baudrate  EQU     (-48)   ;115200bps @ 22.1184MHz
+                      72     
+                      73     ;UART1_Baudrate EQU     (-6912) ; 1200bps @ 33.1776MHz
+                      74     ;UART1_Baudrate EQU     (-3456) ; 2400bps @ 33.1776MHz
+                      75     ;UART1_Baudrate EQU     (-1728) ; 4800bps @ 33.1776MHz
+                      76     ;UART1_Baudrate EQU     (-864)  ; 9600bps @ 33.1776MHz
+                      77     ;UART1_Baudrate EQU     (-432)  ;19200bps @ 33.1776MHz
+                      78     ;UART1_Baudrate EQU     (-216)  ;38400bps @ 33.1776MHz
+                      79     ;UART1_Baudrate EQU     (-144)  ;57600bps @ 33.1776MHz
+                      80     ;UART1_Baudrate EQU     (-72)   ;115200bps @ 33.1776MHz
+                      81     
+                      82     
+                      83     ;*******************************************************************
+                      84     ;*******************************************************************
+                      85     
+                      86     
+                      87     ;*******************************************************************
+  00BA                88     P_SW2       DATA 0BAH
+  008E                89     AUXR        DATA 08EH
+  00C0                90     P4          DATA 0C0H
+  00C8                91     P5          DATA 0C8H
+  00E8                92     P6          DATA 0E8H
+  00F8                93     P7          DATA 0F8H
+                      94     
+  00BC                95     ADC_CONTR   DATA 0BCH   ;´øADÏµÁÐ
+  00BD                96     ADC_RES     DATA 0BDH   ;´øADÏµÁÐ
+  00BE                97     ADC_RESL    DATA 0BEH   ;´øADÏµÁÐ
+  00DE                98     ADCCFG      DATA 0DEH
+                      99     
+  008F               100     INT_CLKO    DATA 0x8F
+  00A2               101     P_SW1       DATA 0A2H
+  00AF               102     IE2         DATA 0AFH
+  00D6               103     T2H         DATA 0D6H
+  00D7               104     T2L         DATA 0D7H
+                     105     
+  0093               106     P0M1    DATA    0x93    ; P0M1.n,P0M0.n     =00--->Standard,    01--->push-pull
+  0094               107     P0M0    DATA    0x94    ;                   =10--->pure input,  11--->open drain
+  0091               108     P1M1    DATA    0x91    ; P1M1.n,P1M0.n     =00--->Standard,    01--->push-pull
+  0092               109     P1M0    DATA    0x92    ;                   =10--->pure input,  11--->open drain
+  0095               110     P2M1    DATA    0x95    ; P2M1.n,P2M0.n     =00--->Standard,    01--->push-pull
+  0096               111     P2M0    DATA    0x96    ;                   =10--->pure input,  11--->open drain
+  00B1               112     P3M1    DATA    0xB1    ; P3M1.n,P3M0.n     =00--->Standard,    01--->push-pull
+  00B2               113     P3M0    DATA    0xB2    ;                   =10--->pure input,  11--->open drain
+  00B3               114     P4M1    DATA    0xB3    ; P4M1.n,P4M0.n     =00--->Standard,    01--->push-pull
+  00B4               115     P4M0    DATA    0xB4    ;                   =10--->pure input,  11--->open drain
+  00C9               116     P5M1    DATA    0xC9    ; P5M1.n,P5M0.n     =00--->Standard,    01--->push-pull
+  00CA               117     P5M0    DATA    0xCA    ;                   =10--->pure input,  11--->open drain
+  00CB               118     P6M1    DATA    0xCB    ; P6M1.n,P6M0.n     =00--->Standard,    01--->push-pull
+  00CC               119     P6M0    DATA    0xCC    ;                   =10--->pure input,  11--->open drain
+  00E1               120     P7M1    DATA    0xE1    ;
+  00E2               121     P7M0    DATA    0xE2    ;
+                     122     
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE     3
+
+  FEA8               123     ADCTIM        XDATA   0FEA8H
+                     124     
+  FEB1               125     PWMA_ENO      XDATA   0FEB1H
+  FEB2               126     PWMA_PS       XDATA   0FEB2H
+                     127     
+  FEC0               128     PWMA_CR1      XDATA   0FEC0H
+  FEC1               129     PWMA_CR2      XDATA   0FEC1H
+  FEC2               130     PWMA_SMCR     XDATA   0FEC2H
+  FEC3               131     PWMA_ETR      XDATA   0FEC3H
+  FEC4               132     PWMA_IER      XDATA   0FEC4H
+  FEC5               133     PWMA_SR1      XDATA   0FEC5H
+  FEC6               134     PWMA_SR2      XDATA   0FEC6H
+  FEC7               135     PWMA_EGR      XDATA   0FEC7H
+  FEC8               136     PWMA_CCMR1    XDATA   0FEC8H
+  FEC9               137     PWMA_CCMR2    XDATA   0FEC9H
+  FECA               138     PWMA_CCMR3    XDATA   0FECAH
+  FECB               139     PWMA_CCMR4    XDATA   0FECBH
+  FECC               140     PWMA_CCER1    XDATA   0FECCH
+  FECD               141     PWMA_CCER2    XDATA   0FECDH
+  FECE               142     PWMA_CNTRH    XDATA   0FECEH
+  FECF               143     PWMA_CNTRL    XDATA   0FECFH
+  FED0               144     PWMA_PSCRH    XDATA   0FED0H
+  FED1               145     PWMA_PSCRL    XDATA   0FED1H
+  FED2               146     PWMA_ARRH     XDATA   0FED2H
+  FED3               147     PWMA_ARRL     XDATA   0FED3H
+  FED4               148     PWMA_RCR      XDATA   0FED4H
+  FED5               149     PWMA_CCR1H    XDATA   0FED5H
+  FED6               150     PWMA_CCR1L    XDATA   0FED6H
+  FED7               151     PWMA_CCR2H    XDATA   0FED7H
+  FED8               152     PWMA_CCR2L    XDATA   0FED8H
+  FED9               153     PWMA_CCR3H    XDATA   0FED9H
+  FEDA               154     PWMA_CCR3L    XDATA   0FEDAH
+  FEDB               155     PWMA_CCR4H    XDATA   0FEDBH
+  FEDC               156     PWMA_CCR4L    XDATA   0FEDCH
+  FEDD               157     PWMA_BKR      XDATA   0FEDDH
+  FEDE               158     PWMA_DTR      XDATA   0FEDEH
+  FEDF               159     PWMA_OISR     XDATA   0FEDFH
+                     160     
+                     161     ;*************  IO¿Ú¶¨Òå    **************/
+                     162     
+                     163     
+                     164     ;*************  ±¾µØ±äÁ¿ÉùÃ÷    **************/
+  0000               165     B_1ms           BIT     20H.0   ;   1ms±êÖ¾
+                     166     
+  0030               167     LED8            DATA    30H     ;   ÏÔÊ¾»º³å 30H ~ 37H
+  0038               168     display_index   DATA    38H     ;   ÏÔÊ¾Î»Ë÷Òý
+                     169     
+  0039               170     msecond_H       DATA    39H     ;
+  003A               171     msecond_L       DATA    3AH     ;
+                     172     
+  0010               173     RX1_Lenth       EQU     16      ; ´®¿Ú½ÓÊÕ»º³å³¤¶È
+                     174     
+  0001               175     B_TX1_Busy      BIT     20H.1   ; ·¢ËÍÃ¦±êÖ¾
+  0002               176     B_RX1_OK        BIT     20H.2   ; ½ÓÊÕ½áÊø±êÖ¾
+  003B               177     TX1_Cnt         DATA    3BH     ; ·¢ËÍ¼ÆÊý
+  003C               178     RX1_Cnt         DATA    3CH     ; ½ÓÊÕ¼ÆÊý
+  003D               179     RX1_TimeOut     DATA    3DH     ; ³¬Ê±¼ÆÊý
+  0040               180     RX1_Buffer      DATA    40H     ;40 ~ 4FH ½ÓÊÕ»º³å
+                     181     
+                     182     ;*******************************************************************
+                     183     ;*******************************************************************
+0000                 184             ORG     0000H               ;reset
+0000 020100          185             LJMP    F_Main
+                     186     
+000B                 187             ORG     000BH               ;1  Timer0 interrupt
+000B 020506          188             LJMP    F_Timer0_Interrupt
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE     4
+
+                     189     
+0023                 190             ORG     0023H               ;4  UART1 interrupt
+0023 020475          191             LJMP    F_UART1_Interrupt
+                     192     
+                     193     
+                     194     ;******************** Ö÷³ÌÐò **************************/
+0100                 195             ORG     0100H       ;reset
+0100                 196     F_Main:
+0100 E4              197         CLR     A
+0101 F593            198         MOV     P0M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0103 F594            199         MOV     P0M0, A
+0105 F595            200         MOV     P2M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0107 F596            201         MOV     P2M0, A
+0109 F5B1            202         MOV     P3M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010B F5B2            203         MOV     P3M0, A
+010D F5B3            204         MOV     P4M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+010F F5B4            205         MOV     P4M0, A
+0111 F5C9            206         MOV     P5M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0113 F5CA            207         MOV     P5M0, A
+0115 F5CB            208         MOV     P6M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+0117 F5CC            209         MOV     P6M0, A
+0119 F5E1            210         MOV     P7M1, A     ;ÉèÖÃÎª×¼Ë«Ïò¿Ú
+011B F5E2            211         MOV     P7M0, A
+                     212     
+011D F592            213         MOV     P1M0, A
+011F 759102          214         MOV     P1M1, #02H  ;ÉèÖÃ P1.1 Îª ADC ÊäÈë¿Ú
+                     215         
+0122 7581D0          216         MOV     SP, #STACK_POIRTER
+0125 75D000          217         MOV     PSW, #0
+                     218         USING   0       ;Ñ¡ÔñµÚ0×éR0~R7
+                     219     
+                     220     ;================= ÓÃ»§³õÊ¼»¯³ÌÐò ====================================
+                     221     
+0128 753800          222         MOV     display_index, #0
+012B 7830            223         MOV     R0, #LED8
+012D 7A08            224         MOV     R2, #8
+012F                 225     L_ClearLoop:
+012F 7610            226         MOV     @R0, #DIS_BLACK     ;ÉÏµçÏûÒþ
+0131 08              227         INC     R0
+0132 DAFB            228         DJNZ    R2, L_ClearLoop
+                     229         
+0134 C28C            230         CLR     TR0
+0136 438E80          231         ORL     AUXR, #(1 SHL 7)    ; Timer0_1T();
+0139 5389FB          232         ANL     TMOD, #NOT 04H      ; Timer0_AsTimer();
+013C 5389FC          233         ANL     TMOD, #NOT 03H      ; Timer0_16bitAutoReload();
+013F 758CA9          234         MOV     TH0, #Timer0_Reload / 256   ;Timer0_Load(Timer0_Reload);
+0142 758A9A          235         MOV     TL0, #Timer0_Reload MOD 256
+0145 D2A9            236         SETB    ET0         ; Timer0_InterruptEnable();
+0147 D28C            237         SETB    TR0         ; Timer0_Run();
+0149 D2AF            238         SETB    EA          ; ´ò¿ª×ÜÖÐ¶Ï
+                     239         
+014B 1202EF          240         LCALL   F_ADC_config    ; ADC³õÊ¼»¯
+014E 120265          241         LCALL   F_PWM_Init      ; PWM³õÊ¼»¯
+                     242     
+0151 753701          243         MOV     LED8+7, #1  ;   //ÏÔÊ¾PWMÄ¬ÈÏÖµ
+0154 753602          244         MOV     LED8+6, #2  ;
+0157 753508          245         MOV     LED8+5, #8  ;
+015A 753410          246         MOV     LED8+4, #DIS_BLACK  ;   //ÕâÎ»²»ÏÔÊ¾
+                     247     
+015D 7401            248         MOV     A, #1
+015F 12042F          249         LCALL   F_UART1_config  ; Ñ¡Ôñ²¨ÌØÂÊ, 2: Ê¹ÓÃTimer2×ö²¨ÌØÂÊ, ÆäËüÖµ: Ê¹ÓÃTimer1×ö²¨ÌØÂÊ.
+                     250     
+0162 900326          251         MOV     DPTR, #StringText1  ;Load string address to DPTR
+0165 12040A          252         LCALL   F_SendString1       ;Send string
+                     253     
+                     254     ;=================== Ö÷Ñ­»· ==================================
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE     5
+
+0168                 255     L_Main_Loop:
+0168 3000FD          256         JNB     B_1ms,  L_Main_Loop     ;1msÎ´µ½
+016B C200            257         CLR     B_1ms
+                     258         
+016D E53D            259         MOV     A, RX1_TimeOut
+016F 7003            260         JNZ     L_CheckRx1TimeOut   ;´®¿Ú¿ÕÏÐ³¬Ê±¼ÆÊý·Ç0, 
+0171                 261     L_QuitCheckRxTimeOut:
+0171 020213          262         LJMP    L_QuitProcessUart1  ;´®¿Ú¿ÕÏÐ³¬Ê±¼ÆÊýÎª0, ÍË³ö
+0174                 263     L_CheckRx1TimeOut:
+0174 D53DFA          264         DJNZ    RX1_TimeOut, L_QuitCheckRxTimeOut   ;´®¿Ú¿ÕÏÐ³¬Ê±¼ÆÊý-1·Ç0ÍË³ö
+                     265     
+0177 D202            266         SETB    B_RX1_OK            ;´®¿Ú¿ÕÏÐ³¬Ê±, ½ÓÊÕ½áÊø, ×ö±êÖ¾
+0179 E53C            267         MOV     A, RX1_Cnt
+017B 7003            268         JNZ     L_RxCntNotZero      ;½ÓÊÕµ½×Ö·ûÊý·Ç¿Õ, Ôò´¦Àí
+017D 020213          269         LJMP    L_QuitProcessUart1  ;½ÓÊÕµ½×Ö·ûÊý¿Õ, ÔòÍË³ö
+                     270     
+0180                 271     L_RxCntNotZero:
+0180 54FC            272         ANL     A, #NOT 3   ;ÏÞÖÆÎª3Î»Êý×Ö
+0182 6009            273         JZ      L_NumberLengthOk
+0184 9003B3          274         MOV     DPTR, #StringError3 ;Load string address to DPTR    "´íÎó! ÊäÈë×Ö·û¹ý¶à! ÊäÈëÕ¼
+                             ¿Õ±ÈÎª0~256!"
+0187 12040A          275         LCALL   F_SendString1       ;Send string
+018A 02020E          276         LJMP    L_QuitCalculatePWM  ;ÍË³ö
+                     277         
+018D                 278     L_NumberLengthOk:
+018D 7A00            279         MOV     R2, #0
+018F 7B00            280         MOV     R3, #0
+0191 7840            281         MOV     R0, #RX1_Buffer
+0193 A93C            282         MOV     R1, RX1_Cnt
+                     283     
+0195                 284     L_GetUartPwmLoop:
+0195 E6              285         MOV     A, @R0
+0196 C3              286         CLR     C
+0197 9430            287         SUBB    A, #'0'             ;¼ÆËãÊÇ·ñÐ¡ÓÚASCIIÊý×Ö0
+0199 5009            288         JNC     L_RxdataLargeThan0
+019B 90035E          289         MOV     DPTR, #StringError1 ;Load string address to DPTR    "´íÎó! ½ÓÊÕµ½Ð¡ÓÚ0µÄÊý×Ö×Ö·
+                             û! Õ¼¿Õ±ÈÎª0~256!"
+019E 12040A          290         LCALL   F_SendString1       ;Send string
+01A1 02020E          291         LJMP    L_QuitCalculatePWM
+                     292         
+01A4                 293     L_RxdataLargeThan0:
+01A4 E6              294         MOV     A, @R0
+01A5 C3              295         CLR     C
+01A6 943A            296         SUBB    A, #03AH            ;¼ÆËãÊÇ·ñ´óÓÚASCIIÊý×Ö9
+01A8 4009            297         JC      L_RxdataLessThan03A
+01AA 9003DC          298         MOV     DPTR, #StringError4 ;Load string address to DPTR    "´íÎó! ½ÓÊÕµ½´óÓÚ9µÄÊý×Ö×Ö·
+                             û! Õ¼¿Õ±ÈÎª0~256!"
+01AD 12040A          299         LCALL   F_SendString1       ;Send string
+01B0 02020E          300         LJMP    L_QuitCalculatePWM
+                     301     
+01B3                 302     L_RxdataLessThan03A:
+01B3 8A04            303         MOV     AR4, R2
+01B5 8B05            304         MOV     AR5, R3
+01B7 7F0A            305         MOV     R7, #10
+01B9 1202C0          306         LCALL   F_MUL16x8   ;(R4,R5)* R7 -->(R5,R6,R7)
+01BC 8E02            307         MOV     AR2, R6
+01BE 8F03            308         MOV     AR3, R7
+01C0 E6              309         MOV     A, @R0      ;¼ÆËã [R2 R3] = [R2 R3] * 10 + RX1_Buffer[i] - '0';
+01C1 C3              310         CLR     C
+01C2 9430            311         SUBB    A, #'0'
+01C4 2B              312         ADD     A, R3
+01C5 FB              313         MOV     R3, A
+01C6 E4              314         CLR     A
+01C7 3A              315         ADDC    A, R2
+01C8 FA              316         MOV     R2, A
+01C9 08              317         INC     R0
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE     6
+
+01CA D9C9            318         DJNZ    R1, L_GetUartPwmLoop
+                     319     
+01CC EB              320         MOV     A, R3
+01CD C3              321         CLR     C
+01CE 9401            322         SUBB    A, #LOW 257     ;if(j >= 257)
+01D0 EA              323         MOV     A, R2
+01D1 9401            324         SUBB    A, #HIGH 257
+01D3 4009            325         JC      L_SetPWM_Right
+01D5 90038C          326         MOV     DPTR, #StringError2 ;Load string address to DPTR    ´íÎó! ÊäÈëÕ¼¿Õ±È¹ý´ó, Çë²»Ò
+                             ª´óÓÚ256!
+01D8 12040A          327         LCALL   F_SendString1       ;Send string
+01DB 02020E          328         LJMP    L_QuitCalculatePWM
+                     329     
+01DE                 330     L_SetPWM_Right:
+                     331     
+01DE 1202AF          332         LCALL   F_UpdatePwm     ;¸üÐÂÕ¼¿Õ±È
+01E1 EA              333         MOV     A, R2
+01E2 600B            334         JZ      L_PWM_LessTan256
+01E4 753702          335         MOV     LED8+7, #2      ;Õ¼¿Õ±ÈÎª256,ÏÔÊ¾256
+01E7 753605          336         MOV     LED8+6, #5
+01EA 753506          337         MOV     LED8+5, #6
+01ED 8019            338         SJMP    L_SetPWM_OK
+01EF                 339     L_PWM_LessTan256:
+01EF EB              340         MOV     A, R3
+01F0 75F064          341         MOV     B, #100     ;ÏÔÊ¾0~255Õ¼¿Õ±È
+01F3 84              342         DIV     AB
+01F4 F537            343         MOV     LED8+7, A
+01F6 E5F0            344         MOV     A, B
+01F8 75F00A          345         MOV     B, #10
+01FB 84              346         DIV     AB
+01FC F536            347         MOV     LED8+6, A
+01FE 85F035          348         MOV     LED8+5, B
+0201 E537            349         MOV     A, LED8+7
+0203 7003            350         JNZ     L_SetPWM_OK
+0205 753710          351         MOV     LED8+7, #DIS_BLACK    ;°ÙÎ»Ïû0
+                     352     
+0208                 353     L_SetPWM_OK:
+0208 90034E          354         MOV     DPTR, #StringText2  ;Load string address to DPTR    "ÒÑ¸üÐÂÕ¼¿Õ±È!"
+020B 12040A          355         LCALL   F_SendString1       ;Send string
+020E                 356     L_QuitCalculatePWM:
+020E 753C00          357         MOV     RX1_Cnt, #0
+0211 C202            358         CLR     B_RX1_OK
+0213                 359     L_QuitProcessUart1:
+                     360     
+                     361     ;=================== ¼ì²â300msÊÇ·ñµ½ ==================================
+0213 053A            362         INC     msecond_L       ;msecond + 1
+0215 E53A            363         MOV     A, msecond_L
+0217 7002            364         JNZ     $+4
+0219 0539            365         INC     msecond_H
+                     366         
+021B C3              367         CLR     C
+021C E53A            368         MOV     A, msecond_L    ;msecond - 300
+021E 942C            369         SUBB    A, #LOW 300
+0220 E539            370         MOV     A, msecond_H
+0222 9401            371         SUBB    A, #HIGH 300
+0224 5003            372         JNC     L_300msIsGood   ;if(msecond < 300), jmp
+0226 020168          373         LJMP    L_Main_Loop     ;if(msecond == 300), jmp
+0229                 374     L_300msIsGood:
+                     375     
+                     376     ;================= 300msµ½ ====================================
+0229 753A00          377         MOV     msecond_L, #0   ;if(msecond >= 1000)
+022C 753900          378         MOV     msecond_H, #0
+                     379     
+022F 7401            380         MOV     A, #01H
+0231 120302          381         LCALL   F_Get_ADC12bitResult    ; ¶ÁÍâ²¿µçÑ¹ADC, ²éÑ¯·½Ê½×öÒ»´ÎADC, ·µ»ØÖµ(R6 R7)¾ÍÊÇAD
+                             C½á¹û, == 4096 Îª´íÎó
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE     7
+
+                     382     
+0234 1202D1          383         LCALL   F_HEX2_DEC      ;(R6 R7) HEX Change to DEC ---> (R3 R4 R5), use (R2~R7)
+                     384         
+0237 EC              385         MOV     A, R4           ;ÏÔÊ¾ADCÖµ
+0238 C4              386         SWAP    A
+0239 540F            387         ANL     A, #0x0F
+023B F533            388         MOV     LED8+3, A
+023D EC              389         MOV     A, R4
+023E 540F            390         ANL     A, #0x0F
+0240 F532            391         MOV     LED8+2, A
+0242 ED              392         MOV     A, R5
+0243 C4              393         SWAP    A
+0244 540F            394         ANL     A, #0x0F
+0246 F531            395         MOV     LED8+1, A
+0248 ED              396         MOV     A, R5
+0249 540F            397         ANL     A, #0x0F
+024B F530            398         MOV     LED8+0, A
+                     399     
+024D E533            400         MOV     A, LED8+3           ;ÏÔÊ¾ÏûÎÞÐ§0
+024F 7011            401         JNZ     L_QuitProcessADC
+0251 753310          402         MOV     LED8+3, #DIS_BLACK
+0254 E532            403         MOV     A, LED8+2
+0256 700A            404         JNZ     L_QuitProcessADC
+0258 753210          405         MOV     LED8+2, #DIS_BLACK
+025B E531            406         MOV     A, LED8+1
+025D 7003            407         JNZ     L_QuitProcessADC
+025F 753110          408         MOV     LED8+1, #DIS_BLACK
+0262                 409     L_QuitProcessADC:
+                     410     
+0262 020168          411         LJMP    L_Main_Loop
+                     412     ;===================================================================
+                     413     
+                     414     ;========================================================================
+                     415     ; º¯Êý: F_PWM_Init
+                     416     ; ÃèÊö: PWM³õÊ¼»¯³ÌÐò.
+                     417     ; ²ÎÊý: none
+                     418     ; ·µ»Ø: none.
+                     419     ; °æ±¾: V1.0, 2021-3-3
+                     420     ;========================================================================
+0265                 421     F_PWM_Init:
+0265 43BA80          422         ORL     P_SW2, #080H        ;Ê¹ÄÜ·ÃÎÊXFR
+                     423     
+0268 7400            424         MOV     A,#00H              ;Ð´ CCMRx Ç°±ØÐëÏÈÇåÁã CCxE ¹Ø±ÕÍ¨µÀ
+026A 90FECD          425         MOV     DPTR,#PWMA_CCER2
+026D F0              426         MOVX    @DPTR,A
+026E 7460            427         MOV     A,#060H             ;ÉèÖÃ PWM4 Ä£Ê½1 Êä³ö
+0270 90FECB          428         MOV     DPTR,#PWMA_CCMR4
+0273 F0              429         MOVX    @DPTR,A
+0274 7450            430         MOV     A,#050H             ;Ê¹ÄÜ CC4E Í¨µÀ
+0276 90FECD          431         MOV     DPTR,#PWMA_CCER2
+0279 F0              432         MOVX    @DPTR,A
+                     433     
+027A 7402            434         MOV     A,#2                ;ÉèÖÃÖÜÆÚÊ±¼ä
+027C 90FED2          435         MOV     DPTR,#PWMA_ARRH
+027F F0              436         MOVX    @DPTR,A
+0280 7400            437         MOV     A,#0
+0282 90FED3          438         MOV     DPTR,#PWMA_ARRL
+0285 F0              439         MOVX    @DPTR,A
+0286 7400            440         MOV     A,#0                ;ÉèÖÃÕ¼¿Õ±ÈÊ±¼ä
+0288 90FEDB          441         MOV     DPTR,#PWMA_CCR4H
+028B F0              442         MOVX    @DPTR,A
+028C 7480            443         MOV     A,#128
+028E 90FEDC          444         MOV     DPTR,#PWMA_CCR4L
+0291 F0              445         MOVX    @DPTR,A
+                     446     
+0292 7480            447         MOV     A,#080H             ;Ê¹ÄÜ PWM4N Êä³ö
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE     8
+
+0294 90FEB1          448         MOV     DPTR,#PWMA_ENO
+0297 F0              449         MOVX    @DPTR,A
+0298 7400            450         MOV     A,#00H              ;¸ß¼¶ PWM Í¨µÀ 4N Êä³ö½ÅÑ¡ÔñÎ», 0x00:P1.7, 0x40:P2.7, 0x80:
+                             P6.7, 0xC0:P3.3
+029A 90FEB2          451         MOV     DPTR,#PWMA_PS
+029D F0              452         MOVX    @DPTR,A
+029E 7480            453         MOV     A,#080H             ;Ê¹ÄÜÖ÷Êä³ö
+02A0 90FEDD          454         MOV     DPTR,#PWMA_BKR
+02A3 F0              455         MOVX    @DPTR,A
+                     456     
+02A4 90FEC0          457         MOV     DPTR,#PWMA_CR1
+02A7 E0              458         MOVX    A,@DPTR
+02A8 4401            459         ORL     A,#01H              ;¿ªÊ¼¼ÆÊ±
+02AA F0              460         MOVX    @DPTR,A
+                     461     
+02AB 53BA7F          462         ANL     P_SW2, #NOT 080H    ;½ûÖ¹·ÃÎÊXFR
+02AE 22              463         RET
+                     464     
+                     465     ;======================================================================
+                     466     
+                     467     ;========================================================================
+                     468     ; º¯Êý: F_UpdatePwm
+                     469     ; ÃèÊö: ¸üÐÂPWMÕ¼¿Õ±ÈÖµ. 
+                     470     ; ²ÎÊý: [R2 R3]: pwmÕ¼¿Õ±ÈÖµ.
+                     471     ; ·µ»Ø: none.
+                     472     ; °æ±¾: V1.0, 2021-3-3
+                     473     ;========================================================================
+02AF                 474     F_UpdatePwm:
+02AF 43BA80          475         ORL     P_SW2, #080H        ;Ê¹ÄÜ·ÃÎÊXFR
+                     476     
+02B2 EA              477         MOV     A, R2               ;ÉèÖÃÕ¼¿Õ±ÈÊ±¼ä
+02B3 90FEDB          478         MOV     DPTR, #PWMA_CCR4H
+02B6 F0              479         MOVX    @DPTR, A
+02B7 EB              480         MOV     A, R3
+02B8 90FEDC          481         MOV     DPTR, #PWMA_CCR4L
+02BB F0              482         MOVX    @DPTR, A
+                     483     
+02BC 53BA7F          484         ANL     P_SW2, #NOT 080H    ;½ûÖ¹·ÃÎÊXFR
+02BF 22              485         RET
+                     486     
+                     487     ;***************************************************************************
+02C0                 488     F_MUL16x8:               ;(R4,R5)* R7 -->(R5,R6,R7)
+02C0 EF              489             MOV   A,R7      ;1T     1
+02C1 8DF0            490             MOV   B,R5      ;2T     3
+02C3 A4              491             MUL   AB        ;4T  R3*R7  4
+02C4 AEF0            492             MOV   R6,B      ;1T     4
+02C6 CF              493             XCH   A,R7      ;2T     3
+                     494             
+02C7 8CF0            495             MOV   B,R4      ;1T     3
+02C9 A4              496             MUL   AB        ;4T  R3*R6  4
+02CA 2E              497             ADD   A,R6      ;1T     2
+02CB FE              498             MOV   R6,A      ;1T     3
+02CC E4              499             CLR   A         ;1T     1
+02CD 35F0            500             ADDC  A,B       ;1T     3
+02CF FD              501             MOV   R5,A      ;1T     2
+02D0 22              502             RET             ;4T     10
+                     503     
+                     504     ;//========================================================================
+                     505     ;// º¯Êý: F_HEX2_DEC
+                     506     ;// ÃèÊö: °ÑË«×Ö½ÚÊ®Áù½øÖÆÊý×ª³ÉÊ®½øÖÆBCDÊý.
+                     507     ;// ²ÎÊý: (R6 R7): Òª×ª»»µÄË«×Ö½ÚÊ®Áù½øÖÆÊý.
+                     508     ;// ·µ»Ø: (R3 R4 R5) = BCDÂë.
+                     509     ;// °æ±¾: V1.0, 2013-10-22
+                     510     ;//========================================================================
+02D1                 511     F_HEX2_DEC:         ;(R6 R7) HEX Change to DEC ---> (R3 R4 R5), use (R2~R7)
+02D1 7A10            512             MOV     R2,#16
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE     9
+
+02D3 7B00            513             MOV     R3,#0
+02D5 7C00            514             MOV     R4,#0
+02D7 7D00            515             MOV     R5,#0
+                     516     
+02D9                 517     L_HEX2_DEC:
+02D9 C3              518             CLR     C   
+02DA EF              519             MOV     A,R7
+02DB 33              520             RLC     A   
+02DC FF              521             MOV     R7,A
+02DD EE              522             MOV     A,R6
+02DE 33              523             RLC     A   
+02DF FE              524             MOV     R6,A
+                     525     
+02E0 ED              526             MOV     A,R5
+02E1 3D              527             ADDC    A,R5
+02E2 D4              528             DA      A   
+02E3 FD              529             MOV     R5,A
+                     530     
+02E4 EC              531             MOV     A,R4
+02E5 3C              532             ADDC    A,R4
+02E6 D4              533             DA      A   
+02E7 FC              534             MOV     R4,A
+                     535     
+02E8 EB              536             MOV     A,R3
+02E9 3B              537             ADDC    A,R3
+02EA D4              538             DA      A   
+02EB FB              539             MOV     R3,A
+                     540     
+02EC DAEB            541             DJNZ    R2,L_HEX2_DEC
+02EE 22              542             RET
+                     543     ;**********************************************/
+                     544     
+02EF                 545     F_ADC_config:
+02EF 43BA80          546         ORL     P_SW2, #080H        ; Ê¹ÄÜ·ÃÎÊXFR
+02F2 743F            547         MOV     A,#03FH             ; ÉèÖÃ ADC ÄÚ²¿Ê±Ðò£¬ADC²ÉÑùÊ±¼ä½¨ÒéÉè×î´óÖµ
+02F4 90FEA8          548         MOV     DPTR,#ADCTIM
+02F7 F0              549         MOVX    @DPTR,A
+02F8 53BA7F          550         ANL     P_SW2, #NOT 080H    ; ½ûÖ¹·ÃÎÊXFR
+                     551     
+02FB 75DE2F          552         MOV     ADCCFG, #02FH       ; ÉèÖÃ×ª»»½á¹ûÓÒ¶ÔÆëÄ£Ê½£¬ ADC Ê±ÖÓÎªÏµÍ³Ê±ÖÓ/2/16
+02FE 75BC80          553         MOV     ADC_CONTR, #080H    ; Ê¹ÄÜ ADC Ä£¿é
+0301 22              554         RET
+                     555     
+                     556     ;========================================================================
+                     557     ; º¯Êý: F_Get_ADC12bitResult
+                     558     ; ÃèÊö: ²éÑ¯·¨¶ÁÒ»´ÎADC½á¹û.
+                     559     ; ²ÎÊý: ACC: Ñ¡ÔñÒª×ª»»µÄADC.
+                     560     ; ·µ»Ø: (R6 R7) = 12Î»ADC½á¹û.
+                     561     ; °æ±¾: V1.0, 2020-11-09
+                     562     ;========================================================================
+0302                 563     F_Get_ADC12bitResult:   ;ACC - Í¨µÀ0~7, ²éÑ¯·½Ê½×öÒ»´ÎADC, ·µ»ØÖµ(R6 R7)¾ÍÊÇADC½á¹û, == 409
+                             6 Îª´íÎó
+0302 FF              564         MOV     R7, A            
+0303 75BD00          565         MOV     ADC_RES,  #0;
+0306 75BE00          566         MOV     ADC_RESL, #0;
+                     567     
+0309 E5BC            568         MOV     A, ADC_CONTR        ;ADC_CONTR = (ADC_CONTR & 0xd0) | ADC_START | channel; 
+030B 54D0            569         ANL     A, #0D0H
+030D 4440            570         ORL     A, #40H
+030F 4F              571         ORL     A, R7
+0310 F5BC            572         MOV     ADC_CONTR, A
+0312 00              573         NOP
+0313 00              574         NOP
+0314 00              575         NOP
+0315 00              576         NOP
+                     577     
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE    10
+
+0316                 578     L_WaitAdcLoop:
+0316 E5BC            579         MOV     A, ADC_CONTR
+0318 30E5FB          580         JNB     ACC.5, L_WaitAdcLoop
+                     581     
+031B 53BCDF          582         ANL     ADC_CONTR, #NOT 020H    ;Çå³ýÍê³É±êÖ¾
+                     583     
+031E E5BD            584         MOV     A, ADC_RES      ;12Î»AD½á¹ûµÄ¸ß4Î»·ÅADC_RESµÄµÍ4Î»£¬µÍ8Î»ÔÚADC_RESL¡£
+0320 540F            585         ANL     A, #0FH
+0322 FE              586         MOV     R6, A
+0323 AFBE            587         MOV     R7, ADC_RESL
+                     588     
+0325                 589     L_QuitAdc:
+0325 22              590         RET
+                     591     
+                     592     ;====================================================================================
+0326                 593     StringText1:
+0326 50574DBA        594         DB  "PWMºÍADC²âÊÔ³ÌÐò, ÊäÈëÕ¼¿Õ±ÈÎª 0~256!",0DH,0AH,0
+032A CD414443                
+032E B2E2CAD4                
+0332 B3CCD0F2                
+0336 2C20CAE4                
+033A C8EBD5BC                
+033E BFD5B1C8                
+0342 CEAA2030                
+0346 7E323536                
+034A 210D0A00                
+034E                 595     StringText2:
+034E D2D1B8FC        596         DB  "ÒÑ¸üÐÂÕ¼¿Õ±È!",0DH,0AH,0
+0352 D0C2D5BC                
+0356 BFD5B1C8                
+035A 210D0A00                
+035E                 597     StringError1:
+035E B4EDCEF3        598         DB  "´íÎó! ½ÓÊÕµ½Ð¡ÓÚ0µÄÊý×Ö×Ö·û! Õ¼¿Õ±ÈÎª0~256!",0DH,0AH,0
+0362 2120BDD3                
+0366 CAD5B5BD                
+036A D0A1D3DA                
+036E 30B5C4CA                
+0372 FDD7D6D7                
+0376 D6B7FB21                
+037A 20D5BCBF                
+037E D5B1C8CE                
+0382 AA307E32                
+0386 3536210D                
+038A 0A00                    
+038C                 599     StringError2:
+038C B4EDCEF3        600         DB  "´íÎó! ÊäÈëÕ¼¿Õ±È¹ý´ó, Çë²»Òª´óÓÚ256!",0DH,0AH,0
+0390 2120CAE4                
+0394 C8EBD5BC                
+0398 BFD5B1C8                
+039C B9FDB4F3                
+03A0 2C20C7EB                
+03A4 B2BBD2AA                
+03A8 B4F3D3DA                
+03AC 32353621                
+03B0 0D0A00                  
+03B3                 601     StringError3:
+03B3 B4EDCEF3        602         DB  "´íÎó! ÊäÈë×Ö·û¹ý¶à! ÊäÈëÕ¼¿Õ±ÈÎª0~256!",0DH,0AH,0
+03B7 2120CAE4                
+03BB C8EBD7D6                
+03BF B7FBB9FD                
+03C3 B6E02120                
+03C7 CAE4C8EB                
+03CB D5BCBFD5                
+03CF B1C8CEAA                
+03D3 307E3235                
+03D7 36210D0A                
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE    11
+
+03DB 00                      
+03DC                 603     StringError4:
+03DC B4EDCEF3        604         DB  "´íÎó! ½ÓÊÕµ½´óÓÚ9µÄÊý×Ö×Ö·û! Õ¼¿Õ±ÈÎª0~256!",0DH,0AH,0
+03E0 2120BDD3                
+03E4 CAD5B5BD                
+03E8 B4F3D3DA                
+03EC 39B5C4CA                
+03F0 FDD7D6D7                
+03F4 D6B7FB21                
+03F8 20D5BCBF                
+03FC D5B1C8CE                
+0400 AA307E32                
+0404 3536210D                
+0408 0A00                    
+                     605     
+                     606     
+                     607     ;========================================================================
+                     608     ; º¯Êý: F_SendString1
+                     609     ; ÃèÊö: ´®¿Ú1·¢ËÍ×Ö·û´®º¯Êý¡£
+                     610     ; ²ÎÊý: DPTR: ×Ö·û´®Ê×µØÖ·.
+                     611     ; ·µ»Ø: none.
+                     612     ; °æ±¾: VER1.0
+                     613     ; ÈÕÆÚ: 2014-11-28
+                     614     ; ±¸×¢: 
+                     615     ;========================================================================
+040A                 616     F_SendString1:
+040A E4              617         CLR     A
+040B 93              618         MOVC    A, @A+DPTR      ;Get current char
+040C 600A            619         JZ      L_SendEnd1      ;Check the end of the string
+040E D201            620         SETB    B_TX1_Busy      ;±êÖ¾·¢ËÍÃ¦
+0410 F599            621         MOV     SBUF, A         ;·¢ËÍÒ»¸ö×Ö½Ú
+0412 2001FD          622         JB      B_TX1_Busy, $   ;µÈ´ý·¢ËÍÍê³É
+0415 A3              623         INC     DPTR            ;increment string ptr
+0416 80F2            624         SJMP    F_SendString1       ;Check next
+0418                 625     L_SendEnd1:
+0418 22              626         RET
+                     627     
+                     628     ;========================================================================
+                     629     ; º¯Êý: F_SetTimer2Baudraye
+                     630     ; ÃèÊö: ÉèÖÃTimer2×ö²¨ÌØÂÊ·¢ÉúÆ÷¡£
+                     631     ; ²ÎÊý: DPTR: Timer2µÄÖØ×°Öµ.
+                     632     ; ·µ»Ø: none.
+                     633     ; °æ±¾: VER1.0
+                     634     ; ÈÕÆÚ: 2014-11-28
+                     635     ; ±¸×¢: 
+                     636     ;========================================================================
+0419                 637     F_SetTimer2Baudraye:    ; Ñ¡Ôñ²¨ÌØÂÊ, 2: Ê¹ÓÃTimer2×ö²¨ÌØÂÊ, ÆäËüÖµ: Ê¹ÓÃTimer1×ö²¨ÌØÂÊ.
+0419 538EEF          638         ANL     AUXR, #NOT (1 SHL 4)    ; Timer stop    ²¨ÌØÂÊÊ¹ÓÃTimer2²úÉú
+041C 538EF7          639         ANL     AUXR, #NOT (1 SHL 3)    ; Timer2 set As Timer
+041F 438E04          640         ORL     AUXR, #(1 SHL 2)        ; Timer2 set as 1T mode
+0422 8583D6          641         MOV     T2H, DPH
+0425 8582D7          642         MOV     T2L, DPL
+0428 53AFFB          643         ANL     IE2, #NOT (1 SHL 2)     ; ½ûÖ¹ÖÐ¶Ï
+042B 438E10          644         ORL     AUXR, #(1 SHL 4)        ; Timer run enable
+042E 22              645         RET
+                     646     
+                     647     ;========================================================================
+                     648     ; º¯Êý: F_UART1_config
+                     649     ; ÃèÊö: UART1³õÊ¼»¯º¯Êý¡£
+                     650     ; ²ÎÊý: ACC: Ñ¡Ôñ²¨ÌØÂÊ, 2: Ê¹ÓÃTimer2×ö²¨ÌØÂÊ, ÆäËüÖµ: Ê¹ÓÃTimer1×ö²¨ÌØÂÊ.
+                     651     ; ·µ»Ø: none.
+                     652     ; °æ±¾: VER1.0
+                     653     ; ÈÕÆÚ: 2014-11-28
+                     654     ; ±¸×¢: 
+                     655     ;========================================================================
+042F                 656     F_UART1_config:
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE    12
+
+042F B4020B          657         CJNE    A, #2, L_Uart1NotUseTimer2
+0432 438E01          658         ORL     AUXR, #0x01     ; S1 BRT Use Timer2;
+0435 90FFD0          659         MOV     DPTR, #UART1_Baudrate
+0438 120419          660         LCALL   F_SetTimer2Baudraye
+043B 801B            661         SJMP    L_SetupUart1
+                     662     
+043D                 663     L_Uart1NotUseTimer2:
+043D C28E            664         CLR     TR1                 ; Timer Stop    ²¨ÌØÂÊÊ¹ÓÃTimer1²úÉú
+043F 538EFE          665         ANL     AUXR, #NOT 0x01     ; S1 BRT Use Timer1;
+0442 438E40          666         ORL     AUXR, #(1 SHL 6)    ; Timer1 set as 1T mode
+0445 5389BF          667         ANL     TMOD, #NOT (1 SHL 6); Timer1 set As Timer
+0448 5389CF          668         ANL     TMOD, #NOT 0x30     ; Timer1_16bitAutoReload;
+044B 758DFF          669         MOV     TH1, #HIGH UART1_Baudrate
+044E 758BD0          670         MOV     TL1, #LOW  UART1_Baudrate
+0451 C2AB            671         CLR     ET1                 ; ½ûÖ¹ÖÐ¶Ï
+0453 538FFD          672         ANL     INT_CLKO, #NOT 0x02 ; ²»Êä³öÊ±ÖÓ
+0456 D28E            673         SETB    TR1
+                     674     
+0458                 675     L_SetupUart1:
+0458 D29C            676         SETB    REN     ; ÔÊÐí½ÓÊÕ
+045A D2AC            677         SETB    ES      ; ÔÊÐíÖÐ¶Ï
+                     678     
+045C 53983F          679         ANL     SCON, #0x3f
+045F 439840          680         ORL     SCON, #0x40     ; UART1Ä£Ê½, 0x00: Í¬²½ÒÆÎ»Êä³ö, 0x40: 8Î»Êý¾Ý,¿É±ä²¨ÌØÂÊ, 0x80
+                             : 9Î»Êý¾Ý,¹Ì¶¨²¨ÌØÂÊ, 0xc0: 9Î»Êý¾Ý,¿É±ä²¨ÌØÂÊ
+                     681     ;   SETB    PS      ; ¸ßÓÅÏÈ¼¶ÖÐ¶Ï
+0462 D29C            682         SETB    REN     ; ÔÊÐí½ÓÊÕ
+0464 D2AC            683         SETB    ES      ; ÔÊÐíÖÐ¶Ï
+                     684     
+0466 53A23F          685         ANL     P_SW1, #0x3f
+0469 43A200          686         ORL     P_SW1, #0x00        ; UART1 switch to, 0x00: P3.0 P3.1, 0x40: P3.6 P3.7, 0x80: 
+                             P1.6 P1.7, 0xC0: P4.3 P4.4
+                     687     ;   ORL     PCON2, #(1 SHL 4)   ; ÄÚ²¿¶ÌÂ·RXDÓëTXD, ×öÖÐ¼Ì, ENABLE,DISABLE
+                     688     
+046C C201            689         CLR     B_TX1_Busy
+046E 753C00          690         MOV     RX1_Cnt, #0;
+0471 753B00          691         MOV     TX1_Cnt, #0;
+0474 22              692         RET
+                     693     
+                     694     
+                     695     ;========================================================================
+                     696     ; º¯Êý: F_UART1_Interrupt
+                     697     ; ÃèÊö: UART2ÖÐ¶Ïº¯Êý¡£
+                     698     ; ²ÎÊý: nine.
+                     699     ; ·µ»Ø: none.
+                     700     ; °æ±¾: VER1.0
+                     701     ; ÈÕÆÚ: 2014-11-28
+                     702     ; ±¸×¢: 
+                     703     ;========================================================================
+0475                 704     F_UART1_Interrupt:
+0475 C0D0            705         PUSH    PSW
+0477 C0E0            706         PUSH    ACC
+0479 C000            707         PUSH    AR0
+                     708         
+047B 309819          709         JNB     RI, L_QuitUartRx
+047E C298            710         CLR     RI
+0480 200214          711         JB      B_RX1_OK, L_QuitUartRx
+0483 E53C            712         MOV     A, RX1_Cnt
+0485 B41003          713         CJNE    A, #RX1_Lenth, L_RxCntNotOver
+0488 753C00          714         MOV     RX1_Cnt, #0     ; ±ÜÃâÒç³ö´¦Àí
+048B                 715     L_RxCntNotOver:
+048B 7440            716         MOV     A, #RX1_Buffer
+048D 253C            717         ADD     A, RX1_Cnt
+048F F8              718         MOV     R0, A
+0490 A699            719         MOV     @R0, SBUF   ;±£´æÒ»¸ö×Ö½Ú
+0492 053C            720         INC     RX1_Cnt
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE    13
+
+0494 753D05          721         MOV     RX1_TimeOut, #5
+0497                 722     L_QuitUartRx:
+                     723     
+0497 309904          724         JNB     TI, L_QuitUartTx
+049A C299            725         CLR     TI
+049C C201            726         CLR     B_TX1_Busy      ; Çå³ý·¢ËÍÃ¦±êÖ¾
+049E                 727     L_QuitUartTx:
+                     728     
+049E D000            729         POP     AR0
+04A0 D0E0            730         POP     ACC
+04A2 D0D0            731         POP     PSW
+04A4 32              732         RETI
+                     733     
+                     734     
+                     735     ; *********************** ÏÔÊ¾Ïà¹Ø³ÌÐò ****************************************
+04A5                 736     T_Display:                      ;±ê×¼×Ö¿â
+                     737     ;    0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+04A5 3F065B4F        738     DB  03FH,006H,05BH,04FH,066H,06DH,07DH,007H,07FH,06FH,077H,07CH,039H,05EH,079H,071H
+04A9 666D7D07                
+04AD 7F6F777C                
+04B1 395E7971                
+                     739     ;  black  -    H    J    K    L    N    o    P    U    t    G    Q    r    M    y
+04B5 0040761E        740     DB  000H,040H,076H,01EH,070H,038H,037H,05CH,073H,03EH,078H,03dH,067H,050H,037H,06EH
+04B9 7038375C                
+04BD 733E783D                
+04C1 6750376E                
+                     741     ;    0.   1.   2.   3.   4.   5.   6.   7.   8.   9.   -1
+04C5 BF86DBCF        742     DB  0BFH,086H,0DBH,0CFH,0E6H,0EDH,0FDH,087H,0FFH,0EFH,046H
+04C9 E6EDFD87                
+04CD FFEF46                  
+                     743     
+04D0                 744     T_COM:
+04D0 01020408        745     DB  001H,002H,004H,008H,010H,020H,040H,080H     ;   Î»Âë
+04D4 10204080                
+                     746     
+                     747     
+                     748     ;//========================================================================
+                     749     ;// º¯Êý: F_DisplayScan
+                     750     ;// ÃèÊö: ÏÔÊ¾É¨Ãè×Ó³ÌÐò¡£
+                     751     ;// ²ÎÊý: none.
+                     752     ;// ·µ»Ø: none.
+                     753     ;// °æ±¾: VER1.0
+                     754     ;// ÈÕÆÚ: 2013-4-1
+                     755     ;// ±¸×¢: ³ýÁËACCCºÍPSWÍâ, ËùÓÃµ½µÄÍ¨ÓÃ¼Ä´æÆ÷¶¼ÈëÕ»
+                     756     ;//========================================================================
+04D8                 757     F_DisplayScan:
+04D8 C083            758         PUSH    DPH     ;DPHÈëÕ»
+04DA C082            759         PUSH    DPL     ;DPLÈëÕ»
+04DC C000            760         PUSH    00H     ;R0 ÈëÕ»
+                     761         
+04DE 9004D0          762         MOV     DPTR, #T_COM
+04E1 E538            763         MOV     A, display_index
+04E3 93              764         MOVC    A, @A+DPTR
+04E4 F4              765         CPL     A
+04E5 F5F8            766         MOV     P7,A
+                     767         
+04E7 9004A5          768         MOV     DPTR, #T_Display
+04EA E538            769         MOV     A, display_index
+04EC 2430            770         ADD     A, #LED8
+04EE F8              771         MOV     R0, A
+04EF E6              772         MOV     A, @R0
+04F0 93              773         MOVC    A, @A+DPTR
+04F1 F4              774         CPL     A
+04F2 F5E8            775         MOV     P6,A
+                     776     
+04F4 0538            777         INC     display_index
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE    14
+
+04F6 E538            778         MOV     A, display_index
+04F8 54F8            779         ANL     A, #0F8H            ; if(display_index >= 8)
+04FA 6003            780         JZ      L_QuitDisplayScan
+04FC 753800          781         MOV     display_index, #0;  ;8Î»½áÊø»Ø0
+04FF                 782     L_QuitDisplayScan:
+04FF D000            783         POP     00H     ;R0 ³öÕ»
+0501 D082            784         POP     DPL     ;DPL³öÕ»
+0503 D083            785         POP     DPH     ;DPH³öÕ»
+0505 22              786         RET
+                     787     
+                     788     
+                     789     ;*******************************************************************
+                     790     ;**************** ÖÐ¶Ïº¯Êý ***************************************************
+                     791     
+0506                 792     F_Timer0_Interrupt: ;Timer0 1msÖÐ¶Ïº¯Êý
+0506 C0D0            793         PUSH    PSW     ;PSWÈëÕ»
+0508 C0E0            794         PUSH    ACC     ;ACCÈëÕ»
+                     795     
+050A 1204D8          796         LCALL   F_DisplayScan   ; 1msÉ¨ÃèÏÔÊ¾Ò»Î»
+050D D200            797         SETB    B_1ms           ; 1ms±êÖ¾
+                     798         
+                     799     
+050F D0E0            800         POP     ACC     ;ACC³öÕ»
+0511 D0D0            801         POP     PSW     ;PSW³öÕ»
+0513 32              802         RETI
+                     803     
+                     804         END
+                             
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE    15
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E               T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . . .  D ADDR   00E0H   A   
+ADCCFG . . . . . . .  D ADDR   00DEH   A   
+ADCTIM . . . . . . .  X ADDR   FEA8H   A   
+ADC_CONTR. . . . . .  D ADDR   00BCH   A   
+ADC_RES. . . . . . .  D ADDR   00BDH   A   
+ADC_RESL . . . . . .  D ADDR   00BEH   A   
+AR0. . . . . . . . .  D ADDR   0000H   A   
+AR2. . . . . . . . .  D ADDR   0002H   A   
+AR3. . . . . . . . .  D ADDR   0003H   A   
+AR4. . . . . . . . .  D ADDR   0004H   A   
+AR5. . . . . . . . .  D ADDR   0005H   A   
+AUXR . . . . . . . .  D ADDR   008EH   A   
+B. . . . . . . . . .  D ADDR   00F0H   A   
+B_1MS. . . . . . . .  B ADDR   0020H.0 A   
+B_RX1_OK . . . . . .  B ADDR   0020H.2 A   
+B_TX1_BUSY . . . . .  B ADDR   0020H.1 A   
+DISPLAY_INDEX. . . .  D ADDR   0038H   A   
+DIS_ . . . . . . . .  N NUMB   0011H   A   
+DIS_BLACK. . . . . .  N NUMB   0010H   A   
+DIS_DOT. . . . . . .  N NUMB   0020H   A   
+DPH. . . . . . . . .  D ADDR   0083H   A   
+DPL. . . . . . . . .  D ADDR   0082H   A   
+EA . . . . . . . . .  B ADDR   00A8H.7 A   
+ES . . . . . . . . .  B ADDR   00A8H.4 A   
+ET0. . . . . . . . .  B ADDR   00A8H.1 A   
+ET1. . . . . . . . .  B ADDR   00A8H.3 A   
+FOSC_KHZ . . . . . .  N NUMB   5666H   A   
+F_ADC_CONFIG . . . .  C ADDR   02EFH   A   
+F_DISPLAYSCAN. . . .  C ADDR   04D8H   A   
+F_GET_ADC12BITRESULT  C ADDR   0302H   A   
+F_HEX2_DEC . . . . .  C ADDR   02D1H   A   
+F_MAIN . . . . . . .  C ADDR   0100H   A   
+F_MUL16X8. . . . . .  C ADDR   02C0H   A   
+F_PWM_INIT . . . . .  C ADDR   0265H   A   
+F_SENDSTRING1. . . .  C ADDR   040AH   A   
+F_SETTIMER2BAUDRAYE.  C ADDR   0419H   A   
+F_TIMER0_INTERRUPT .  C ADDR   0506H   A   
+F_UART1_CONFIG . . .  C ADDR   042FH   A   
+F_UART1_INTERRUPT. .  C ADDR   0475H   A   
+F_UPDATEPWM. . . . .  C ADDR   02AFH   A   
+IE2. . . . . . . . .  D ADDR   00AFH   A   
+INT_CLKO . . . . . .  D ADDR   008FH   A   
+LED8 . . . . . . . .  D ADDR   0030H   A   
+L_300MSISGOOD. . . .  C ADDR   0229H   A   
+L_CHECKRX1TIMEOUT. .  C ADDR   0174H   A   
+L_CLEARLOOP. . . . .  C ADDR   012FH   A   
+L_GETUARTPWMLOOP . .  C ADDR   0195H   A   
+L_HEX2_DEC . . . . .  C ADDR   02D9H   A   
+L_MAIN_LOOP. . . . .  C ADDR   0168H   A   
+L_NUMBERLENGTHOK . .  C ADDR   018DH   A   
+L_PWM_LESSTAN256 . .  C ADDR   01EFH   A   
+L_QUITADC. . . . . .  C ADDR   0325H   A   
+L_QUITCALCULATEPWM .  C ADDR   020EH   A   
+L_QUITCHECKRXTIMEOUT  C ADDR   0171H   A   
+L_QUITDISPLAYSCAN. .  C ADDR   04FFH   A   
+L_QUITPROCESSADC . .  C ADDR   0262H   A   
+L_QUITPROCESSUART1 .  C ADDR   0213H   A   
+L_QUITUARTRX . . . .  C ADDR   0497H   A   
+L_QUITUARTTX . . . .  C ADDR   049EH   A   
+L_RXCNTNOTOVER . . .  C ADDR   048BH   A   
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE    16
+
+L_RXCNTNOTZERO . . .  C ADDR   0180H   A   
+L_RXDATALARGETHAN0 .  C ADDR   01A4H   A   
+L_RXDATALESSTHAN03A.  C ADDR   01B3H   A   
+L_SENDEND1 . . . . .  C ADDR   0418H   A   
+L_SETPWM_OK. . . . .  C ADDR   0208H   A   
+L_SETPWM_RIGHT . . .  C ADDR   01DEH   A   
+L_SETUPUART1 . . . .  C ADDR   0458H   A   
+L_UART1NOTUSETIMER2.  C ADDR   043DH   A   
+L_WAITADCLOOP. . . .  C ADDR   0316H   A   
+MSECOND_H. . . . . .  D ADDR   0039H   A   
+MSECOND_L. . . . . .  D ADDR   003AH   A   
+P0M0 . . . . . . . .  D ADDR   0094H   A   
+P0M1 . . . . . . . .  D ADDR   0093H   A   
+P1M0 . . . . . . . .  D ADDR   0092H   A   
+P1M1 . . . . . . . .  D ADDR   0091H   A   
+P2M0 . . . . . . . .  D ADDR   0096H   A   
+P2M1 . . . . . . . .  D ADDR   0095H   A   
+P3M0 . . . . . . . .  D ADDR   00B2H   A   
+P3M1 . . . . . . . .  D ADDR   00B1H   A   
+P4 . . . . . . . . .  D ADDR   00C0H   A   
+P4M0 . . . . . . . .  D ADDR   00B4H   A   
+P4M1 . . . . . . . .  D ADDR   00B3H   A   
+P5 . . . . . . . . .  D ADDR   00C8H   A   
+P5M0 . . . . . . . .  D ADDR   00CAH   A   
+P5M1 . . . . . . . .  D ADDR   00C9H   A   
+P6 . . . . . . . . .  D ADDR   00E8H   A   
+P6M0 . . . . . . . .  D ADDR   00CCH   A   
+P6M1 . . . . . . . .  D ADDR   00CBH   A   
+P7 . . . . . . . . .  D ADDR   00F8H   A   
+P7M0 . . . . . . . .  D ADDR   00E2H   A   
+P7M1 . . . . . . . .  D ADDR   00E1H   A   
+PSW. . . . . . . . .  D ADDR   00D0H   A   
+PWMA_ARRH. . . . . .  X ADDR   FED2H   A   
+PWMA_ARRL. . . . . .  X ADDR   FED3H   A   
+PWMA_BKR . . . . . .  X ADDR   FEDDH   A   
+PWMA_CCER1 . . . . .  X ADDR   FECCH   A   
+PWMA_CCER2 . . . . .  X ADDR   FECDH   A   
+PWMA_CCMR1 . . . . .  X ADDR   FEC8H   A   
+PWMA_CCMR2 . . . . .  X ADDR   FEC9H   A   
+PWMA_CCMR3 . . . . .  X ADDR   FECAH   A   
+PWMA_CCMR4 . . . . .  X ADDR   FECBH   A   
+PWMA_CCR1H . . . . .  X ADDR   FED5H   A   
+PWMA_CCR1L . . . . .  X ADDR   FED6H   A   
+PWMA_CCR2H . . . . .  X ADDR   FED7H   A   
+PWMA_CCR2L . . . . .  X ADDR   FED8H   A   
+PWMA_CCR3H . . . . .  X ADDR   FED9H   A   
+PWMA_CCR3L . . . . .  X ADDR   FEDAH   A   
+PWMA_CCR4H . . . . .  X ADDR   FEDBH   A   
+PWMA_CCR4L . . . . .  X ADDR   FEDCH   A   
+PWMA_CNTRH . . . . .  X ADDR   FECEH   A   
+PWMA_CNTRL . . . . .  X ADDR   FECFH   A   
+PWMA_CR1 . . . . . .  X ADDR   FEC0H   A   
+PWMA_CR2 . . . . . .  X ADDR   FEC1H   A   
+PWMA_DTR . . . . . .  X ADDR   FEDEH   A   
+PWMA_EGR . . . . . .  X ADDR   FEC7H   A   
+PWMA_ENO . . . . . .  X ADDR   FEB1H   A   
+PWMA_ETR . . . . . .  X ADDR   FEC3H   A   
+PWMA_IER . . . . . .  X ADDR   FEC4H   A   
+PWMA_OISR. . . . . .  X ADDR   FEDFH   A   
+PWMA_PS. . . . . . .  X ADDR   FEB2H   A   
+PWMA_PSCRH . . . . .  X ADDR   FED0H   A   
+PWMA_PSCRL . . . . .  X ADDR   FED1H   A   
+PWMA_RCR . . . . . .  X ADDR   FED4H   A   
+PWMA_SMCR. . . . . .  X ADDR   FEC2H   A   
+PWMA_SR1 . . . . . .  X ADDR   FEC5H   A   
+PWMA_SR2 . . . . . .  X ADDR   FEC6H   A   
+A51 MACRO ASSEMBLER  PWM_DAC                                                              03/03/2021 14:50:37 PAGE    17
+
+P_SW1. . . . . . . .  D ADDR   00A2H   A   
+P_SW2. . . . . . . .  D ADDR   00BAH   A   
+REN. . . . . . . . .  B ADDR   0098H.4 A   
+RI . . . . . . . . .  B ADDR   0098H.0 A   
+RX1_BUFFER . . . . .  D ADDR   0040H   A   
+RX1_CNT. . . . . . .  D ADDR   003CH   A   
+RX1_LENTH. . . . . .  N NUMB   0010H   A   
+RX1_TIMEOUT. . . . .  D ADDR   003DH   A   
+SBUF . . . . . . . .  D ADDR   0099H   A   
+SCON . . . . . . . .  D ADDR   0098H   A   
+SP . . . . . . . . .  D ADDR   0081H   A   
+STACK_POIRTER. . . .  N NUMB   00D0H   A   
+STRINGERROR1 . . . .  C ADDR   035EH   A   
+STRINGERROR2 . . . .  C ADDR   038CH   A   
+STRINGERROR3 . . . .  C ADDR   03B3H   A   
+STRINGERROR4 . . . .  C ADDR   03DCH   A   
+STRINGTEXT1. . . . .  C ADDR   0326H   A   
+STRINGTEXT2. . . . .  C ADDR   034EH   A   
+T2H. . . . . . . . .  D ADDR   00D6H   A   
+T2L. . . . . . . . .  D ADDR   00D7H   A   
+TH0. . . . . . . . .  D ADDR   008CH   A   
+TH1. . . . . . . . .  D ADDR   008DH   A   
+TI . . . . . . . . .  B ADDR   0098H.1 A   
+TIMER0_RELOAD. . . .  N NUMB   A99AH   A   
+TL0. . . . . . . . .  D ADDR   008AH   A   
+TL1. . . . . . . . .  D ADDR   008BH   A   
+TMOD . . . . . . . .  D ADDR   0089H   A   
+TR0. . . . . . . . .  B ADDR   0088H.4 A   
+TR1. . . . . . . . .  B ADDR   0088H.6 A   
+TX1_CNT. . . . . . .  D ADDR   003BH   A   
+T_COM. . . . . . . .  C ADDR   04D0H   A   
+T_DISPLAY. . . . . .  C ADDR   04A5H   A   
+UART1_BAUDRATE . . .  N NUMB   FFD0H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)
